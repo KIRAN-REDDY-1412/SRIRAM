@@ -48,7 +48,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
     const { data, error } = await supabase
       .from('registration_requests')
       .select('*')
-      .order('submitted_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('❌ [Supabase Error] Failed to fetch registration_requests:', error);
@@ -64,8 +64,8 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
 };
 
 /**
- * STEP 4: Approve registration request & insert into colleges table
- * Tables: registration_requests, colleges
+ * STEP 4 & STEP 6: Approve registration request, insert into colleges & subscriptions tables
+ * Tables: registration_requests, colleges, subscriptions
  */
 export const approveCollegeInSupabase = async (request) => {
   console.log('[Supabase Operation] Approving Request ID:', request.id);
@@ -113,8 +113,39 @@ export const approveCollegeInSupabase = async (request) => {
       return { success: false, error: collegeErr.message };
     }
 
-    console.log('✅ [Supabase Success] Approved & Created College:', collegeData[0]);
-    return { success: true, data: collegeData[0] };
+    const createdCollege = collegeData[0];
+    console.log('✅ [Supabase Success] Created College:', createdCollege);
+
+    // 4. STEP 6: Insert into subscriptions table automatically
+    const subscriptionPayload = {
+      college_id: createdCollege.id,
+      plan_name: request.subscriptionPlan || 'Professional',
+      subscription_start_date: new Date().toISOString().split('T')[0],
+      subscription_expiry_date: '2027-08-04',
+      maximum_students: parseInt(request.maxStudentsAllowed, 10) || 600,
+      status: 'Active'
+    };
+
+    console.log('➜ Inserting into subscriptions table with Payload:', subscriptionPayload);
+
+    const { data: subData, error: subErr } = await supabase
+      .from('subscriptions')
+      .insert([subscriptionPayload])
+      .select();
+
+    if (subErr) {
+      console.error('❌ [Supabase Error] Failed to insert into subscriptions:', subErr);
+    } else if (subData && subData[0]) {
+      console.log('✅ [Supabase Success] Created Subscription Plan:', subData[0]);
+
+      // Link subscription_id back to colleges
+      await supabase
+        .from('colleges')
+        .update({ subscription_id: subData[0].id })
+        .eq('id', createdCollege.id);
+    }
+
+    return { success: true, data: createdCollege };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during approval:', err);
     return { success: false, error: err.message };
@@ -165,14 +196,13 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       college_id: collegeId,
       plan_name: profileData.subscriptionPlan || 'Professional',
       subscription_start_date: profileData.subscriptionStartDate || new Date().toISOString().split('T')[0],
-      subscription_expiry_date: profileData.subscriptionExpiryDate || '2027-12-31',
+      subscription_expiry_date: profileData.subscriptionExpiryDate || '2027-08-04',
       maximum_students: parseInt(profileData.maxStudentsAllowed, 10) || 600,
       status: profileData.subscriptionStatus || 'Active'
     };
 
     console.log('➜ Inserting/Updating subscriptions table with Payload:', subscriptionPayload);
 
-    // Check if subscription row exists for college_id
     const { data: existingSub } = await supabase
       .from('subscriptions')
       .select('id')
@@ -198,7 +228,6 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
     } else if (subResult.data && subResult.data[0]) {
       console.log('✅ [Supabase Success] Saved Subscription Plan:', subResult.data[0]);
 
-      // Update colleges.subscription_id FK link
       await supabase
         .from('colleges')
         .update({ subscription_id: subResult.data[0].id })
@@ -231,8 +260,7 @@ export const fetchActiveCollegesFromSupabase = async () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch active colleges:', error);
-      // Fallback simple query without join if relationship isn't populated
+      console.error('❌ [Supabase Error] Failed to fetch active colleges with join:', error);
       const { data: simpleData, error: simpleErr } = await supabase
         .from('colleges')
         .select('*')

@@ -64,7 +64,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
 };
 
 /**
- * STEP 4 & STEP 6: Approve registration request, insert into colleges & subscriptions tables
+ * STEP 4: Approve registration request, insert into colleges & subscriptions tables
  * Tables: registration_requests, colleges, subscriptions
  */
 export const approveCollegeInSupabase = async (request) => {
@@ -116,7 +116,7 @@ export const approveCollegeInSupabase = async (request) => {
     const createdCollege = collegeData[0];
     console.log('✅ [Supabase Success] Created College:', createdCollege);
 
-    // 4. STEP 6: Insert into subscriptions table automatically
+    // 4. Insert into subscriptions table automatically
     const subscriptionPayload = {
       college_id: createdCollege.id,
       plan_name: request.subscriptionPlan || 'Professional',
@@ -148,6 +148,36 @@ export const approveCollegeInSupabase = async (request) => {
     return { success: true, data: createdCollege };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during approval:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Reject registration request
+ * Table: registration_requests
+ */
+export const rejectCollegeInSupabase = async (requestId) => {
+  console.log('[Supabase Operation] Rejecting Request ID:', requestId);
+
+  try {
+    const { data, error } = await supabase
+      .from('registration_requests')
+      .update({
+        status: 'Rejected',
+        rejected_at: new Date().toISOString()
+      })
+      .eq('id', requestId)
+      .select();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to reject request:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Rejected Request ID in Supabase:', data);
+    return { success: true, data: data[0] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error during rejection:', err);
     return { success: false, error: err.message };
   }
 };
@@ -207,7 +237,7 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       .from('subscriptions')
       .select('id')
       .eq('college_id', collegeId)
-      .single();
+      .maybeSingle();
 
     let subResult;
     if (existingSub && existingSub.id) {

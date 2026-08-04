@@ -4,6 +4,7 @@ import {
   fetchRegistrationRequestsFromSupabase, 
   submitCollegeRegistrationToSupabase, 
   approveCollegeInSupabase, 
+  rejectCollegeInSupabase,
   updateCollegeProfileAndSubscriptionInSupabase, 
   deleteCollegeFromSupabase, 
   deleteMultipleCollegesFromSupabase 
@@ -49,7 +50,7 @@ export const CollegeProvider = ({ children }) => {
           status: c.status || 'Active',
           subscriptionPlan: sub ? sub.plan_name : 'Professional',
           subscriptionStartDate: sub ? sub.subscription_start_date : new Date().toISOString().split('T')[0],
-          subscriptionExpiryDate: sub ? sub.subscription_expiry_date : '2027-12-31',
+          subscriptionExpiryDate: sub ? sub.subscription_expiry_date : '2027-08-04',
           maxStudentsAllowed: sub ? sub.maximum_students : 600,
           subscriptionStatus: sub ? sub.status : 'Active'
         };
@@ -91,7 +92,7 @@ export const CollegeProvider = ({ children }) => {
         logoBg: 'from-teal-600 to-emerald-700',
         subscriptionPlan: 'Professional',
         subscriptionStartDate: new Date().toISOString().split('T')[0],
-        subscriptionExpiryDate: '2027-12-31',
+        subscriptionExpiryDate: '2027-08-04',
         maxStudentsAllowed: 600,
         subscriptionStatus: 'Active'
       }));
@@ -107,60 +108,63 @@ export const CollegeProvider = ({ children }) => {
     loadSupabaseData();
   }, []);
 
-  // STEP 2: Submit Registration Request
+  // Submit Registration Request -> Direct Supabase Insert
   const submitRegistration = async (newRequestData) => {
-    console.log('[CollegeContext] Submitting new registration request:', newRequestData);
+    console.log('[CollegeContext] Submitting registration directly to Supabase:', newRequestData);
     const result = await submitCollegeRegistrationToSupabase(newRequestData);
 
     if (result.success) {
-      await loadSupabaseData(); // Refresh directly from Supabase
+      await loadSupabaseData();
       return { success: true, data: result.data };
     } else {
       return { success: false, error: result.error };
     }
   };
 
-  // STEP 4: Approve College Request
+  // Approve College Request -> Direct Supabase Update & Inserts
   const approveCollege = async (requestId) => {
     const request = pendingRequests.find(r => r.id === requestId);
     if (!request) return null;
 
-    console.log('[CollegeContext] Approving request:', requestId);
+    console.log('[CollegeContext] Approving request directly in Supabase:', requestId);
     const result = await approveCollegeInSupabase(request);
 
     if (result.success) {
-      await loadSupabaseData(); // Refresh directly from Supabase
+      await loadSupabaseData();
       return result.data;
     }
     return null;
   };
 
-  // Reject College Request
+  // Reject College Request -> Direct Supabase Update
   const rejectCollege = async (requestId) => {
-    console.log('[CollegeContext] Rejecting request:', requestId);
-    setPendingRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: "Rejected" } : r));
-  };
-
-  // STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
-  const updateCollegeProfile = async (collegeId, updatedProfile) => {
-    console.log('[CollegeContext] Updating profile and subscription plan for college:', collegeId);
-    const result = await updateCollegeProfileAndSubscriptionInSupabase(collegeId, updatedProfile);
-
+    console.log('[CollegeContext] Rejecting request directly in Supabase:', requestId);
+    const result = await rejectCollegeInSupabase(requestId);
     if (result.success) {
-      await loadSupabaseData(); // Refresh directly from Supabase
+      await loadSupabaseData();
     }
   };
 
-  // Delete Single College
+  // Update College Profile & Subscription -> Direct Supabase Updates
+  const updateCollegeProfile = async (collegeId, updatedProfile) => {
+    console.log('[CollegeContext] Updating profile and subscription directly in Supabase:', collegeId);
+    const result = await updateCollegeProfileAndSubscriptionInSupabase(collegeId, updatedProfile);
+
+    if (result.success) {
+      await loadSupabaseData();
+    }
+  };
+
+  // Delete Single College -> Direct Supabase Deletion
   const deleteCollege = async (collegeId) => {
-    console.log('[CollegeContext] Deleting college:', collegeId);
+    console.log('[CollegeContext] Deleting college directly in Supabase:', collegeId);
     await deleteCollegeFromSupabase(collegeId);
     await loadSupabaseData();
   };
 
-  // Bulk Delete Multiple Colleges
+  // Bulk Delete Multiple Colleges -> Direct Supabase Bulk Deletion
   const deleteMultipleColleges = async (collegeIds) => {
-    console.log('[CollegeContext] Bulk deleting colleges:', collegeIds);
+    console.log('[CollegeContext] Bulk deleting colleges directly in Supabase:', collegeIds);
     await deleteMultipleCollegesFromSupabase(collegeIds);
     await loadSupabaseData();
   };

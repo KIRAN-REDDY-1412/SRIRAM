@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.colleges (
     principal_name VARCHAR(150) NULL,
     principal_mobile VARCHAR(20) NULL,
     principal_email VARCHAR(255) NULL,
-    subscription_id UUID NULL, -- FK added via ALTER TABLE below
+    subscription_id UUID NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Expired')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
@@ -145,26 +145,28 @@ CREATE INDEX IF NOT EXISTS idx_super_admin_email ON public.super_admin(email);
 
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES FOR SUPABASE
+-- Enable open policies so anon API key can SELECT, INSERT, UPDATE, DELETE
 -- ====================================================================
 ALTER TABLE public.registration_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.colleges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admin ENABLE ROW LEVEL SECURITY;
 
--- 1. Public Read Policy on Active Colleges for Landing Page
-CREATE POLICY "Public Read Active Colleges" ON public.colleges
-    FOR SELECT USING (status = 'Active');
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow All Operations Registration Requests" ON public.registration_requests;
+DROP POLICY IF EXISTS "Allow All Operations Colleges" ON public.colleges;
+DROP POLICY IF EXISTS "Allow All Operations Subscriptions" ON public.subscriptions;
+DROP POLICY IF EXISTS "Allow All Operations Super Admin" ON public.super_admin;
 
--- 2. Public Read Policy on Subscriptions for Active Colleges
-CREATE POLICY "Public Read Active Subscriptions" ON public.subscriptions
-    FOR SELECT USING (status = 'Active');
+-- Create open policies for all roles (anon, authenticated, service_role)
+CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests
+    FOR ALL USING (true) WITH CHECK (true);
 
--- 3. Public Insert Policy for Landing Page Registration Request Form
-CREATE POLICY "Public Insert Registration Request" ON public.registration_requests
-    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow All Operations Colleges" ON public.colleges
+    FOR ALL USING (true) WITH CHECK (true);
 
--- 4. Full Access Policies for Service Role / Authenticated Admin
-CREATE POLICY "Service Role Full Access Requests" ON public.registration_requests FOR ALL USING (true);
-CREATE POLICY "Service Role Full Access Colleges" ON public.colleges FOR ALL USING (true);
-CREATE POLICY "Service Role Full Access Subscriptions" ON public.subscriptions FOR ALL USING (true);
-CREATE POLICY "Service Role Full Access Super Admin" ON public.super_admin FOR ALL USING (true);
+CREATE POLICY "Allow All Operations Subscriptions" ON public.subscriptions
+    FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin
+    FOR ALL USING (true) WITH CHECK (true);

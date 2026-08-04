@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   fetchActiveCollegesFromSupabase, 
-  fetchPendingRequestsFromSupabase, 
+  fetchRegistrationRequestsFromSupabase, 
   submitCollegeRegistrationToSupabase, 
   approveCollegeInSupabase, 
-  updateCollegeProfileInSupabase, 
+  updateCollegeProfileAndSubscriptionInSupabase, 
   deleteCollegeFromSupabase, 
   deleteMultipleCollegesFromSupabase 
 } from '../services/supabaseService';
@@ -18,69 +18,86 @@ export const CollegeProvider = ({ children }) => {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load live data from Supabase on initial mount
+  // STEP 3 & STEP 7: Pure Live Supabase Fetch
   const loadSupabaseData = async () => {
     setIsLoading(true);
+    console.log('[CollegeContext] Loading live data from Supabase PostgreSQL...');
     
-    // Fetch active colleges
+    // 1. Fetch Active Colleges for Landing Page (from colleges table)
     const collegesRes = await fetchActiveCollegesFromSupabase();
     if (collegesRes.success && Array.isArray(collegesRes.data)) {
-      const mappedColleges = collegesRes.data.map(c => ({
-        id: c.id,
-        name: c.name,
-        code: c.code,
-        city: c.city,
-        state: c.state,
-        district: c.district,
-        pinCode: c.pin_code,
-        address: c.address,
-        universityAffiliation: c.university_affiliation,
-        pciApprovalNo: c.pci_approval_no,
-        principalName: c.principal_name,
-        principalMobile: c.principal_mobile,
-        principalEmail: c.principal_email,
-        logoBg: c.logo_bg || 'from-emerald-600 to-teal-700',
-        initials: c.initials || (c.name ? c.name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG'),
-        studentsCount: c.max_students_allowed || c.students_count || 600,
-        portalUrl: c.portal_url || `https://${(c.code || 'clg').toLowerCase()}.pharmdverse.com`,
-        status: c.status || 'Active Subscribed',
-        subscriptionPlan: c.subscription_plan || 'Professional',
-        subscriptionStartDate: c.subscription_start_date || new Date().toISOString().split('T')[0],
-        subscriptionExpiryDate: c.subscription_expiry_date || '2027-12-31',
-        maxStudentsAllowed: c.max_students_allowed || 600,
-        subscriptionStatus: c.subscription_status || 'Active'
-      }));
-      setActiveColleges(mappedColleges);
+      const mappedColleges = collegesRes.data.map(c => {
+        const sub = c.subscriptions && c.subscriptions[0] ? c.subscriptions[0] : null;
+        return {
+          id: c.id,
+          name: c.college_name || c.name,
+          code: c.college_code || c.code,
+          city: c.city,
+          state: c.state,
+          district: c.district,
+          pinCode: c.pincode || c.pin_code,
+          address: c.address,
+          universityAffiliation: c.university_affiliation,
+          pciApprovalNo: c.pci_approval_number || c.pci_approval_no,
+          principalName: c.principal_name,
+          principalMobile: c.principal_mobile,
+          principalEmail: c.principal_email,
+          logoBg: c.college_logo || c.logo_bg || 'from-emerald-600 to-teal-700',
+          initials: (c.college_name || c.name) ? (c.college_name || c.name).split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
+          studentsCount: sub ? sub.maximum_students : 600,
+          portalUrl: `https://${(c.college_code || c.code || 'clg').toLowerCase()}.pharmdverse.com`,
+          status: c.status || 'Active',
+          subscriptionPlan: sub ? sub.plan_name : 'Professional',
+          subscriptionStartDate: sub ? sub.subscription_start_date : new Date().toISOString().split('T')[0],
+          subscriptionExpiryDate: sub ? sub.subscription_expiry_date : '2027-12-31',
+          maxStudentsAllowed: sub ? sub.maximum_students : 600,
+          subscriptionStatus: sub ? sub.status : 'Active'
+        };
+      });
+
+      const activeList = mappedColleges.filter(c => c.status === 'Active');
+      const inactiveList = mappedColleges.filter(c => c.status === 'Inactive');
+      const expiredList = mappedColleges.filter(c => c.status === 'Expired');
+
+      setActiveColleges(activeList);
+      setInactiveColleges(inactiveList);
+      setExpiredSubscriptions(expiredList);
+    } else {
+      setActiveColleges([]);
+      setInactiveColleges([]);
+      setExpiredSubscriptions([]);
     }
 
-    // Fetch registration requests
-    const requestsRes = await fetchPendingRequestsFromSupabase();
+    // 2. Fetch Registration Requests for Super Admin (from registration_requests table)
+    const requestsRes = await fetchRegistrationRequestsFromSupabase();
     if (requestsRes.success && Array.isArray(requestsRes.data)) {
       const mappedRequests = requestsRes.data.map(r => ({
         id: r.id,
         collegeName: r.college_name,
         city: r.city,
         state: r.state,
-        contactName: r.contact_name,
+        contactName: r.contact_person || r.contact_name,
         mobileNumber: r.mobile_number,
         email: r.email,
         status: r.status || 'Pending',
-        submittedDate: r.submitted_date ? r.submitted_date.split('T')[0] : new Date().toISOString().split('T')[0],
-        address: r.address,
-        district: r.district,
-        pinCode: r.pin_code,
-        universityAffiliation: r.university_affiliation,
-        pciApprovalNo: r.pci_approval_no,
-        code: r.code,
-        initials: r.initials,
-        logoBg: r.logo_bg,
-        subscriptionPlan: r.subscription_plan || 'Professional',
-        subscriptionStartDate: r.subscription_start_date,
-        subscriptionExpiryDate: r.subscription_expiry_date,
-        maxStudentsAllowed: r.max_students_allowed || 600,
-        subscriptionStatus: r.subscription_status || 'Active'
+        submittedDate: r.submitted_at ? r.submitted_at.split('T')[0] : (r.created_at ? r.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
+        address: `${r.city}, ${r.state}`,
+        district: r.city,
+        pinCode: '500001',
+        universityAffiliation: 'State Health Sciences University',
+        pciApprovalNo: `PCI-${r.state.substring(0, 3).toUpperCase()}-2026/100`,
+        code: r.college_name.split(' ').map(w => w[0]).join('').toUpperCase() + `-${r.city.substring(0, 3).toUpperCase()}`,
+        initials: r.college_name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase(),
+        logoBg: 'from-teal-600 to-emerald-700',
+        subscriptionPlan: 'Professional',
+        subscriptionStartDate: new Date().toISOString().split('T')[0],
+        subscriptionExpiryDate: '2027-12-31',
+        maxStudentsAllowed: 600,
+        subscriptionStatus: 'Active'
       }));
       setPendingRequests(mappedRequests);
+    } else {
+      setPendingRequests([]);
     }
 
     setIsLoading(false);
@@ -90,149 +107,62 @@ export const CollegeProvider = ({ children }) => {
     loadSupabaseData();
   }, []);
 
-  // Submit registration request (Public User)
+  // STEP 2: Submit Registration Request
   const submitRegistration = async (newRequestData) => {
-    const exists = pendingRequests.some(
-      req => req.email.toLowerCase() === newRequestData.email.toLowerCase() ||
-             req.collegeName.toLowerCase() === newRequestData.collegeName.toLowerCase()
-    );
+    console.log('[CollegeContext] Submitting new registration request:', newRequestData);
+    const result = await submitCollegeRegistrationToSupabase(newRequestData);
 
-    if (exists) {
-      return { success: false, error: "A registration request for this college name or email address already exists." };
+    if (result.success) {
+      await loadSupabaseData(); // Refresh directly from Supabase
+      return { success: true, data: result.data };
+    } else {
+      return { success: false, error: result.error };
     }
-
-    // 1. Send to Supabase
-    const supabaseRes = await submitCollegeRegistrationToSupabase(newRequestData);
-
-    const newRequest = {
-      id: supabaseRes.data ? supabaseRes.data.id : `req_${Date.now()}`,
-      collegeName: newRequestData.collegeName,
-      city: newRequestData.city,
-      state: newRequestData.state,
-      contactName: newRequestData.contactName,
-      mobileNumber: newRequestData.mobileNumber,
-      email: newRequestData.email,
-      submittedDate: new Date().toISOString().split('T')[0],
-      status: "Pending",
-      address: `${newRequestData.city}, ${newRequestData.state}`,
-      district: newRequestData.city,
-      pinCode: "500001",
-      universityAffiliation: "State Health Sciences University",
-      pciApprovalNo: `PCI-${newRequestData.state.substring(0, 3).toUpperCase()}-2026/${Math.floor(100 + Math.random() * 900)}`,
-      code: newRequestData.collegeName.split(' ').map(w => w[0]).join('').toUpperCase() + `-${newRequestData.city.substring(0, 3).toUpperCase()}`,
-      initials: newRequestData.collegeName.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase(),
-      logoBg: "from-teal-600 to-emerald-700",
-      subscriptionPlan: "Professional",
-      subscriptionStartDate: new Date().toISOString().split('T')[0],
-      subscriptionExpiryDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
-      maxStudentsAllowed: 600,
-      subscriptionStatus: "Active"
-    };
-
-    setPendingRequests(prev => [newRequest, ...prev]);
-    return { success: true, data: newRequest };
   };
 
-  // Approve College Request (Super Admin)
+  // STEP 4: Approve College Request
   const approveCollege = async (requestId) => {
     const request = pendingRequests.find(r => r.id === requestId);
     if (!request) return null;
 
-    setPendingRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: "Approved" } : r));
+    console.log('[CollegeContext] Approving request:', requestId);
+    const result = await approveCollegeInSupabase(request);
 
-    // Send to Supabase
-    const res = await approveCollegeInSupabase(request);
-
-    const newActiveCollege = {
-      id: res.data ? res.data.id : `clg_${Date.now()}`,
-      name: request.collegeName,
-      city: request.city,
-      state: request.state,
-      code: request.code || `${request.collegeName.substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`,
-      studentsCount: request.maxStudentsAllowed || 350,
-      accreditation: "PCI Approved",
-      status: "Active Subscribed",
-      portalUrl: `https://${(request.code || 'clg').toLowerCase()}.pharmdverse.com`,
-      logoBg: request.logoBg || "from-emerald-600 to-teal-700",
-      initials: request.initials || request.collegeName.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase(),
-      address: request.address,
-      district: request.district,
-      pinCode: request.pinCode,
-      universityAffiliation: request.universityAffiliation,
-      pciApprovalNo: request.pciApprovalNo,
-      principalName: request.contactName,
-      principalMobile: request.mobileNumber,
-      principalEmail: request.email,
-      requestId: request.id,
-      subscriptionPlan: request.subscriptionPlan || "Professional",
-      subscriptionStartDate: request.subscriptionStartDate || new Date().toISOString().split('T')[0],
-      subscriptionExpiryDate: request.subscriptionExpiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
-      maxStudentsAllowed: request.maxStudentsAllowed || 600,
-      subscriptionStatus: "Active"
-    };
-
-    setActiveColleges(prev => [newActiveCollege, ...prev]);
-    return newActiveCollege;
+    if (result.success) {
+      await loadSupabaseData(); // Refresh directly from Supabase
+      return result.data;
+    }
+    return null;
   };
 
-  // Reject College Request (Super Admin)
-  const rejectCollege = (requestId) => {
+  // Reject College Request
+  const rejectCollege = async (requestId) => {
+    console.log('[CollegeContext] Rejecting request:', requestId);
     setPendingRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: "Rejected" } : r));
   };
 
-  // Update College Profile & Subscription Plan (Super Admin)
+  // STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
   const updateCollegeProfile = async (collegeId, updatedProfile) => {
-    // Send update to Supabase
-    await updateCollegeProfileInSupabase(collegeId, updatedProfile);
+    console.log('[CollegeContext] Updating profile and subscription plan for college:', collegeId);
+    const result = await updateCollegeProfileAndSubscriptionInSupabase(collegeId, updatedProfile);
 
-    setActiveColleges(prev => prev.map(clg => {
-      if (clg.id === collegeId) {
-        const isNowActive = updatedProfile.subscriptionStatus === 'Active';
-        return {
-          ...clg,
-          name: updatedProfile.collegeName || clg.name,
-          code: updatedProfile.collegeCode || clg.code,
-          address: updatedProfile.address || clg.address,
-          city: updatedProfile.city || clg.city,
-          district: updatedProfile.district || clg.district,
-          state: updatedProfile.state || clg.state,
-          pinCode: updatedProfile.pinCode || clg.pinCode,
-          universityAffiliation: updatedProfile.universityAffiliation || clg.universityAffiliation,
-          pciApprovalNo: updatedProfile.pciApprovalNo || clg.pciApprovalNo,
-          principalName: updatedProfile.principalName || clg.principalName,
-          principalMobile: updatedProfile.principalMobile || clg.principalMobile,
-          principalEmail: updatedProfile.principalEmail || clg.principalEmail,
-          logoBg: updatedProfile.logoBg || clg.logoBg,
-          initials: updatedProfile.collegeName ? updatedProfile.collegeName.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : clg.initials,
-          subscriptionPlan: updatedProfile.subscriptionPlan || clg.subscriptionPlan,
-          subscriptionStartDate: updatedProfile.subscriptionStartDate || clg.subscriptionStartDate,
-          subscriptionExpiryDate: updatedProfile.subscriptionExpiryDate || clg.subscriptionExpiryDate,
-          maxStudentsAllowed: updatedProfile.maxStudentsAllowed || clg.maxStudentsAllowed,
-          subscriptionStatus: updatedProfile.subscriptionStatus || clg.subscriptionStatus,
-          status: isNowActive ? "Active Subscribed" : "Inactive"
-        };
-      }
-      return clg;
-    }));
+    if (result.success) {
+      await loadSupabaseData(); // Refresh directly from Supabase
+    }
   };
 
-  // DELETE SINGLE COLLEGE
+  // Delete Single College
   const deleteCollege = async (collegeId) => {
+    console.log('[CollegeContext] Deleting college:', collegeId);
     await deleteCollegeFromSupabase(collegeId);
-    setActiveColleges(prev => prev.filter(c => c.id !== collegeId));
-    setPendingRequests(prev => prev.filter(r => r.id !== collegeId));
-    setInactiveColleges(prev => prev.filter(c => c.id !== collegeId));
-    setExpiredSubscriptions(prev => prev.filter(c => c.id !== collegeId));
+    await loadSupabaseData();
   };
 
-  // BULK DELETE MULTIPLE COLLEGES
+  // Bulk Delete Multiple Colleges
   const deleteMultipleColleges = async (collegeIds) => {
+    console.log('[CollegeContext] Bulk deleting colleges:', collegeIds);
     await deleteMultipleCollegesFromSupabase(collegeIds);
-    const idsSet = new Set(collegeIds);
-    setActiveColleges(prev => prev.filter(c => !idsSet.has(c.id)));
-    setPendingRequests(prev => prev.filter(r => !idsSet.has(r.id)));
-    setInactiveColleges(prev => prev.filter(c => !idsSet.has(c.id)));
-    setExpiredSubscriptions(prev => prev.filter(c => !idsSet.has(c.id)));
+    await loadSupabaseData();
   };
 
   return (

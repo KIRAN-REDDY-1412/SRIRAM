@@ -1,171 +1,295 @@
 import { supabase } from '../lib/supabaseClient';
 
 /**
- * Fetch active colleges for landing page & admin dashboard
- */
-export const fetchActiveCollegesFromSupabase = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('colleges')
-      .select('*')
-      .eq('subscription_status', 'Active')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { success: true, data: data || [] };
-  } catch (err) {
-    console.error('Supabase fetch active colleges error:', err.message);
-    return { success: false, data: [], error: err.message };
-  }
-};
-
-/**
- * Fetch pending registration requests for Super Admin
- */
-export const fetchPendingRequestsFromSupabase = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('college_requests')
-      .select('*')
-      .order('submitted_date', { ascending: false });
-
-    if (error) throw error;
-    return { success: true, data: data || [] };
-  } catch (err) {
-    console.error('Supabase fetch requests error:', err.message);
-    return { success: false, data: [], error: err.message };
-  }
-};
-
-/**
- * Submit new college registration request
+ * STEP 2: Submit new college registration request
+ * Table: registration_requests
  */
 export const submitCollegeRegistrationToSupabase = async (formData) => {
+  const payload = {
+    college_name: formData.collegeName,
+    city: formData.city,
+    state: formData.state,
+    contact_person: formData.contactName,
+    mobile_number: formData.mobileNumber,
+    email: formData.email,
+    status: 'Pending'
+  };
+
+  console.log('[Supabase Operation] Submitting College Registration Request:');
+  console.log('➜ Payload:', payload);
+
   try {
     const { data, error } = await supabase
-      .from('college_requests')
-      .insert([
-        {
-          college_name: formData.collegeName,
-          city: formData.city,
-          state: formData.state,
-          contact_name: formData.contactName,
-          mobile_number: formData.mobileNumber,
-          email: formData.email,
-          status: 'Pending'
-        }
-      ])
+      .from('registration_requests')
+      .insert([payload])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to insert into registration_requests:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Inserted into registration_requests:', data);
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('Supabase submit registration error:', err.message);
-    return { success: false, error: err.message };
+    console.error('❌ [Supabase Error] Unexpected error during submit:', err);
+    return { success: false, error: err.message || 'Database insert failed' };
   }
 };
 
 /**
- * Approve registration request & create active college record
+ * STEP 3: Fetch all registration requests for Super Admin
+ * Table: registration_requests
+ */
+export const fetchRegistrationRequestsFromSupabase = async () => {
+  console.log('[Supabase Operation] Fetching all registration_requests...');
+
+  try {
+    const { data, error } = await supabase
+      .from('registration_requests')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch registration_requests:', error);
+      return { success: false, data: [], error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Fetched registration_requests:', data);
+    return { success: true, data: data || [] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error during fetch requests:', err);
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+/**
+ * STEP 4: Approve registration request & insert into colleges table
+ * Tables: registration_requests, colleges
  */
 export const approveCollegeInSupabase = async (request) => {
+  console.log('[Supabase Operation] Approving Request ID:', request.id);
+
   try {
-    // 1. Update request status to Approved
-    await supabase
-      .from('college_requests')
-      .update({ status: 'Approved' })
+    // 1. Update registration_requests status to 'Approved' & set approved_at timestamp
+    const { error: updateErr } = await supabase
+      .from('registration_requests')
+      .update({ 
+        status: 'Approved',
+        approved_at: new Date().toISOString()
+      })
       .eq('id', request.id);
 
-    // 2. Insert into colleges table
-    const { data, error } = await supabase
+    if (updateErr) {
+      console.error('❌ [Supabase Error] Failed to update request status to Approved:', updateErr);
+      return { success: false, error: updateErr.message };
+    }
+
+    // 2. Generate unique college_code
+    const collegeCode = request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`;
+
+    // 3. Prepare payload for colleges table
+    const collegePayload = {
+      registration_request_id: request.id,
+      college_code: collegeCode,
+      college_name: request.collegeName || request.college_name,
+      city: request.city,
+      state: request.state,
+      principal_name: request.contactName || request.contact_person,
+      principal_mobile: request.mobileNumber || request.mobile_number,
+      principal_email: request.email,
+      status: 'Active'
+    };
+
+    console.log('➜ Inserting into colleges table with Payload:', collegePayload);
+
+    const { data: collegeData, error: collegeErr } = await supabase
       .from('colleges')
-      .insert([
-        {
-          request_id: request.id,
-          name: request.collegeName || request.college_name,
-          city: request.city,
-          state: request.state,
-          code: request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`,
-          principal_name: request.contactName || request.contact_name,
-          principal_mobile: request.mobileNumber || request.mobile_number,
-          principal_email: request.email,
-          subscription_plan: 'Professional',
-          subscription_status: 'Active'
-        }
-      ])
+      .insert([collegePayload])
       .select();
 
-    if (error) throw error;
-    return { success: true, data: data[0] };
+    if (collegeErr) {
+      console.error('❌ [Supabase Error] Failed to insert into colleges:', collegeErr);
+      return { success: false, error: collegeErr.message };
+    }
+
+    console.log('✅ [Supabase Success] Approved & Created College:', collegeData[0]);
+    return { success: true, data: collegeData[0] };
   } catch (err) {
-    console.error('Supabase approve college error:', err.message);
+    console.error('❌ [Supabase Error] Unexpected error during approval:', err);
     return { success: false, error: err.message };
   }
 };
 
 /**
- * Update college profile & subscription plan
+ * STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
+ * Tables: colleges, subscriptions
  */
-export const updateCollegeProfileInSupabase = async (collegeId, profileData) => {
+export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, profileData) => {
+  console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
+
   try {
-    const { data, error } = await supabase
+    // 1. Update colleges table
+    const collegeUpdatePayload = {
+      college_code: profileData.collegeCode,
+      college_name: profileData.collegeName,
+      college_logo: profileData.collegeLogo || profileData.logoBg,
+      address: profileData.address,
+      city: profileData.city,
+      district: profileData.district,
+      state: profileData.state,
+      pincode: profileData.pinCode,
+      university_affiliation: profileData.universityAffiliation,
+      pci_approval_number: profileData.pciApprovalNo,
+      principal_name: profileData.principalName,
+      principal_mobile: profileData.principalMobile,
+      principal_email: profileData.principalEmail,
+      status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive'
+    };
+
+    console.log('➜ Updating colleges table with Payload:', collegeUpdatePayload);
+
+    const { data: updatedCollege, error: updateCollegeErr } = await supabase
       .from('colleges')
-      .update({
-        name: profileData.collegeName,
-        code: profileData.collegeCode,
-        city: profileData.city,
-        state: profileData.state,
-        district: profileData.district,
-        pin_code: profileData.pinCode,
-        address: profileData.address,
-        university_affiliation: profileData.universityAffiliation,
-        pci_approval_no: profileData.pciApprovalNo,
-        principal_name: profileData.principalName,
-        principal_mobile: profileData.principalMobile,
-        principal_email: profileData.principalEmail,
-        subscription_plan: profileData.subscriptionPlan,
-        subscription_start_date: profileData.subscriptionStartDate,
-        subscription_expiry_date: profileData.subscriptionExpiryDate,
-        max_students_allowed: profileData.maxStudentsAllowed,
-        subscription_status: profileData.subscriptionStatus,
-        logo_bg: profileData.logoBg
-      })
+      .update(collegeUpdatePayload)
       .eq('id', collegeId)
       .select();
 
-    if (error) throw error;
-    return { success: true, data: data[0] };
+    if (updateCollegeErr) {
+      console.error('❌ [Supabase Error] Failed to update colleges table:', updateCollegeErr);
+      return { success: false, error: updateCollegeErr.message };
+    }
+
+    // 2. Insert / Update subscriptions table
+    const subscriptionPayload = {
+      college_id: collegeId,
+      plan_name: profileData.subscriptionPlan || 'Professional',
+      subscription_start_date: profileData.subscriptionStartDate || new Date().toISOString().split('T')[0],
+      subscription_expiry_date: profileData.subscriptionExpiryDate || '2027-12-31',
+      maximum_students: parseInt(profileData.maxStudentsAllowed, 10) || 600,
+      status: profileData.subscriptionStatus || 'Active'
+    };
+
+    console.log('➜ Inserting/Updating subscriptions table with Payload:', subscriptionPayload);
+
+    // Check if subscription row exists for college_id
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('college_id', collegeId)
+      .single();
+
+    let subResult;
+    if (existingSub && existingSub.id) {
+      subResult = await supabase
+        .from('subscriptions')
+        .update(subscriptionPayload)
+        .eq('id', existingSub.id)
+        .select();
+    } else {
+      subResult = await supabase
+        .from('subscriptions')
+        .insert([subscriptionPayload])
+        .select();
+    }
+
+    if (subResult.error) {
+      console.error('❌ [Supabase Error] Failed to save subscriptions table:', subResult.error);
+    } else if (subResult.data && subResult.data[0]) {
+      console.log('✅ [Supabase Success] Saved Subscription Plan:', subResult.data[0]);
+
+      // Update colleges.subscription_id FK link
+      await supabase
+        .from('colleges')
+        .update({ subscription_id: subResult.data[0].id })
+        .eq('id', collegeId);
+    }
+
+    console.log('✅ [Supabase Success] Profile & Subscription update completed successfully!');
+    return { success: true, data: updatedCollege ? updatedCollege[0] : null };
   } catch (err) {
-    console.error('Supabase update college error:', err.message);
+    console.error('❌ [Supabase Error] Unexpected error during profile update:', err);
     return { success: false, error: err.message };
   }
 };
 
 /**
- * Delete single college record
+ * STEP 7: Fetch Active Colleges for Landing Page
+ * Table: colleges (where status = 'Active')
+ */
+export const fetchActiveCollegesFromSupabase = async () => {
+  console.log('[Supabase Operation] Fetching Active Colleges for Landing Page...');
+
+  try {
+    const { data, error } = await supabase
+      .from('colleges')
+      .select(`
+        *,
+        subscriptions!fk_colleges_subscription(*)
+      `)
+      .eq('status', 'Active')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch active colleges:', error);
+      // Fallback simple query without join if relationship isn't populated
+      const { data: simpleData, error: simpleErr } = await supabase
+        .from('colleges')
+        .select('*')
+        .eq('status', 'Active')
+        .order('created_at', { ascending: false });
+
+      if (simpleErr) return { success: false, data: [], error: simpleErr.message };
+      return { success: true, data: simpleData || [] };
+    }
+
+    console.log('✅ [Supabase Success] Fetched Active Colleges for Landing Page:', data);
+    return { success: true, data: data || [] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error during fetch active colleges:', err);
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+/**
+ * Delete single college record from Supabase
  */
 export const deleteCollegeFromSupabase = async (collegeId) => {
+  console.log('[Supabase Operation] Deleting College ID:', collegeId);
+
   try {
+    await supabase.from('subscriptions').delete().eq('college_id', collegeId);
     const { error: err1 } = await supabase.from('colleges').delete().eq('id', collegeId);
-    const { error: err2 } = await supabase.from('college_requests').delete().eq('id', collegeId);
-    if (err1 && err2) throw err1;
+    const { error: err2 } = await supabase.from('registration_requests').delete().eq('id', collegeId);
+
+    if (err1 && err2) {
+      console.error('❌ [Supabase Error] Delete college failed:', err1 || err2);
+      return { success: false, error: (err1 || err2).message };
+    }
+
+    console.log('✅ [Supabase Success] Deleted College ID:', collegeId);
     return { success: true };
   } catch (err) {
-    console.error('Supabase delete college error:', err.message);
+    console.error('❌ [Supabase Error] Unexpected error during delete:', err);
     return { success: false, error: err.message };
   }
 };
 
 /**
- * Delete multiple colleges (Bulk Delete)
+ * Delete multiple colleges (Bulk Delete) from Supabase
  */
 export const deleteMultipleCollegesFromSupabase = async (collegeIds) => {
+  console.log('[Supabase Operation] Bulk Deleting College IDs:', collegeIds);
+
   try {
+    await supabase.from('subscriptions').delete().in('college_id', collegeIds);
     await supabase.from('colleges').delete().in('id', collegeIds);
-    await supabase.from('college_requests').delete().in('id', collegeIds);
+    await supabase.from('registration_requests').delete().in('id', collegeIds);
+
+    console.log('✅ [Supabase Success] Bulk Deleted College IDs:', collegeIds);
     return { success: true };
   } catch (err) {
-    console.error('Supabase bulk delete error:', err.message);
+    console.error('❌ [Supabase Error] Unexpected error during bulk delete:', err);
     return { success: false, error: err.message };
   }
 };

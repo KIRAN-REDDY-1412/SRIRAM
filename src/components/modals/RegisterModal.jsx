@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { useColleges } from '../../context/CollegeContext';
-import { Building2, MapPin, Mail, User, Phone, CheckCircle2, AlertCircle, ArrowRight, X, Sparkles } from 'lucide-react';
+import { Building2, MapPin, Mail, User, Phone, CheckCircle2, AlertCircle, ArrowRight, X, Loader2 } from 'lucide-react';
 
 export const RegisterModal = ({ isOpen, onClose }) => {
   const { submitRegistration } = useColleges();
@@ -19,25 +19,34 @@ export const RegisterModal = ({ isOpen, onClose }) => {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [duplicateError, setDuplicateError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  const autoCloseTimerRef = useRef(null);
+
+  // Clean up auto close timer on unmount or close
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
+    };
+  }, []);
+
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setTouched(prev => ({ ...prev, [name]: true }));
 
-    // Real-time validation update
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-    if (duplicateError) setDuplicateError('');
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleBlur = (field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
-  // Helper function to determine input status state: 'error' | 'success' | 'default'
   const getInputStatus = (fieldName) => {
     if (errors[fieldName]) return 'error';
     if (touched[fieldName] && formData[fieldName].trim().length > 0) {
@@ -84,7 +93,7 @@ export const RegisterModal = ({ isOpen, onClose }) => {
     if (!formData.email.trim()) {
       newErrors.email = 'Email address is mandatory.';
     } else if (!emailRegex.test(formData.email.trim())) {
-      newErrors.email = 'Please enter a valid email format (name@college.edu).';
+      newErrors.email = 'Please enter a valid email format (e.g. principal@college.edu).';
     }
 
     setErrors(newErrors);
@@ -99,29 +108,45 @@ export const RegisterModal = ({ isOpen, onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // ASYNC SUBMIT HANDLER WITH DATABASE/API CONFIRMATION
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent duplicate clicks
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setErrorMessage('');
 
-    setTimeout(() => {
-      const result = submitRegistration(formData);
+    try {
+      // Async database / context API submission
+      const result = await submitRegistration(formData);
       setIsSubmitting(false);
 
       if (result.success) {
         setSubmitted(true);
+        
+        // Automatically close popup after 2 seconds
+        autoCloseTimerRef.current = setTimeout(() => {
+          handleClose();
+        }, 2000);
       } else {
-        setDuplicateError(result.error);
+        // Keep popup open & display error message
+        setErrorMessage(result.error || 'Failed to submit registration request. Please try again.');
       }
-    }, 450);
+    } catch (err) {
+      setIsSubmitting(false);
+      setErrorMessage(err.message || 'An unexpected error occurred while saving the registration request.');
+    }
   };
 
+  // Complete cleanup and close popup
   const handleClose = () => {
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
     setSubmitted(false);
+    setIsSubmitting(false);
     setErrors({});
     setTouched({});
-    setDuplicateError('');
+    setErrorMessage('');
     setFormData({
       collegeName: '',
       city: '',
@@ -133,7 +158,6 @@ export const RegisterModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // Helper CSS for input border based on validation state
   const getInputBorderClass = (status) => {
     if (status === 'error') {
       return 'border-rose-500 ring-2 ring-rose-500/15 bg-rose-50/20 dark:bg-rose-950/20 text-slate-900 dark:text-white';
@@ -144,7 +168,6 @@ export const RegisterModal = ({ isOpen, onClose }) => {
     return 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 text-slate-900 dark:text-white focus:border-[#2563EB] focus:ring-4 focus:ring-blue-600/15';
   };
 
-  // Custom Header matching Stripe/Vercel/Linear design
   const headerComponent = (
     <div className="flex items-start justify-between px-7 sm:px-8 pt-7 pb-5 border-b border-slate-100 dark:border-slate-800/80 bg-gradient-to-b from-slate-50/80 to-transparent dark:from-slate-900/50">
       <div className="flex items-center gap-3.5">
@@ -156,14 +179,15 @@ export const RegisterModal = ({ isOpen, onClose }) => {
             Register Your College
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-            Join PharmDVerse and submit your college registration for approval.
+            Complete the details below to submit your registration request.
           </p>
         </div>
       </div>
 
       <button
         onClick={handleClose}
-        className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+        disabled={isSubmitting}
+        className="w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 disabled:opacity-50"
         aria-label="Close dialog"
       >
         <X className="w-5 h-5" />
@@ -183,33 +207,28 @@ export const RegisterModal = ({ isOpen, onClose }) => {
         /* SUCCESS SCREEN */
         <div className="py-10 px-4 text-center animate-fadeIn space-y-5">
           
-          {/* Animated Green Checkmark Badge */}
           <div className="relative w-20 h-20 mx-auto">
             <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse" />
-            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30 transform transition-transform hover:scale-105">
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30">
               <CheckCircle2 className="w-12 h-12 stroke-[2.5]" />
             </div>
           </div>
 
-          {/* Heading */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Registration Submitted Successfully!
+              ✅ Registration Submitted Successfully!
             </h4>
             <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed font-normal">
-              Thank you for registering with PharmDVerse.<br />
-              Your request has been sent to the Super Admin for review.<br />
-              You will receive an email once your college is approved.
+              Your registration request has been submitted successfully and is awaiting Super Admin approval. You will be notified once your college is approved.
             </p>
           </div>
 
-          {/* Close Button */}
           <div className="pt-4">
             <button
               onClick={handleClose}
-              className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-bold text-xs rounded-[14px] shadow-lg shadow-blue-600/25 transition-all transform hover:-translate-y-0.5"
+              className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white font-extrabold text-xs rounded-[14px] shadow-lg shadow-blue-600/25 transition-all transform hover:-translate-y-0.5"
             >
-              Close
+              OK
             </button>
           </div>
         </div>
@@ -217,10 +236,11 @@ export const RegisterModal = ({ isOpen, onClose }) => {
         /* REGISTRATION FORM */
         <form onSubmit={handleSubmit} className="space-y-5">
           
-          {duplicateError && (
-            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span className="font-semibold">{duplicateError}</span>
+          {/* Error Message (Keeps form open) */}
+          {errorMessage && (
+            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-3 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+              <span className="font-semibold">{errorMessage}</span>
             </div>
           )}
 
@@ -244,11 +264,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                 <input
                   type="text"
                   name="collegeName"
+                  disabled={isSubmitting}
                   value={formData.collegeName}
                   onChange={handleChange}
                   onBlur={() => handleBlur('collegeName')}
                   placeholder="Enter college name"
-                  className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('collegeName'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                  className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('collegeName'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                 />
               </div>
               {errors.collegeName && (
@@ -267,11 +288,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                   <input
                     type="text"
                     name="city"
+                    disabled={isSubmitting}
                     value={formData.city}
                     onChange={handleChange}
                     onBlur={() => handleBlur('city')}
                     placeholder="Enter city"
-                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('city'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('city'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                   />
                 </div>
                 {errors.city && (
@@ -289,11 +311,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                   <input
                     type="text"
                     name="state"
+                    disabled={isSubmitting}
                     value={formData.state}
                     onChange={handleChange}
                     onBlur={() => handleBlur('state')}
                     placeholder="Enter state"
-                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('state'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('state'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                   />
                 </div>
                 {errors.state && (
@@ -323,11 +346,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                 <input
                   type="text"
                   name="contactName"
+                  disabled={isSubmitting}
                   value={formData.contactName}
                   onChange={handleChange}
                   onBlur={() => handleBlur('contactName')}
-                  placeholder="Enter full name"
-                  className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('contactName'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                  placeholder="Enter contact person name"
+                  className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('contactName'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                 />
               </div>
               {errors.contactName && (
@@ -346,11 +370,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                   <input
                     type="tel"
                     name="mobileNumber"
+                    disabled={isSubmitting}
                     value={formData.mobileNumber}
                     onChange={handleChange}
                     onBlur={() => handleBlur('mobileNumber')}
-                    placeholder="Enter 10-digit mobile number"
-                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('mobileNumber'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                    placeholder="Enter mobile number"
+                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('mobileNumber'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                   />
                 </div>
                 {errors.mobileNumber && (
@@ -368,11 +393,12 @@ export const RegisterModal = ({ isOpen, onClose }) => {
                   <input
                     type="email"
                     name="email"
+                    disabled={isSubmitting}
                     value={formData.email}
                     onChange={handleChange}
                     onBlur={() => handleBlur('email')}
-                    placeholder="Enter official email address"
-                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('email'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200`}
+                    placeholder="Enter email address"
+                    className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${getInputBorderClass(getInputStatus('email'))} placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-all duration-200 disabled:opacity-60`}
                   />
                 </div>
                 {errors.email && (
@@ -388,20 +414,24 @@ export const RegisterModal = ({ isOpen, onClose }) => {
             {/* Secondary Button: Cancel */}
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={handleClose}
-              className="h-[48px] px-6 rounded-[14px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-xs"
+              className="h-[48px] px-6 rounded-[14px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all shadow-xs disabled:opacity-50"
             >
               Cancel
             </button>
 
-            {/* Primary Button: Submit Registration (Blue -> Emerald Gradient) */}
+            {/* Primary Button: Submit Registration */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-[48px] px-7 rounded-[14px] bg-gradient-to-r from-blue-600 via-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white text-xs font-extrabold flex items-center gap-2.5 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="h-[48px] px-7 rounded-[14px] bg-gradient-to-r from-blue-600 via-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white text-xs font-extrabold flex items-center gap-2.5 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
-                <span>Submitting...</span>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Submitting Request...</span>
+                </>
               ) : (
                 <>
                   <span>Submit Registration</span>

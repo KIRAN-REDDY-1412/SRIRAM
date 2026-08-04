@@ -1,0 +1,127 @@
+// ====================================================================
+// PharmDVerse Phase 1 Prisma ORM Schema (Express.js + Supabase PostgreSQL)
+// ====================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RequestStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum CollegeStatus {
+  Active
+  Inactive
+  Expired
+}
+
+enum SubscriptionPlan {
+  Basic
+  Professional
+  Enterprise
+}
+
+enum SubscriptionStatus {
+  Active
+  Inactive
+  Expired
+}
+
+// 1. registration_requests table
+model RegistrationRequest {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  collegeName    String        @map("college_name") @db.VarChar(255)
+  city           String        @db.VarChar(100)
+  state          String        @db.VarChar(100)
+  contactPerson  String        @map("contact_person") @db.VarChar(150)
+  mobileNumber   String        @map("mobile_number") @db.VarChar(20)
+  email          String        @unique @db.VarChar(255)
+  status         RequestStatus @default(Pending)
+  submittedAt    DateTime?     @default(now()) @map("submitted_at") @db.Timestamptz
+  approvedAt     DateTime?     @map("approved_at") @db.Timestamptz
+  rejectedAt     DateTime?     @map("rejected_at") @db.Timestamptz
+  remarks        String?       @db.Text
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  colleges College[]
+
+  @@index([email])
+  @@index([status])
+  @@map("registration_requests")
+}
+
+// 2. colleges table
+model College {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  registrationRequestId String?              @map("registration_request_id") @db.Uuid
+  collegeCode           String               @unique @map("college_code") @db.VarChar(50)
+  collegeName           String               @map("college_name") @db.VarChar(255)
+  collegeLogo           String?              @map("college_logo") @db.Text
+  address               String?              @db.Text
+  city                  String               @db.VarChar(100)
+  district              String?              @db.VarChar(100)
+  state                 String               @db.VarChar(100)
+  pincode               String?              @db.VarChar(20)
+  universityAffiliation String?              @map("university_affiliation") @db.Text
+  pciApprovalNumber     String?              @map("pci_approval_number") @db.VarChar(100)
+  principalName         String?              @map("principal_name") @db.VarChar(150)
+  principalMobile       String?              @map("principal_mobile") @db.VarChar(20)
+  principalEmail        String?              @map("principal_email") @db.VarChar(255)
+  subscriptionId        String?              @map("subscription_id") @db.Uuid
+  status                CollegeStatus        @default(Active)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+
+  registrationRequest RegistrationRequest? @relation(fields: [registrationRequestId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  activeSubscription  Subscription?        @relation("CollegeSubscription", fields: [subscriptionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  subscriptions       Subscription[]       @relation("AllSubscriptions")
+
+  @@index([collegeCode])
+  @@index([status])
+  @@map("colleges")
+}
+
+// 3. subscriptions table
+model Subscription {
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  collegeId              String             @map("college_id") @db.Uuid
+  planName               SubscriptionPlan   @default(Professional) @map("plan_name")
+  subscriptionStartDate  DateTime           @default(now()) @map("subscription_start_date") @db.Date
+  subscriptionExpiryDate DateTime           @map("subscription_expiry_date") @db.Date
+  maximumStudents        Int                @default(600) @map("maximum_students")
+  status                 SubscriptionStatus @default(Active)
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  college           College   @relation("AllSubscriptions", fields: [collegeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  assignedToCollege College[] @relation("CollegeSubscription")
+
+  @@index([collegeId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// 4. super_admin table
+model SuperAdmin {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String    @db.VarChar(150)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         String    @default("SUPER_ADMIN") @db.VarChar(50)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLogin    DateTime? @map("last_login") @db.Timestamptz
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([email])
+  @@map("super_admin")
+}

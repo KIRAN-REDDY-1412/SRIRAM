@@ -1,38 +1,97 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  fetchActiveCollegesFromSupabase, 
+  fetchPendingRequestsFromSupabase, 
+  submitCollegeRegistrationToSupabase, 
+  approveCollegeInSupabase, 
+  updateCollegeProfileInSupabase, 
+  deleteCollegeFromSupabase, 
+  deleteMultipleCollegesFromSupabase 
+} from '../services/supabaseService';
 
 const CollegeContext = createContext();
 
 export const CollegeProvider = ({ children }) => {
-  // Initial states ready for Backend API integration
-  const [activeColleges, setActiveColleges] = useState(() => {
-    const saved = localStorage.getItem('pharmdverse_active_colleges');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return [];
-  });
-
-  const [pendingRequests, setPendingRequests] = useState(() => {
-    const saved = localStorage.getItem('pharmdverse_pending_requests');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return [];
-  });
-
+  const [activeColleges, setActiveColleges] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
   const [inactiveColleges, setInactiveColleges] = useState([]);
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load live data from Supabase on initial mount
+  const loadSupabaseData = async () => {
+    setIsLoading(true);
+    
+    // Fetch active colleges
+    const collegesRes = await fetchActiveCollegesFromSupabase();
+    if (collegesRes.success && Array.isArray(collegesRes.data)) {
+      const mappedColleges = collegesRes.data.map(c => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        city: c.city,
+        state: c.state,
+        district: c.district,
+        pinCode: c.pin_code,
+        address: c.address,
+        universityAffiliation: c.university_affiliation,
+        pciApprovalNo: c.pci_approval_no,
+        principalName: c.principal_name,
+        principalMobile: c.principal_mobile,
+        principalEmail: c.principal_email,
+        logoBg: c.logo_bg || 'from-emerald-600 to-teal-700',
+        initials: c.initials || (c.name ? c.name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG'),
+        studentsCount: c.max_students_allowed || c.students_count || 600,
+        portalUrl: c.portal_url || `https://${(c.code || 'clg').toLowerCase()}.pharmdverse.com`,
+        status: c.status || 'Active Subscribed',
+        subscriptionPlan: c.subscription_plan || 'Professional',
+        subscriptionStartDate: c.subscription_start_date || new Date().toISOString().split('T')[0],
+        subscriptionExpiryDate: c.subscription_expiry_date || '2027-12-31',
+        maxStudentsAllowed: c.max_students_allowed || 600,
+        subscriptionStatus: c.subscription_status || 'Active'
+      }));
+      setActiveColleges(mappedColleges);
+    }
+
+    // Fetch registration requests
+    const requestsRes = await fetchPendingRequestsFromSupabase();
+    if (requestsRes.success && Array.isArray(requestsRes.data)) {
+      const mappedRequests = requestsRes.data.map(r => ({
+        id: r.id,
+        collegeName: r.college_name,
+        city: r.city,
+        state: r.state,
+        contactName: r.contact_name,
+        mobileNumber: r.mobile_number,
+        email: r.email,
+        status: r.status || 'Pending',
+        submittedDate: r.submitted_date ? r.submitted_date.split('T')[0] : new Date().toISOString().split('T')[0],
+        address: r.address,
+        district: r.district,
+        pinCode: r.pin_code,
+        universityAffiliation: r.university_affiliation,
+        pciApprovalNo: r.pci_approval_no,
+        code: r.code,
+        initials: r.initials,
+        logoBg: r.logo_bg,
+        subscriptionPlan: r.subscription_plan || 'Professional',
+        subscriptionStartDate: r.subscription_start_date,
+        subscriptionExpiryDate: r.subscription_expiry_date,
+        maxStudentsAllowed: r.max_students_allowed || 600,
+        subscriptionStatus: r.subscription_status || 'Active'
+      }));
+      setPendingRequests(mappedRequests);
+    }
+
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    localStorage.setItem('pharmdverse_active_colleges', JSON.stringify(activeColleges));
-  }, [activeColleges]);
-
-  useEffect(() => {
-    localStorage.setItem('pharmdverse_pending_requests', JSON.stringify(pendingRequests));
-  }, [pendingRequests]);
+    loadSupabaseData();
+  }, []);
 
   // Submit registration request (Public User)
-  const submitRegistration = (newRequestData) => {
+  const submitRegistration = async (newRequestData) => {
     const exists = pendingRequests.some(
       req => req.email.toLowerCase() === newRequestData.email.toLowerCase() ||
              req.collegeName.toLowerCase() === newRequestData.collegeName.toLowerCase()
@@ -42,8 +101,11 @@ export const CollegeProvider = ({ children }) => {
       return { success: false, error: "A registration request for this college name or email address already exists." };
     }
 
+    // 1. Send to Supabase
+    const supabaseRes = await submitCollegeRegistrationToSupabase(newRequestData);
+
     const newRequest = {
-      id: `req_${Date.now()}`,
+      id: supabaseRes.data ? supabaseRes.data.id : `req_${Date.now()}`,
       collegeName: newRequestData.collegeName,
       city: newRequestData.city,
       state: newRequestData.state,
@@ -72,24 +134,27 @@ export const CollegeProvider = ({ children }) => {
   };
 
   // Approve College Request (Super Admin)
-  const approveCollege = (requestId) => {
+  const approveCollege = async (requestId) => {
     const request = pendingRequests.find(r => r.id === requestId);
     if (!request) return null;
 
     setPendingRequests(prev => prev.map(r => r.id === requestId ? { ...r, status: "Approved" } : r));
 
+    // Send to Supabase
+    const res = await approveCollegeInSupabase(request);
+
     const newActiveCollege = {
-      id: `clg_${Date.now()}`,
+      id: res.data ? res.data.id : `clg_${Date.now()}`,
       name: request.collegeName,
       city: request.city,
       state: request.state,
-      code: request.code,
+      code: request.code || `${request.collegeName.substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`,
       studentsCount: request.maxStudentsAllowed || 350,
       accreditation: "PCI Approved",
       status: "Active Subscribed",
-      portalUrl: `https://${request.code.toLowerCase()}.pharmdverse.com`,
-      logoBg: request.logoBg,
-      initials: request.initials,
+      portalUrl: `https://${(request.code || 'clg').toLowerCase()}.pharmdverse.com`,
+      logoBg: request.logoBg || "from-emerald-600 to-teal-700",
+      initials: request.initials || request.collegeName.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase(),
       address: request.address,
       district: request.district,
       pinCode: request.pinCode,
@@ -116,7 +181,10 @@ export const CollegeProvider = ({ children }) => {
   };
 
   // Update College Profile & Subscription Plan (Super Admin)
-  const updateCollegeProfile = (collegeId, updatedProfile) => {
+  const updateCollegeProfile = async (collegeId, updatedProfile) => {
+    // Send update to Supabase
+    await updateCollegeProfileInSupabase(collegeId, updatedProfile);
+
     setActiveColleges(prev => prev.map(clg => {
       if (clg.id === collegeId) {
         const isNowActive = updatedProfile.subscriptionStatus === 'Active';
@@ -149,15 +217,17 @@ export const CollegeProvider = ({ children }) => {
   };
 
   // DELETE SINGLE COLLEGE
-  const deleteCollege = (collegeId) => {
+  const deleteCollege = async (collegeId) => {
+    await deleteCollegeFromSupabase(collegeId);
     setActiveColleges(prev => prev.filter(c => c.id !== collegeId));
     setPendingRequests(prev => prev.filter(r => r.id !== collegeId));
     setInactiveColleges(prev => prev.filter(c => c.id !== collegeId));
     setExpiredSubscriptions(prev => prev.filter(c => c.id !== collegeId));
   };
 
-  // BULK DELETE MULTIPLE COLLEGES (SELECT TO DELETE)
-  const deleteMultipleColleges = (collegeIds) => {
+  // BULK DELETE MULTIPLE COLLEGES
+  const deleteMultipleColleges = async (collegeIds) => {
+    await deleteMultipleCollegesFromSupabase(collegeIds);
     const idsSet = new Set(collegeIds);
     setActiveColleges(prev => prev.filter(c => !idsSet.has(c.id)));
     setPendingRequests(prev => prev.filter(r => !idsSet.has(r.id)));
@@ -171,6 +241,8 @@ export const CollegeProvider = ({ children }) => {
       pendingRequests,
       inactiveColleges,
       expiredSubscriptions,
+      isLoading,
+      loadSupabaseData,
       submitRegistration,
       approveCollege,
       rejectCollege,

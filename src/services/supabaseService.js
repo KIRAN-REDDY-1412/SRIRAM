@@ -24,12 +24,10 @@ export const hashPassword = async (password) => {
 export const uploadProfilePhotoToSupabaseStorage = async (file, folder = 'profiles') => {
   if (!file) return { success: false, error: 'No file provided' };
 
-  // Validate 100 KB max size
   if (file.size > 100 * 1024) {
     return { success: false, error: 'File size exceeds 100 KB limit. Please choose a smaller image.' };
   }
 
-  // Validate JPG / JPEG / PNG
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
   if (!validTypes.includes(file.type.toLowerCase())) {
     return { success: false, error: 'Invalid file format. Only JPG, JPEG, and PNG images are allowed.' };
@@ -47,13 +45,9 @@ export const uploadProfilePhotoToSupabaseStorage = async (file, folder = 'profil
       .upload(filePath, file, { upsert: true });
 
     if (error) {
-      console.warn('⚠️ [Supabase Storage Warning] Storage bucket notice:', error.message);
-      // Fallback: Convert file to Base64 Data URL if storage bucket is not pre-configured
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({ success: true, url: reader.result });
-        };
+        reader.onloadend = () => resolve({ success: true, url: reader.result });
         reader.readAsDataURL(file);
       });
     }
@@ -62,15 +56,11 @@ export const uploadProfilePhotoToSupabaseStorage = async (file, folder = 'profil
       .from('profile-photos')
       .getPublicUrl(filePath);
 
-    console.log('✅ [Supabase Storage Success] Public Photo URL:', publicUrlData.publicUrl);
     return { success: true, url: publicUrlData.publicUrl };
   } catch (err) {
-    console.error('❌ [Supabase Storage Error] Upload failed:', err);
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve({ success: true, url: reader.result });
-      };
+      reader.onloadend = () => resolve({ success: true, url: reader.result });
       reader.readAsDataURL(file);
     });
   }
@@ -114,33 +104,159 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// STUDENT-PRECEPTOR ASSIGNMENTS SERVICES
+// ====================================================================
+
+export const fetchAssignmentsFromSupabase = async (collegeId, preceptorId = null) => {
+  console.log('[Supabase Operation] Fetching assignments for College ID:', collegeId, 'Preceptor ID:', preceptorId);
+
+  try {
+    let query = supabase
+      .from('student_preceptor_assignments')
+      .select(`
+        *,
+        students(*),
+        preceptors(*)
+      `)
+      .eq('college_id', collegeId)
+      .order('created_at', { ascending: false });
+
+    if (preceptorId) {
+      query = query.eq('preceptor_id', preceptorId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch assignments:', error);
+      return { success: false, data: [], error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Fetched assignments:', data);
+    return { success: true, data: data || [] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error during fetch assignments:', err);
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+export const assignStudentsToPreceptorInSupabase = async ({ collegeId, preceptorId, studentIds, assignmentDate, remarks, status = 'Active' }) => {
+  console.log('[Supabase Operation] Assigning students to Preceptor ID:', preceptorId, 'Student IDs:', studentIds);
+
+  try {
+    // 1. Check for existing active assignments for these students
+    if (status === 'Active') {
+      const { data: existingActive } = await supabase
+        .from('student_preceptor_assignments')
+        .select('student_id, students(roll_number, full_name)')
+        .eq('college_id', collegeId)
+        .eq('status', 'Active')
+        .in('student_id', studentIds);
+
+      if (existingActive && existingActive.length > 0) {
+        const conflictNames = existingActive.map(a => a.students ? `${a.students.full_name} (${a.students.roll_number})` : a.student_id).join(', ');
+        return { 
+          success: false, 
+          error: `The following student(s) already have an active preceptor assignment: ${conflictNames}. Please remove or deactivate their existing assignment before reassigning.` 
+        };
+      }
+    }
+
+    // 2. Prepare bulk insert payloads
+    const dateToSave = assignmentDate || new Date().toISOString().split('T')[0];
+    const payloads = studentIds.map(sId => ({
+      college_id: collegeId,
+      preceptor_id: preceptorId,
+      student_id: sId,
+      assignment_date: dateToSave,
+      remarks: remarks || null,
+      status: status
+    }));
+
+    const { data, error } = await supabase
+      .from('student_preceptor_assignments')
+      .insert(payloads)
+      .select();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to assign students:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Assigned students to preceptor:', data);
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error during assignment:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const updateAssignmentInSupabase = async (assignmentId, payload) => {
+  console.log('[Supabase Operation] Updating assignment ID:', assignmentId);
+
+  try {
+    const { data, error } = await supabase
+      .from('student_preceptor_assignments')
+      .update({
+        assignment_date: payload.assignmentDate,
+        remarks: payload.remarks || null,
+        status: payload.status || 'Active'
+      })
+      .eq('id', assignmentId)
+      .select();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to update assignment:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Updated assignment:', data[0]);
+    return { success: true, data: data[0] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error updating assignment:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const removeAssignmentFromSupabase = async (assignmentId) => {
+  console.log('[Supabase Operation] Removing assignment ID:', assignmentId);
+
+  try {
+    const { error } = await supabase
+      .from('student_preceptor_assignments')
+      .delete()
+      .eq('id', assignmentId);
+
+    if (error) {
+      console.error('❌ [Supabase Error] Remove assignment failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Removed assignment ID:', assignmentId);
+    return { success: true };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error removing assignment:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // PRECEPTOR CRUD SERVICES
 // ====================================================================
 
 export const fetchPreceptorsFromSupabase = async (collegeId) => {
-  console.log('[Supabase Operation] Fetching preceptors for College ID:', collegeId);
-
   try {
     let query = supabase.from('preceptors').select('*').order('created_at', { ascending: false });
     if (collegeId) query = query.eq('college_id', collegeId);
 
     const { data, error } = await query;
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch preceptors:', error);
-      return { success: false, data: [], error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Fetched preceptors:', data);
+    if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error during fetch preceptors:', err);
     return { success: false, data: [], error: err.message };
   }
 };
 
 export const insertPreceptorToSupabase = async (collegeId, preceptorData) => {
-  console.log('[Supabase Operation] Inserting Preceptor for College ID:', collegeId);
-
   try {
     const passwordHash = await hashPassword(preceptorData.password);
     if (!passwordHash) return { success: false, error: 'Password hashing failed' };
@@ -154,35 +270,22 @@ export const insertPreceptorToSupabase = async (collegeId, preceptorData) => {
       qualification: preceptorData.qualification,
       designation: preceptorData.designation,
       department: preceptorData.department,
-      username: preceptorData.email, // Auto-populated from email
+      username: preceptorData.email,
       password_hash: passwordHash,
       profile_photo_url: preceptorData.profilePhotoUrl || null,
       status: preceptorData.status || 'Active'
     };
 
-    console.log('➜ Payload:', payload);
+    const { data, error } = await supabase.from('preceptors').insert([payload]).select();
 
-    const { data, error } = await supabase
-      .from('preceptors')
-      .insert([payload])
-      .select();
-
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to insert preceptor:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Inserted preceptor:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error inserting preceptor:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const updatePreceptorInSupabase = async (preceptorId, preceptorData) => {
-  console.log('[Supabase Operation] Updating Preceptor ID:', preceptorId);
-
   try {
     const payload = {
       full_name: preceptorData.fullName,
@@ -202,43 +305,21 @@ export const updatePreceptorInSupabase = async (preceptorId, preceptorData) => {
       if (passwordHash) payload.password_hash = passwordHash;
     }
 
-    const { data, error } = await supabase
-      .from('preceptors')
-      .update(payload)
-      .eq('id', preceptorId)
-      .select();
+    const { data, error } = await supabase.from('preceptors').update(payload).eq('id', preceptorId).select();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to update preceptor:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Updated preceptor:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error updating preceptor:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const deletePreceptorFromSupabase = async (preceptorId) => {
-  console.log('[Supabase Operation] Deleting Preceptor ID:', preceptorId);
-
   try {
-    const { error } = await supabase
-      .from('preceptors')
-      .delete()
-      .eq('id', preceptorId);
-
-    if (error) {
-      console.error('❌ [Supabase Error] Delete preceptor failed:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Deleted Preceptor ID:', preceptorId);
+    const { error } = await supabase.from('preceptors').delete().eq('id', preceptorId);
+    if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error deleting preceptor:', err);
     return { success: false, error: err.message };
   }
 };
@@ -248,29 +329,19 @@ export const deletePreceptorFromSupabase = async (preceptorId) => {
 // ====================================================================
 
 export const fetchStudentsFromSupabase = async (collegeId) => {
-  console.log('[Supabase Operation] Fetching students for College ID:', collegeId);
-
   try {
     let query = supabase.from('students').select('*').order('created_at', { ascending: false });
     if (collegeId) query = query.eq('college_id', collegeId);
 
     const { data, error } = await query;
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch students:', error);
-      return { success: false, data: [], error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Fetched students:', data);
+    if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error during fetch students:', err);
     return { success: false, data: [], error: err.message };
   }
 };
 
 export const insertStudentToSupabase = async (collegeId, studentData) => {
-  console.log('[Supabase Operation] Inserting Student for College ID:', collegeId);
-
   try {
     const passwordHash = await hashPassword(studentData.password);
     if (!passwordHash) return { success: false, error: 'Password hashing failed' };
@@ -286,35 +357,22 @@ export const insertStudentToSupabase = async (collegeId, studentData) => {
       course: studentData.course || 'Pharm.D',
       academic_year: studentData.academicYear || '2026–2027',
       year: studentData.year,
-      username: studentData.rollNumber, // Auto-populated from Roll Number
+      username: studentData.rollNumber,
       password_hash: passwordHash,
       profile_photo_url: studentData.profilePhotoUrl || null,
       status: studentData.status || 'Active'
     };
 
-    console.log('➜ Payload:', payload);
+    const { data, error } = await supabase.from('students').insert([payload]).select();
 
-    const { data, error } = await supabase
-      .from('students')
-      .insert([payload])
-      .select();
-
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to insert student:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Inserted student:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error inserting student:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const updateStudentInSupabase = async (studentId, studentData) => {
-  console.log('[Supabase Operation] Updating Student ID:', studentId);
-
   try {
     const payload = {
       roll_number: studentData.rollNumber,
@@ -336,43 +394,21 @@ export const updateStudentInSupabase = async (studentId, studentData) => {
       if (passwordHash) payload.password_hash = passwordHash;
     }
 
-    const { data, error } = await supabase
-      .from('students')
-      .update(payload)
-      .eq('id', studentId)
-      .select();
+    const { data, error } = await supabase.from('students').update(payload).eq('id', studentId).select();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to update student:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Updated student:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error updating student:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const deleteStudentFromSupabase = async (studentId) => {
-  console.log('[Supabase Operation] Deleting Student ID:', studentId);
-
   try {
-    const { error } = await supabase
-      .from('students')
-      .delete()
-      .eq('id', studentId);
-
-    if (error) {
-      console.error('❌ [Supabase Error] Delete student failed:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Deleted Student ID:', studentId);
+    const { error } = await supabase.from('students').delete().eq('id', studentId);
+    if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error deleting student:', err);
     return { success: false, error: err.message };
   }
 };
@@ -393,11 +429,7 @@ export const submitCollegeRegistrationToSupabase = async (formData) => {
   };
 
   try {
-    const { data, error } = await supabase
-      .from('registration_requests')
-      .insert([payload])
-      .select();
-
+    const { data, error } = await supabase.from('registration_requests').insert([payload]).select();
     if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
@@ -407,11 +439,7 @@ export const submitCollegeRegistrationToSupabase = async (formData) => {
 
 export const fetchRegistrationRequestsFromSupabase = async () => {
   try {
-    const { data, error } = await supabase
-      .from('registration_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.from('registration_requests').select('*').order('created_at', { ascending: false });
     if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
@@ -421,10 +449,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
 
 export const approveCollegeInSupabase = async (request) => {
   try {
-    await supabase
-      .from('registration_requests')
-      .update({ status: 'Approved', approved_at: new Date().toISOString() })
-      .eq('id', request.id);
+    await supabase.from('registration_requests').update({ status: 'Approved', approved_at: new Date().toISOString() }).eq('id', request.id);
 
     const collegeCode = request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`;
 
@@ -448,11 +473,7 @@ export const approveCollegeInSupabase = async (request) => {
       status: 'Active'
     };
 
-    const { data: collegeData, error: collegeErr } = await supabase
-      .from('colleges')
-      .insert([collegePayload])
-      .select();
-
+    const { data: collegeData, error: collegeErr } = await supabase.from('colleges').insert([collegePayload]).select();
     if (collegeErr) return { success: false, error: collegeErr.message };
 
     const createdCollege = collegeData[0];
@@ -466,16 +487,9 @@ export const approveCollegeInSupabase = async (request) => {
       status: 'Active'
     };
 
-    const { data: subData } = await supabase
-      .from('subscriptions')
-      .insert([subscriptionPayload])
-      .select();
-
+    const { data: subData } = await supabase.from('subscriptions').insert([subscriptionPayload]).select();
     if (subData && subData[0]) {
-      await supabase
-        .from('colleges')
-        .update({ subscription_id: subData[0].id })
-        .eq('id', createdCollege.id);
+      await supabase.from('colleges').update({ subscription_id: subData[0].id }).eq('id', createdCollege.id);
     }
 
     return { success: true, data: createdCollege };
@@ -486,12 +500,7 @@ export const approveCollegeInSupabase = async (request) => {
 
 export const rejectCollegeInSupabase = async (requestId, remarks = '') => {
   try {
-    const { data, error } = await supabase
-      .from('registration_requests')
-      .update({ status: 'Rejected', rejected_at: new Date().toISOString(), remarks: remarks || null })
-      .eq('id', requestId)
-      .select();
-
+    const { data, error } = await supabase.from('registration_requests').update({ status: 'Rejected', rejected_at: new Date().toISOString(), remarks: remarks || null }).eq('id', requestId).select();
     if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
@@ -526,12 +535,7 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       if (passwordHash) collegeUpdatePayload.college_admin_password_hash = passwordHash;
     }
 
-    const { data: updatedCollege, error: updateCollegeErr } = await supabase
-      .from('colleges')
-      .update(collegeUpdatePayload)
-      .eq('id', collegeId)
-      .select();
-
+    const { data: updatedCollege, error: updateCollegeErr } = await supabase.from('colleges').update(collegeUpdatePayload).eq('id', collegeId).select();
     if (updateCollegeErr) return { success: false, error: updateCollegeErr.message };
 
     const subscriptionPayload = {
@@ -543,12 +547,7 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       status: profileData.subscriptionStatus || 'Active'
     };
 
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('college_id', collegeId)
-      .maybeSingle();
-
+    const { data: existingSub } = await supabase.from('subscriptions').select('id').eq('college_id', collegeId).maybeSingle();
     if (existingSub && existingSub.id) {
       await supabase.from('subscriptions').update(subscriptionPayload).eq('id', existingSub.id);
     } else {
@@ -569,12 +568,7 @@ export const authenticateCollegeAdminInSupabase = async (username, password) => 
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
 
-    const { data: college, error } = await supabase
-      .from('colleges')
-      .select('*')
-      .eq('college_admin_username', username)
-      .maybeSingle();
-
+    const { data: college, error } = await supabase.from('colleges').select('*').eq('college_admin_username', username).maybeSingle();
     if (error || !college) return { success: false, error: 'Invalid User ID or Password' };
     if (!college.college_admin_password_hash) return { success: false, error: 'College Admin password has not been set by Super Admin.' };
     if (college.college_admin_password_hash !== inputHash) return { success: false, error: 'Invalid User ID or Password' };
@@ -587,17 +581,11 @@ export const authenticateCollegeAdminInSupabase = async (username, password) => 
 
 export const fetchActiveCollegesFromSupabase = async () => {
   try {
-    const { data, error } = await supabase
-      .from('colleges')
-      .select(`*, subscriptions!fk_colleges_subscription(*)`)
-      .eq('status', 'Active')
-      .order('created_at', { ascending: false });
-
+    const { data, error } = await supabase.from('colleges').select(`*, subscriptions!fk_colleges_subscription(*)`).eq('status', 'Active').order('created_at', { ascending: false });
     if (error) {
       const { data: simpleData } = await supabase.from('colleges').select('*').eq('status', 'Active').order('created_at', { ascending: false });
       return { success: true, data: simpleData || [] };
     }
-
     return { success: true, data: data || [] };
   } catch (err) {
     return { success: false, data: [], error: err.message };

@@ -195,6 +195,29 @@ CREATE TRIGGER set_updated_at_students
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ====================================================================
+-- TABLE 7: student_preceptor_assignments
+-- Purpose: Links PharmD students to assigned preceptors within a college.
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.student_preceptor_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    preceptor_id UUID NOT NULL REFERENCES public.preceptors(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    assignment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    remarks TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Trigger for student_preceptor_assignments updated_at
+DROP TRIGGER IF EXISTS set_updated_at_assignments ON public.student_preceptor_assignments;
+CREATE TRIGGER set_updated_at_assignments
+    BEFORE UPDATE ON public.student_preceptor_assignments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ====================================================================
 -- INDEXES FOR FREQUENTLY SEARCHED COLUMNS
 -- ====================================================================
 CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON public.registration_requests(email);
@@ -208,6 +231,11 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_college_id ON public.subscriptions(
 CREATE INDEX IF NOT EXISTS idx_preceptors_college_id ON public.preceptors(college_id);
 CREATE INDEX IF NOT EXISTS idx_students_college_id ON public.students(college_id);
 
+CREATE INDEX IF NOT EXISTS idx_assignments_college ON public.student_preceptor_assignments(college_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_student ON public.student_preceptor_assignments(student_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_preceptor ON public.student_preceptor_assignments(preceptor_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_status ON public.student_preceptor_assignments(status);
+
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES FOR SUPABASE
 -- ====================================================================
@@ -217,6 +245,7 @@ ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admin ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.preceptors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.student_preceptor_assignments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow All Operations Registration Requests" ON public.registration_requests;
 DROP POLICY IF EXISTS "Allow All Operations Colleges" ON public.colleges;
@@ -224,6 +253,7 @@ DROP POLICY IF EXISTS "Allow All Operations Subscriptions" ON public.subscriptio
 DROP POLICY IF EXISTS "Allow All Operations Super Admin" ON public.super_admin;
 DROP POLICY IF EXISTS "Allow All Operations Preceptors" ON public.preceptors;
 DROP POLICY IF EXISTS "Allow All Operations Students" ON public.students;
+DROP POLICY IF EXISTS "Allow All Operations Assignments" ON public.student_preceptor_assignments;
 
 CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Colleges" ON public.colleges FOR ALL USING (true) WITH CHECK (true);
@@ -231,3 +261,4 @@ CREATE POLICY "Allow All Operations Subscriptions" ON public.subscriptions FOR A
 CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Preceptors" ON public.preceptors FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Students" ON public.students FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Assignments" ON public.student_preceptor_assignments FOR ALL USING (true) WITH CHECK (true);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { CollegeAdminDashboardView } from './CollegeAdminDashboardView';
@@ -7,11 +7,13 @@ import { AddPreceptorView } from './AddPreceptorView';
 import { PreceptorListView } from './PreceptorListView';
 import { AddStudentView } from './AddStudentView';
 import { StudentListView } from './StudentListView';
+import { AssignStudentsView } from './AssignStudentsView';
+import { AssignmentListView } from './AssignmentListView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 
 export const CollegeAdminLayout = ({ college, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'profile'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
@@ -61,7 +63,7 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             </button>
           </div>
 
-          {/* CLEAN SIDEBAR NAVIGATION ITEMS (NO DROPDOWNS) */}
+          {/* SIDEBAR NAVIGATION ITEMS */}
           <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto text-xs font-semibold">
             
             {/* Dashboard */}
@@ -101,6 +103,19 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             >
               <GraduationCap className="w-4 h-4 shrink-0" />
               <span>Student Management</span>
+            </button>
+
+            {/* Assignment Management */}
+            <button
+              onClick={() => handleNavigate('assignments-list')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'assignments-list' || activeTab === 'assign-students'
+                  ? 'bg-cyan-600 text-white font-bold shadow-md shadow-cyan-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4 shrink-0" />
+              <span>Assignment Management</span>
             </button>
 
             {/* My Profile */}
@@ -220,6 +235,21 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             <StudentListView
               college={college}
               onAddNew={() => handleNavigate('add-student')}
+            />
+          )}
+
+          {activeTab === 'assign-students' && (
+            <AssignStudentsView
+              college={college}
+              onCancel={() => handleNavigate('assignments-list')}
+              onSuccess={() => handleNavigate('assignments-list')}
+            />
+          )}
+
+          {activeTab === 'assignments-list' && (
+            <AssignmentListView
+              college={college}
+              onAddNew={() => handleNavigate('assign-students')}
             />
           )}
 

@@ -1,10 +1,12 @@
 import React from 'react';
-import { X, Printer, ShieldAlert, FileText, Activity, AlertCircle, CheckCircle, Upload } from 'lucide-react';
+import { X, Printer, ShieldAlert, FileText, Download } from 'lucide-react';
 
 export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, report, suspectedMeds, concomitantMeds, attachments }) => {
   if (!isOpen) return null;
 
   const collegeName = student?.colleges?.college_name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
+  const collegeLogoUrl = student?.colleges?.college_logo_url;
+  const formRef = `PDV/ADR/2026-27/${clinicalCase?.case_id || '001'}`;
 
   const handlePrint = () => {
     window.print();
@@ -18,16 +20,16 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
         <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Clinical Event Summary (Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Clinical Summary (A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Summary</span>
+              <span>Print / Download PDF</span>
             </button>
 
             <button
@@ -39,195 +41,206 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
           </div>
         </div>
 
-        {/* ORIGINAL SAAS-STYLED ADR DOCUMENT */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 space-y-6">
+        {/* A4 PRINT PREVIEW WRAPPER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
           
-          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg space-y-6 text-xs">
+          <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
             
-            {/* BRANDING HEADER */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-              <div>
-                <span className="text-[10px] font-extrabold tracking-wider uppercase text-emerald-600 dark:text-emerald-400 block">
-                  {collegeName}
-                </span>
-                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mt-0.5">
-                  Adverse Drug Event Clinical Documentation
-                </h1>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-right">
-                <div className="font-mono font-extrabold text-amber-700 dark:text-amber-400 text-sm">
-                  {report?.adr_number || 'ADR-2026-000001'}
-                </div>
-                <div className="text-[10px] text-slate-500">Status: <strong className="uppercase font-bold text-slate-800 dark:text-slate-200">{report?.approval_status || 'Draft'}</strong></div>
-              </div>
-            </div>
-
-            {/* 1. GENERAL RECORD */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800">
-              <div><span className="text-slate-400 block">Reporting Date:</span><strong className="font-mono text-slate-800 dark:text-slate-200">{report?.reporting_date || '—'}</strong></div>
-              <div><span className="text-slate-400 block">Linked Clinical Case:</span><strong className="font-mono text-emerald-600 dark:text-emerald-400">{clinicalCase?.case_id}</strong></div>
-              <div><span className="text-slate-400 block">Reported By:</span><strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong></div>
-              <div><span className="text-slate-400 block">Assigned Preceptor:</span><strong className="text-slate-800 dark:text-slate-200">{report?.assigned_preceptor_name || 'Faculty Preceptor'}</strong></div>
-            </div>
-
-            {/* 2. PATIENT OVERVIEW */}
-            <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-emerald-600 dark:text-emerald-400">
-                Patient Demographics
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <div><span className="text-slate-400">Patient Initials:</span> <strong className="text-slate-800 dark:text-slate-200">{report?.patient_initials || '—'}</strong></div>
-                <div><span className="text-slate-400">Hosp Reg No:</span> <strong className="font-mono text-slate-800 dark:text-slate-200">{report?.hospital_reg_number || '—'}</strong></div>
-                <div><span className="text-slate-400">Age / Gender / Wt:</span> <strong className="text-slate-800 dark:text-slate-200">{report?.age} / {report?.gender} / {report?.weight} kg</strong></div>
-                <div><span className="text-slate-400">Dept / Ward:</span> <strong className="text-slate-800 dark:text-slate-200">{report?.department} ({report?.ward})</strong></div>
-                <div className="col-span-2 sm:col-span-4"><span className="text-slate-400">Primary Diagnosis:</span> <strong className="text-slate-800 dark:text-slate-200 italic">{report?.primary_diagnosis || 'N/A'}</strong></div>
+            {/* INSTITUTIONAL HEADER & BRANDING */}
+            <div className="border-2 border-slate-900 p-4 text-center relative space-y-1">
+              {collegeLogoUrl && (
+                <img
+                  src={collegeLogoUrl}
+                  alt={collegeName}
+                  className="w-12 h-12 object-contain absolute left-4 top-4 border border-slate-300 rounded-md"
+                />
+              )}
+              <h1 className="text-base sm:text-lg font-black uppercase tracking-wide border-b-2 border-slate-900 pb-1">
+                {collegeName}
+              </h1>
+              <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-700 pt-1">
+                <span>PharmDVerse Clinical Services</span>
+                <span>Pharmacovigilance Division</span>
+                <span>Academic Year: 2026–2027</span>
               </div>
             </div>
 
-            {/* 3. REACTION OVERVIEW */}
-            <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-rose-600 dark:text-rose-400">
-                Clinical Event Overview
-              </h3>
-              <div className="p-4 rounded-2xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 space-y-2">
-                <div className="flex justify-between font-bold text-slate-900 dark:text-white">
-                  <span className="text-sm">{report?.reaction_title || 'Untitled Adverse Reaction'}</span>
-                  <span className="px-2.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold">{report?.reaction_category || 'General'}</span>
-                </div>
+            {/* DOCUMENT TITLE & REF */}
+            <div className="flex justify-between items-center text-[11px] font-mono font-bold border-b border-slate-900 pb-2">
+              <span>Form Ref: {formRef}</span>
+              <span className="font-serif text-sm font-extrabold uppercase underline tracking-wider text-slate-900">
+                ADVERSE DRUG EVENT CLINICAL REPORT
+              </span>
+              <span>Case: {clinicalCase?.case_id}</span>
+            </div>
 
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                  {report?.reaction_description || 'No reaction description provided.'}
+            {/* SECTION 1: GENERAL RECORD */}
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
+                Section 1: General Record Information
+              </strong>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
+                <div>ADR Record No: <span className="font-mono underline text-amber-700">{report?.adr_number || 'ADR-2026-000001'}</span></div>
+                <div>Reporting Date: <span className="font-mono underline">{report?.reporting_date || '—'}</span></div>
+                <div>Reported By: <span className="underline">{student?.full_name} ({student?.roll_number})</span></div>
+                <div>Preceptor: <span className="underline">{report?.assigned_preceptor_name || 'Faculty Preceptor'}</span></div>
+                <div>Status: <span className="uppercase underline font-mono text-emerald-800">{report?.approval_status || 'Draft'}</span></div>
+              </div>
+            </div>
+
+            {/* SECTION 2: PATIENT OVERVIEW */}
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-slate-900">
+                Section 2: Patient Overview
+              </strong>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
+                <div>Initials: <span className="underline">{report?.patient_initials || '—'}</span></div>
+                <div>Reg No: <span className="font-mono underline">{report?.hospital_reg_number || '—'}</span></div>
+                <div>Age / Gender: <span className="underline">{report?.age} yrs / {report?.gender}</span></div>
+                <div>Weight: <span className="font-mono underline">{report?.weight} kg</span></div>
+                <div>Department: <span className="underline">{report?.department}</span></div>
+                <div>Ward / Unit: <span className="underline">{report?.ward}</span></div>
+                <div className="col-span-2">Primary Diagnosis: <span className="underline italic">{report?.primary_diagnosis || 'N/A'}</span></div>
+              </div>
+            </div>
+
+            {/* SECTION 3: REACTION DETAILS */}
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-rose-900">
+                Section 3: Adverse Reaction Overview
+              </strong>
+              <div className="grid grid-cols-2 gap-2 font-bold">
+                <div className="col-span-2">Reaction Title: <span className="underline text-rose-800 text-sm font-extrabold">{report?.reaction_title || 'N/A'}</span></div>
+                <div>Category: <span className="underline">{report?.reaction_category || 'General'}</span></div>
+                <div>Patient Condition: <span className="underline">{report?.current_patient_condition || 'Recovering'}</span></div>
+                <div>Started At: <span className="font-mono underline">{report?.reaction_started_at || '—'}</span></div>
+                <div>Ended At: <span className="font-mono underline">{report?.reaction_ended_at || '—'}</span></div>
+                <div>Duration: <span className="underline">{report?.reaction_duration || '—'}</span></div>
+              </div>
+              <div className="pt-1">
+                <strong className="block font-bold">Clinical Description:</strong>
+                <p className="p-2 border border-slate-900 bg-white font-serif italic text-slate-900">
+                  {report?.reaction_description || 'N/A'}
                 </p>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-rose-200 dark:border-rose-900 text-[11px]">
-                  <div><span className="text-slate-500">Onset:</span> <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{report?.reaction_started_at || '—'}</span></div>
-                  <div><span className="text-slate-500">Resolution:</span> <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{report?.reaction_ended_at || '—'}</span></div>
-                  <div><span className="text-slate-500">Duration:</span> <span className="font-bold text-slate-800 dark:text-slate-200">{report?.reaction_duration || '—'}</span></div>
-                  <div><span className="text-slate-500">Patient Condition:</span> <span className="font-bold text-slate-800 dark:text-slate-200">{report?.current_patient_condition || '—'}</span></div>
-                </div>
-
-                {report?.clinical_management_provided && (
-                  <div className="pt-2 text-[11px]">
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Management Provided:</span> {report.clinical_management_provided}
-                  </div>
-                )}
               </div>
+              {report?.clinical_management_provided && (
+                <div className="font-bold pt-1">
+                  Management Provided: <span className="underline font-normal">{report.clinical_management_provided}</span>
+                </div>
+              )}
             </div>
 
-            {/* 4. SUSPECTED MEDICATION TABLE */}
+            {/* SECTION 4: SUSPECTED MEDICATION TABLE */}
             <div className="space-y-2">
-              <h3 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-amber-600 dark:text-amber-400">
-                Suspected Medication(s)
-              </h3>
-              <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-100 dark:bg-slate-800 font-bold uppercase text-[10px]">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
+                Section 4: Suspected Medication(s)
+              </strong>
+              <table className="w-full text-left text-xs border-2 border-slate-900 border-collapse">
+                <thead className="bg-slate-200 font-bold uppercase text-[10px] border-b border-slate-900">
+                  <tr>
+                    <th className="p-2 border-r border-slate-900">Brand Name</th>
+                    <th className="p-2 border-r border-slate-900">Generic</th>
+                    <th className="p-2 border-r border-slate-900">Dose & Route</th>
+                    <th className="p-2 border-r border-slate-900">Therapy Dates</th>
+                    <th className="p-2">Indication</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900 font-serif">
+                  {suspectedMeds && suspectedMeds.length > 0 ? (
+                    suspectedMeds.map((m, i) => (
+                      <tr key={i} className="border-b border-slate-900">
+                        <td className="p-2 border-r border-slate-900 font-bold">{m.medicine_name}</td>
+                        <td className="p-2 border-r border-slate-900">{m.generic_name || '—'}</td>
+                        <td className="p-2 border-r border-slate-900 font-mono">{m.dose} ({m.route} / {m.frequency})</td>
+                        <td className="p-2 border-r border-slate-900 font-mono text-[10px]">{m.start_date} to {m.stop_date || 'Ongoing'}</td>
+                        <td className="p-2">{m.clinical_indication || '—'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan={5} className="p-3 text-center italic text-slate-500">No suspected medications recorded.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* SECTION 5: CONCOMITANT MEDICATIONS */}
+            {concomitantMeds && concomitantMeds.length > 0 && (
+              <div className="space-y-2">
+                <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1">
+                  Section 5: Other Concurrent Medications
+                </strong>
+                <table className="w-full text-left text-xs border border-slate-900 border-collapse">
+                  <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
                     <tr>
-                      <th className="p-2.5">Medicine</th>
-                      <th className="p-2.5">Generic</th>
-                      <th className="p-2.5">Dose & Route</th>
-                      <th className="p-2.5">Therapy Dates</th>
-                      <th className="p-2.5">Indication</th>
+                      <th className="p-1.5 border-r border-slate-900">Medicine</th>
+                      <th className="p-1.5 border-r border-slate-900">Dose & Freq</th>
+                      <th className="p-1.5 border-r border-slate-900">Purpose</th>
+                      <th className="p-1.5">Therapy Dates</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                    {suspectedMeds.length > 0 ? (
-                      suspectedMeds.map((m, i) => (
-                        <tr key={i}>
-                          <td className="p-2.5 font-bold text-slate-900 dark:text-white">{m.medicine_name}</td>
-                          <td className="p-2.5 text-slate-500">{m.generic_name || '—'}</td>
-                          <td className="p-2.5 font-mono">{m.dose} ({m.route} / {m.frequency})</td>
-                          <td className="p-2.5 font-mono text-[11px]">{m.start_date} to {m.stop_date || 'Ongoing'}</td>
-                          <td className="p-2.5 text-slate-600 dark:text-slate-400">{m.clinical_indication || '—'}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={5} className="p-4 text-center text-slate-400 italic">No suspected medications listed.</td></tr>
-                    )}
+                  <tbody className="divide-y divide-slate-900 font-serif">
+                    {concomitantMeds.map((m, i) => (
+                      <tr key={i} className="border-b border-slate-900">
+                        <td className="p-1.5 border-r border-slate-900 font-bold">{m.medicine_name}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono">{m.dose} ({m.frequency})</td>
+                        <td className="p-1.5 border-r border-slate-900">{m.purpose || '—'}</td>
+                        <td className="p-1.5 font-mono text-[10px]">{m.start_date} to {m.stop_date || 'Ongoing'}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* 5. CONCOMITANT MEDICATIONS */}
-            {concomitantMeds.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] text-slate-500">
-                  Other Concurrent Medications
-                </h3>
-                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 font-bold uppercase text-[10px]">
-                      <tr>
-                        <th className="p-2">Medicine</th>
-                        <th className="p-2">Dose / Freq</th>
-                        <th className="p-2">Purpose</th>
-                        <th className="p-2">Dates</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {concomitantMeds.map((m, i) => (
-                        <tr key={i}>
-                          <td className="p-2 font-bold text-slate-800 dark:text-slate-200">{m.medicine_name}</td>
-                          <td className="p-2 font-mono">{m.dose} ({m.frequency})</td>
-                          <td className="p-2 text-slate-500">{m.purpose || '—'}</td>
-                          <td className="p-2 font-mono text-[10px]">{m.start_date} to {m.stop_date || 'Ongoing'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
             )}
 
-            {/* 6. PATIENT BACKGROUND & ASSESSMENT */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-2">
-                <h4 className="font-bold text-slate-900 dark:text-white text-xs uppercase border-b border-slate-200 dark:border-slate-700 pb-1">
-                  Patient Background & Allergies
-                </h4>
-                <div><span className="text-slate-400">Drug Allergy History:</span> <span className="font-semibold text-rose-600 dark:text-rose-400">{report?.drug_allergy_history || 'None'}</span></div>
-                <div><span className="text-slate-400">Previous ADR History:</span> <span className="font-semibold">{report?.previous_adr_history || 'None'}</span></div>
-                <div><span className="text-slate-400">Pregnancy / Lactation:</span> <span>{report?.pregnancy_lactation_status || 'N/A'}</span></div>
-                <div><span className="text-slate-400">Renal & Hepatic Status:</span> <span>Renal: {report?.renal_status || 'Normal'} | Hepatic: {report?.hepatic_status || 'Normal'}</span></div>
+            {/* SECTIONS 6 & 7: CLINICAL BACKGROUND & REACTION ASSESSMENT */}
+            <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30">
+              <div className="space-y-1 font-bold">
+                <strong className="block border-b border-slate-900 pb-1 uppercase text-slate-900">
+                  Section 6: Background
+                </strong>
+                <div>Allergies: <span className="underline text-rose-700">{report?.drug_allergy_history || 'None'}</span></div>
+                <div>Previous ADR: <span className="underline">{report?.previous_adr_history || 'None'}</span></div>
+                <div>Pregnancy/Lactation: <span className="underline">{report?.pregnancy_lactation_status || 'N/A'}</span></div>
+                <div>Renal / Hepatic: <span className="underline">{report?.renal_status} / {report?.hepatic_status}</span></div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 space-y-2">
-                <h4 className="font-bold text-slate-900 dark:text-white text-xs uppercase border-b border-indigo-200 dark:border-indigo-900 pb-1">
-                  Pharmacovigilance Assessment
-                </h4>
-                <div><span className="text-slate-400">Severity:</span> <strong className="font-extrabold text-indigo-700 dark:text-indigo-300">{report?.reaction_severity || 'Moderate'}</strong></div>
-                <div><span className="text-slate-400">Seriousness:</span> <strong className="font-bold">{report?.reaction_seriousness || 'Non-serious'}</strong></div>
-                <div><span className="text-slate-400">Patient Outcome:</span> <strong className="font-bold text-emerald-600 dark:text-emerald-400">{report?.patient_outcome || 'Recovered'}</strong></div>
-                <div><span className="text-slate-400">Action Taken:</span> <span>{report?.action_taken_on_suspected_drug || 'Withdrawn'}</span></div>
-                <div><span className="text-slate-400">Causality Opinion:</span> <strong className="font-mono text-indigo-600 dark:text-indigo-400">{report?.initial_causality_opinion || 'Probable/Likely'}</strong></div>
+              <div className="space-y-1 font-bold border-l border-slate-900 pl-3">
+                <strong className="block border-b border-slate-900 pb-1 uppercase text-indigo-900">
+                  Section 7: Assessment
+                </strong>
+                <div>Severity: <span className="underline text-indigo-800">{report?.reaction_severity || 'Moderate'}</span></div>
+                <div>Seriousness: <span className="underline">{report?.reaction_seriousness || 'Non-serious'}</span></div>
+                <div>Outcome: <span className="underline text-emerald-800">{report?.patient_outcome || 'Recovered'}</span></div>
+                <div>Causality Opinion: <span className="underline text-indigo-900">{report?.initial_causality_opinion || 'Probable/Likely'}</span></div>
               </div>
             </div>
 
-            {/* ATTACHMENTS SUMMARY */}
-            {attachments.length > 0 && (
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-1">
-                <strong className="font-bold block text-slate-700 dark:text-slate-300">Supporting Attachments ({attachments.length}):</strong>
-                <div className="flex flex-wrap gap-2">
-                  {attachments.map((att, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-mono">
-                      📎 {att.file_name} ({att.file_type})
-                    </span>
-                  ))}
-                </div>
+            {/* ATTACHMENTS */}
+            {attachments && attachments.length > 0 && (
+              <div className="border border-slate-900 p-2 text-[11px] font-mono">
+                <strong>Supporting Documents ({attachments.length}):</strong>{' '}
+                {attachments.map(a => a.file_name).join(', ')}
               </div>
             )}
 
-            {/* REVIEW & SIGNATURES */}
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs font-semibold">
-              <div className="text-slate-500">
-                Documented by: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name} ({student?.roll_number})</strong>
+            {/* SIGNATURES */}
+            <div className="pt-8 flex justify-between items-center text-xs font-bold font-serif">
+              <div className="border-t border-slate-900 pt-1 w-48 text-center">
+                Student Reporter Signature
+                <span className="block text-[10px] font-mono font-normal text-slate-600">{student?.full_name} ({student?.roll_number})</span>
               </div>
 
-              <div className="text-right text-slate-500">
-                Reviewed by: <strong className="text-slate-800 dark:text-slate-200">{report?.assigned_preceptor_name || 'Assigned Faculty Preceptor'}</strong>
+              <div className="border-t border-slate-900 pt-1 w-48 text-center">
+                Faculty Preceptor Signature
+                <span className="block text-[10px] font-mono font-normal text-slate-600">{report?.assigned_preceptor_name || 'Assigned Faculty Preceptor'}</span>
               </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-between items-center pt-4 border-t border-slate-900 text-[10px] font-mono text-slate-500">
+              <span>PharmDVerse Cloud Logbook</span>
+              <span>Confidential Clinical Record</span>
+              <span>Page 1 of 1</span>
             </div>
 
           </div>

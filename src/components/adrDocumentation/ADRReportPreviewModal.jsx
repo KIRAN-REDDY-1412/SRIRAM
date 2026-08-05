@@ -34,7 +34,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
         <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Documentation (A4 PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Documentation (A4 Print / PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -68,8 +68,8 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             pageNumber="1 of 1"
           >
             {/* SECTION 1: GENERAL RECORD */}
-            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
-              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2 text-xs">
+              <strong className="block font-bold uppercase border-b border-slate-900 pb-1 text-amber-900">
                 1. General Record Information
               </strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
@@ -82,8 +82,8 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             </div>
 
             {/* SECTION 2: PATIENT OVERVIEW */}
-            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
-              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-slate-900">
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2 text-xs">
+              <strong className="block font-bold uppercase border-b border-slate-900 pb-1 text-slate-900">
                 2. Patient Overview
               </strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
@@ -98,8 +98,8 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             </div>
 
             {/* SECTION 3: REACTION DETAILS */}
-            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
-              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-rose-900">
+            <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2 text-xs">
+              <strong className="block font-bold uppercase border-b border-slate-900 pb-1 text-rose-900">
                 3. Adverse Reaction Overview
               </strong>
               <div className="grid grid-cols-2 gap-2 font-bold">
@@ -124,11 +124,11 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             </div>
 
             {/* SECTION 4: SUSPECTED MEDICATION TABLE */}
-            <div className="space-y-2">
-              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
+            <div className="space-y-2 text-xs">
+              <strong className="block font-bold uppercase border-b border-slate-900 pb-1 text-amber-900">
                 4. Suspected Medication(s)
               </strong>
-              <table className="w-full text-left text-xs border-2 border-slate-900 border-collapse">
+              <table className="w-full text-left border-2 border-slate-900 border-collapse">
                 <thead className="bg-slate-200 font-bold uppercase text-[10px] border-b border-slate-900">
                   <tr>
                     <th className="p-2 border-r border-slate-900">Brand Name</th>
@@ -158,11 +158,11 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
 
             {/* SECTION 5: CONCOMITANT MEDICATIONS */}
             {concomitantMeds && concomitantMeds.length > 0 && (
-              <div className="space-y-2">
-                <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1">
+              <div className="space-y-2 text-xs">
+                <strong className="block font-bold uppercase border-b border-slate-900 pb-1">
                   5. Other Concurrent Medications
                 </strong>
-                <table className="w-full text-left text-xs border border-slate-900 border-collapse">
+                <table className="w-full text-left border border-slate-900 border-collapse">
                   <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
                     <tr>
                       <th className="p-1.5 border-r border-slate-900">Medicine</th>
@@ -186,15 +186,20 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             )}
 
             {/* SECTIONS 6 & 7: CLINICAL BACKGROUND & REACTION ASSESSMENT */}
-            <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30">
+            <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30 text-xs">
               <div className="space-y-1 font-bold">
                 <strong className="block border-b border-slate-900 pb-1 uppercase text-slate-900">
                   6. Clinical Background
                 </strong>
                 <div>Allergies: <span className="underline text-rose-700">{report?.drug_allergy_history || 'None'}</span></div>
                 <div>Previous ADR: <span className="underline">{report?.previous_adr_history || 'None'}</span></div>
+                <div>Medical Conditions: <span className="underline">{report?.relevant_medical_conditions || 'None'}</span></div>
                 <div>Pregnancy/Lactation: <span className="underline">{report?.pregnancy_lactation_status || 'N/A'}</span></div>
                 <div>Renal / Hepatic: <span className="underline">{report?.renal_status} / {report?.hepatic_status}</span></div>
+                <div>Lifestyle Factors: <span className="underline">{report?.lifestyle_factors || 'N/A'}</span></div>
+                {report?.additional_clinical_notes && (
+                  <div>Additional Notes: <span className="font-normal italic">{report.additional_clinical_notes}</span></div>
+                )}
               </div>
 
               <div className="space-y-1 font-bold border-l border-slate-900 pl-3">
@@ -204,17 +209,28 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
                 <div>Severity: <span className="underline text-indigo-800">{report?.reaction_severity || 'Moderate'}</span></div>
                 <div>Seriousness: <span className="underline">{report?.reaction_seriousness || 'Non-serious'}</span></div>
                 <div>Outcome: <span className="underline text-emerald-800">{report?.patient_outcome || 'Recovered'}</span></div>
+                <div>Action Taken: <span className="underline">{report?.action_taken_on_suspected_drug || 'Drug Withdrawn'}</span></div>
+                <div>Rechallenge Info: <span className="underline">{report?.rechallenge_information || 'N/A'}</span></div>
+                <div>Dechallenge Info: <span className="underline">{report?.dechallenge_information || 'N/A'}</span></div>
                 <div>Causality Opinion: <span className="underline text-indigo-900">{report?.initial_causality_opinion || 'Probable/Likely'}</span></div>
               </div>
             </div>
 
-            {/* ATTACHMENTS */}
-            {attachments && attachments.length > 0 && (
-              <div className="border border-slate-900 p-2 text-[11px] font-mono">
-                <strong>Supporting Documents ({attachments.length}):</strong>{' '}
-                {attachments.map(a => a.file_name).join(', ')}
-              </div>
-            )}
+            {/* SECTION 8: REMARKS & ATTACHMENTS */}
+            <div className="border border-slate-900 p-3 bg-slate-50/20 text-xs space-y-2">
+              <strong className="block border-b border-slate-900 pb-1 uppercase font-bold text-slate-900">
+                8. Review Information & Remarks
+              </strong>
+              {report?.student_remarks && <div><strong>Student Remarks:</strong> <p className="italic">{report.student_remarks}</p></div>}
+              {report?.preceptor_review && <div><strong>Preceptor Review:</strong> <p className="italic font-bold">{report.preceptor_review}</p></div>}
+              {report?.faculty_comments && <div><strong>Faculty Comments:</strong> <p className="italic">{report.faculty_comments}</p></div>}
+              {attachments && attachments.length > 0 && (
+                <div className="font-mono text-[11px] pt-1 border-t border-slate-900">
+                  <strong>Supporting Attachments ({attachments.length}):</strong>{' '}
+                  {attachments.map(a => a.file_name).join(', ')}
+                </div>
+              )}
+            </div>
           </PharmDVerseBrandedDocumentContainer>
 
         </div>

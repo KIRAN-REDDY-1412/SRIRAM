@@ -26,6 +26,11 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
     window.print();
   };
 
+  const rxDetails = interventionData?.prescription_details || [];
+  const rxProblems = interventionData?.prescription_problems || [];
+  const actionsTaken = interventionData?.action_taken || [];
+  const recommendations = interventionData?.recommendations || [];
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
@@ -34,7 +39,7 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
         <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-teal-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">Pharmacist Intervention Documentation (A4 PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">Pharmacist Intervention Documentation (A4 Print / PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -66,38 +71,98 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
             student={student}
             pageNumber="1 of 1"
           >
-            {/* PATIENT METADATA */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 font-bold">
+            {/* 1. PATIENT INFORMATION */}
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
+              <strong className="block uppercase border-b border-slate-900 pb-1 text-teal-900">1. Patient Information</strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>Patient Name: <span className="underline">{interventionData?.patient_name || '—'}</span></div>
                 <div>Age / Sex: <span className="underline">{interventionData?.age} yrs / {interventionData?.sex}</span></div>
-                <div>Date: <span className="font-mono underline">{interventionData?.date_of_intervention || '—'}</span></div>
+                <div>Date of Intervention: <span className="font-mono underline">{interventionData?.date_of_intervention || '—'}</span></div>
                 <div>IP/OP No: <span className="font-mono underline">{interventionData?.ip_op_no || '—'}</span></div>
-              </div>
-              <div className="pt-1">
-                Diagnosis: <span className="underline italic font-normal">{interventionData?.present_diagnosis || 'N/A'}</span>
+                <div className="col-span-2">Ward / Unit: <span className="underline">{interventionData?.ward || '—'}</span></div>
               </div>
             </div>
 
-            {/* PROBLEM DESCRIPTION */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20">
-              <strong className="block uppercase text-teal-900 font-bold">Description of Problem / Drug Interaction:</strong>
+            {/* 2. PRESENT DIAGNOSIS */}
+            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
+              <strong className="block uppercase font-bold text-teal-900 border-b border-slate-900 pb-1">2. Present Diagnosis</strong>
+              <p className="p-2 border border-slate-900 bg-white font-serif font-bold">{interventionData?.present_diagnosis || 'N/A'}</p>
+            </div>
+
+            {/* 3. PRESCRIPTION DETAILS */}
+            {rxDetails && rxDetails.length > 0 && (
+              <div className="space-y-1 text-xs">
+                <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">3. Prescription Details</strong>
+                <table className="w-full text-left border border-slate-900 border-collapse text-xs">
+                  <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
+                    <tr>
+                      <th className="p-1.5 border-r border-slate-900">Drug Name</th>
+                      <th className="p-1.5 border-r border-slate-900">Dose</th>
+                      <th className="p-1.5 border-r border-slate-900">Route</th>
+                      <th className="p-1.5">Frequency</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-900 font-serif">
+                    {rxDetails.map((rx, i) => (
+                      <tr key={i} className="border-b border-slate-900">
+                        <td className="p-1.5 border-r border-slate-900 font-bold">{rx.drug_name}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono">{rx.dose}</td>
+                        <td className="p-1.5 border-r border-slate-900">{rx.route}</td>
+                        <td className="p-1.5 font-bold">{rx.frequency}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 4. PRESCRIPTION PROBLEMS */}
+            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
+              <strong className="block uppercase border-b border-slate-900 pb-1 text-slate-900">4. Identified Prescription Problems</strong>
+              <p className="underline text-indigo-900">{rxProblems.join(', ')} {interventionData?.prescription_problem_other ? `(${interventionData.prescription_problem_other})` : ''}</p>
+            </div>
+
+            {/* 5. DESCRIPTION OF PROBLEM */}
+            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
+              <strong className="block uppercase font-bold text-teal-900 border-b border-slate-900 pb-1">5. Description of Problem</strong>
               <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">
                 {interventionData?.description_of_problem || 'N/A'}
               </p>
             </div>
 
-            {/* INTERVENTION OUTCOME & SIGNIFICANCE */}
-            <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30 font-bold">
-              <div>Significance: <span className="underline text-indigo-900">{interventionData?.significance_of_intervention || 'Moderate'}</span></div>
-              <div>Outcome: <span className="underline text-emerald-800">{interventionData?.outcome || 'Positive'}</span></div>
-              <div>Accepted by Physician: <span className="underline">{interventionData?.accepted ? 'YES' : 'NO'}</span></div>
-              <div>Therapy Changed: <span className="underline">{interventionData?.changed ? 'YES' : 'NO'}</span></div>
+            {/* 6. ACTION TAKEN & 7. RECOMMENDATIONS */}
+            <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
+              <div>
+                <strong className="block border-b border-slate-900 pb-1 uppercase text-slate-900">6. Action Taken</strong>
+                <p className="underline font-normal text-slate-800">{actionsTaken.join(', ')} {interventionData?.action_taken_other ? `(${interventionData.action_taken_other})` : ''}</p>
+              </div>
+
+              <div>
+                <strong className="block border-b border-slate-900 pb-1 uppercase text-slate-900">7. Recommendations</strong>
+                <p className="underline font-normal text-slate-800">{recommendations.join(', ')} {interventionData?.recommendation_other ? `(${interventionData.recommendation_other})` : ''}</p>
+              </div>
             </div>
 
-            {/* REFERENCES & FOLLOW-UP */}
+            {/* 8. ACCEPTANCE & OUTCOME */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border border-slate-900 p-3 bg-slate-50/30 text-xs font-bold">
+              <div>Discussed with Physician: <span className="underline">{interventionData?.discussed_with_physician ? 'YES' : 'NO'}</span></div>
+              <div>Suggestions at Right Time: <span className="underline">{interventionData?.suggestions_appropriate_time ? 'YES' : 'NO'}</span></div>
+              <div>Accepted: <span className="underline text-emerald-800">{interventionData?.accepted ? 'YES' : 'NO'}</span></div>
+              <div>Changed: <span className="underline text-emerald-800">{interventionData?.changed ? 'YES' : 'NO'}</span></div>
+              <div>Significance: <span className="underline text-indigo-900">{interventionData?.significance_of_intervention || 'Moderate'}</span></div>
+              <div>Outcome: <span className="underline text-emerald-800">{interventionData?.outcome || 'Positive'}</span></div>
+            </div>
+
+            {/* 9. FOLLOW-UP & REFERENCES */}
+            {interventionData?.follow_up && (
+              <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
+                <strong className="block uppercase font-bold border-b border-slate-900 pb-1">9. Follow-Up Notes</strong>
+                <p className="p-2 border border-slate-900 bg-white font-serif">{interventionData.follow_up}</p>
+              </div>
+            )}
+
             {interventionData?.references_text && (
-              <div className="space-y-1 border border-slate-900 p-3 font-serif">
+              <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs font-serif">
                 <strong className="block uppercase font-bold text-xs">References:</strong>
                 <p className="italic">{interventionData.references_text}</p>
               </div>

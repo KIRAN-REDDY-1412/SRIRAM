@@ -10,8 +10,9 @@ import { APP_CONFIG } from './config/appConfig';
 import { useDeveloperShortcut } from './hooks/useDeveloperShortcut';
 import { getActiveAdminSession } from './services/authService';
 
-// Full Page Admin Dashboard
+// Full Page Admin Dashboard & Dedicated College Portal Landing Page
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
+import { CollegePortalView } from './components/portal/CollegePortalView';
 
 // Modals
 import { PricingModal } from './components/modals/PricingModal';
@@ -21,10 +22,9 @@ import { AllCollegesModal } from './components/modals/AllCollegesModal';
 import { DeveloperAccessModal } from './components/modals/DeveloperAccessModal';
 import { SuperAdminModal } from './components/modals/SuperAdminModal';
 import { InfoModal } from './components/modals/InfoModal';
-import { PortalModal } from './components/modals/PortalModal';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin'
+  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin' | 'college_portal'
   const [pricingOpen, setPricingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -69,21 +69,37 @@ export default function App() {
     };
   }, []);
 
+  // Open Full-Page College Portal Landing Page
   const handleOpenPortal = (college) => {
     setActivePortalCollege(college);
+    setViewMode('college_portal');
+    setAllCollegesOpen(false);
+  };
+
+  const handleBackToLanding = () => {
+    setViewMode('landing');
+    setActivePortalCollege(null);
   };
 
   return (
     <ThemeProvider>
       <CollegeProvider>
         
-        {/* FULL PAGE SUPER ADMIN DASHBOARD VIEW */}
+        {/* 1. FULL PAGE SUPER ADMIN DASHBOARD VIEW */}
         {viewMode === 'admin' ? (
           <SuperAdminDashboard
-            onExitToLanding={() => setViewMode('landing')}
+            onExitToLanding={handleBackToLanding}
           />
+        ) : viewMode === 'college_portal' && activePortalCollege ? (
+          
+          /* 2. FULL PAGE DEDICATED COLLEGE PORTAL LANDING PAGE */
+          <CollegePortalView
+            college={activePortalCollege}
+            onBackToLanding={handleBackToLanding}
+          />
+
         ) : (
-          /* PUBLIC SAAS LANDING PAGE VIEW */
+          /* 3. PUBLIC SAAS LANDING PAGE VIEW */
           <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500 selection:text-white transition-colors duration-300 flex flex-col justify-between">
             
             {/* Sticky Glass Header */}
@@ -160,13 +176,6 @@ export default function App() {
               isOpen={Boolean(infoContentType)}
               onClose={() => setInfoContentType(null)}
               contentType={infoContentType}
-            />
-
-            {/* College Portal Launcher Modal */}
-            <PortalModal
-              isOpen={Boolean(activePortalCollege)}
-              onClose={() => setActivePortalCollege(null)}
-              college={activePortalCollege}
             />
 
           </div>

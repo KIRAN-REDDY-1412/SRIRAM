@@ -76,7 +76,7 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
           >
             {/* 1. PATIENT DEMOGRAPHICS */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
-              <strong className="block uppercase border-b border-slate-900 pb-1 text-slate-900">1. Demographics & Admission</strong>
+              <strong className="block uppercase border-b border-slate-900 pb-1 text-slate-900">1. Demographics & Admission Details</strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>Patient Initials: <span className="underline">{profile?.patient_initials || '—'}</span></div>
                 <div>Age / Sex: <span className="underline">{profile?.age} yrs / {profile?.gender}</span></div>
@@ -88,6 +88,9 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
                 <div>Bed / Ward: <span className="underline">{profile?.bed_number || '—'} / {profile?.ward_unit || '—'}</span></div>
                 <div>Department: <span className="underline">{profile?.department || '—'}</span></div>
                 <div>Date of Admission: <span className="font-mono underline">{profile?.date_of_admission || '—'}</span></div>
+                {profile?.date_of_collection && <div>Date of Collection: <span className="font-mono underline">{profile.date_of_collection}</span></div>}
+                {profile?.date_of_discharge && <div>Date of Discharge: <span className="font-mono underline">{profile.date_of_discharge}</span></div>}
+                {profile?.attending_physician && <div>Attending Physician: <span className="underline">{profile.attending_physician}</span></div>}
                 <div className="col-span-2">Hospital Name: <span className="underline">{profile?.hospital_name || 'Lalitha Superspecialities Hospital'}</span></div>
               </div>
             </div>
@@ -116,7 +119,9 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
                 </div>
                 <div>
                   <span className="font-bold block text-slate-900">Allergy History:</span>
-                  <p className="italic text-rose-800 font-bold">{profile?.allergies || 'No known drug allergies'}</p>
+                  <p className="italic text-rose-800 font-bold">
+                    {profile?.allergies || (profile?.allergy_drugs || profile?.allergy_food ? `Drug: ${profile?.allergy_drugs || 'None'}, Food: ${profile?.allergy_food || 'None'}` : 'No known drug allergies')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -145,8 +150,19 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
             showSignatures={false}
           >
             {/* 5. PHYSICAL EXAMINATION */}
-            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">5. Physical Examination</strong>
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
+              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">5. Physical & Systemic Examination</strong>
+              <div className="grid grid-cols-3 gap-2 font-bold pb-1 border-b border-slate-300">
+                <div>Pallor: <span className="underline">{profile?.pallor || 'Absent'}</span></div>
+                <div>Icterus: <span className="underline">{profile?.icterus || 'Absent'}</span></div>
+                <div>Cyanosis: <span className="underline">{profile?.cyanosis || 'Absent'}</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 font-serif pt-1">
+                {profile?.cvs && <div>CVS: <span className="underline">{profile.cvs}</span></div>}
+                {profile?.rs && <div>RS: <span className="underline">{profile.rs}</span></div>}
+                {profile?.gi && <div>GIT: <span className="underline">{profile.gi}</span></div>}
+                {profile?.cns && <div>CNS: <span className="underline">{profile.cns}</span></div>}
+              </div>
               <p className="p-2 border border-slate-900 bg-white font-serif">{profile?.systemic_examination || 'General examination normal.'}</p>
             </div>
 

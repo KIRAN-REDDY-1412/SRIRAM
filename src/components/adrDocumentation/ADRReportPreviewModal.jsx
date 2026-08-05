@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer, ShieldAlert } from 'lucide-react';
-import { PharmDVerseDocumentHeader } from '../branding/PharmDVerseDocumentHeader';
+import { fetchDocumentBrandingSettingsFromSupabase } from '../../services/supabaseService';
+import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
 export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, report, suspectedMeds, concomitantMeds, attachments }) => {
+  const [branding, setBranding] = useState(null);
+
+  useEffect(() => {
+    const loadBranding = async () => {
+      if (student?.college_id) {
+        const res = await fetchDocumentBrandingSettingsFromSupabase(student.college_id);
+        if (res.success && res.settings) {
+          setBranding(res.settings);
+        }
+      }
+    };
+    if (isOpen) loadBranding();
+  }, [isOpen, student]);
+
   if (!isOpen) return null;
 
   const college = student?.colleges;
@@ -43,15 +58,15 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
         {/* A4 PRINT PREVIEW WRAPPER */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
           
-          <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
-            
-            {/* COMMON BRANDING HEADER */}
-            <PharmDVerseDocumentHeader
-              college={college}
-              documentTitle="ADR Documentation"
-              caseId={clinicalCase?.case_id}
-            />
-
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="ADR Documentation"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            preceptorName={report?.assigned_preceptor_name}
+            pageNumber="1 of 1"
+          >
             {/* SECTION 1: GENERAL RECORD */}
             <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
@@ -200,28 +215,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
                 {attachments.map(a => a.file_name).join(', ')}
               </div>
             )}
-
-            {/* SIGNATURES */}
-            <div className="pt-8 flex justify-between items-center text-xs font-bold font-serif">
-              <div className="border-t border-slate-900 pt-1 w-48 text-center">
-                Student Reporter Signature
-                <span className="block text-[10px] font-mono font-normal text-slate-600">{student?.full_name} ({student?.roll_number})</span>
-              </div>
-
-              <div className="border-t border-slate-900 pt-1 w-48 text-center">
-                Faculty Preceptor Signature
-                <span className="block text-[10px] font-mono font-normal text-slate-600">{report?.assigned_preceptor_name || 'Assigned Faculty Preceptor'}</span>
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-900 text-[10px] font-mono text-slate-500">
-              <span>PharmDVerse</span>
-              <span>Confidential Clinical Documentation</span>
-              <span>Page 1 of 1</span>
-            </div>
-
-          </div>
+          </PharmDVerseBrandedDocumentContainer>
 
         </div>
 

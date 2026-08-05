@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer, FileSearch } from 'lucide-react';
-import { PharmDVerseDocumentHeader } from '../branding/PharmDVerseDocumentHeader';
+import { fetchDocumentBrandingSettingsFromSupabase } from '../../services/supabaseService';
+import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
 export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, student, dirData }) => {
+  const [branding, setBranding] = useState(null);
+
+  useEffect(() => {
+    const loadBranding = async () => {
+      if (student?.college_id) {
+        const res = await fetchDocumentBrandingSettingsFromSupabase(student.college_id);
+        if (res.success && res.settings) {
+          setBranding(res.settings);
+        }
+      }
+    };
+    if (isOpen) loadBranding();
+  }, [isOpen, student]);
+
   if (!isOpen) return null;
 
   const college = student?.colleges;
@@ -48,15 +63,14 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
           
           {/* ================= PAGE 1 ================= */}
-          <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
-            
-            {/* COMMON BRANDING HEADER */}
-            <PharmDVerseDocumentHeader
-              college={college}
-              documentTitle="Drug Information Request Documentation"
-              caseId={clinicalCase?.case_id}
-            />
-
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="Drug Information Request Documentation"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            pageNumber="1 of 2"
+          >
             {/* DATE & TIME & ENQUIRER DETAILS */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20">
               <div className="flex justify-between font-bold border-b border-slate-900 pb-2">
@@ -144,20 +158,18 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
                 <div>Reason for Delay (If any): <span className="underline italic">{dirData.reason_for_delay}</span></div>
               )}
             </div>
-
-            <div className="text-right text-[10px] font-mono text-slate-400">Page 1 of 2</div>
-          </div>
+          </PharmDVerseBrandedDocumentContainer>
 
 
           {/* ================= PAGE 2 ================= */}
-          <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
-            
-            <PharmDVerseDocumentHeader
-              college={college}
-              documentTitle="Drug Information Request Documentation (Continued)"
-              caseId={clinicalCase?.case_id}
-            />
-
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="Drug Information Request Documentation (Continued)"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            pageNumber="2 of 2"
+          >
             {/* RESPONSE PROVIDED (INFORMATION PROVIDED) */}
             <div>
               <strong className="font-bold text-xs uppercase block font-serif mb-1">Information provided (Response):</strong>
@@ -178,22 +190,7 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
               <div>Website: <span className="font-mono font-bold">{dirData?.ref_website || '—'}</span></div>
               <div>Others (specify): <span className="font-bold italic">{dirData?.ref_others || '—'}</span></div>
             </div>
-
-            {/* SIGNATURES */}
-            <div className="pt-10 flex justify-between items-center text-xs font-bold font-serif">
-              <div className="border-t border-slate-900 pt-1 w-48 text-center">
-                Signature of the Student
-                <span className="block text-[10px] font-mono font-normal text-slate-600">Prepared By: {student?.full_name} ({student?.roll_number})</span>
-              </div>
-
-              <div className="border-t border-slate-900 pt-1 w-48 text-center">
-                Signature of the Preceptor
-                <span className="block text-[10px] font-mono font-normal text-slate-600">Reviewed By: Assigned Faculty Preceptor</span>
-              </div>
-            </div>
-
-            <div className="text-right text-[10px] font-mono text-slate-400">Page 2 of 2</div>
-          </div>
+          </PharmDVerseBrandedDocumentContainer>
 
         </div>
 

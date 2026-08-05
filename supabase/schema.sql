@@ -218,6 +218,35 @@ CREATE TRIGGER set_updated_at_assignments
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ====================================================================
+-- TABLE 8: clinical_cases
+-- Purpose: Stores clinical case logbooks submitted by PharmD students.
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.clinical_cases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id VARCHAR(100) NOT NULL UNIQUE,
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    preceptor_id UUID NULL REFERENCES public.preceptors(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    hospital_name VARCHAR(255) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    ward_unit VARCHAR(100) NOT NULL,
+    ip_op_type VARCHAR(10) NOT NULL CHECK (ip_op_type IN ('IP', 'OP')),
+    date_of_admission DATE NOT NULL,
+    date_of_collection DATE NOT NULL,
+    academic_year VARCHAR(50) NOT NULL DEFAULT '2026–2027',
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Trigger for clinical_cases updated_at
+DROP TRIGGER IF EXISTS set_updated_at_cases ON public.clinical_cases;
+CREATE TRIGGER set_updated_at_cases
+    BEFORE UPDATE ON public.clinical_cases
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ====================================================================
 -- INDEXES FOR FREQUENTLY SEARCHED COLUMNS
 -- ====================================================================
 CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON public.registration_requests(email);
@@ -225,16 +254,14 @@ CREATE INDEX IF NOT EXISTS idx_registration_requests_status ON public.registrati
 
 CREATE INDEX IF NOT EXISTS idx_colleges_code ON public.colleges(college_code);
 CREATE INDEX IF NOT EXISTS idx_colleges_status ON public.colleges(status);
-CREATE INDEX IF NOT EXISTS idx_colleges_admin_username ON public.colleges(college_admin_username);
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_college_id ON public.subscriptions(college_id);
 CREATE INDEX IF NOT EXISTS idx_preceptors_college_id ON public.preceptors(college_id);
 CREATE INDEX IF NOT EXISTS idx_students_college_id ON public.students(college_id);
 
 CREATE INDEX IF NOT EXISTS idx_assignments_college ON public.student_preceptor_assignments(college_id);
-CREATE INDEX IF NOT EXISTS idx_assignments_student ON public.student_preceptor_assignments(student_id);
-CREATE INDEX IF NOT EXISTS idx_assignments_preceptor ON public.student_preceptor_assignments(preceptor_id);
-CREATE INDEX IF NOT EXISTS idx_assignments_status ON public.student_preceptor_assignments(status);
+CREATE INDEX IF NOT EXISTS idx_cases_case_id ON public.clinical_cases(case_id);
+CREATE INDEX IF NOT EXISTS idx_cases_student ON public.clinical_cases(student_id);
 
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES FOR SUPABASE
@@ -246,6 +273,7 @@ ALTER TABLE public.super_admin ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.preceptors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_preceptor_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clinical_cases ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow All Operations Registration Requests" ON public.registration_requests;
 DROP POLICY IF EXISTS "Allow All Operations Colleges" ON public.colleges;
@@ -254,6 +282,7 @@ DROP POLICY IF EXISTS "Allow All Operations Super Admin" ON public.super_admin;
 DROP POLICY IF EXISTS "Allow All Operations Preceptors" ON public.preceptors;
 DROP POLICY IF EXISTS "Allow All Operations Students" ON public.students;
 DROP POLICY IF EXISTS "Allow All Operations Assignments" ON public.student_preceptor_assignments;
+DROP POLICY IF EXISTS "Allow All Operations Clinical Cases" ON public.clinical_cases;
 
 CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Colleges" ON public.colleges FOR ALL USING (true) WITH CHECK (true);
@@ -262,3 +291,4 @@ CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin FOR ALL U
 CREATE POLICY "Allow All Operations Preceptors" ON public.preceptors FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Students" ON public.students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Operations Assignments" ON public.student_preceptor_assignments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Clinical Cases" ON public.clinical_cases FOR ALL USING (true) WITH CHECK (true);

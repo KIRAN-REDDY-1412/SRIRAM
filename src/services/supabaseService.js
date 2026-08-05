@@ -102,12 +102,162 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// CLINICAL CASES SERVICES
+// ====================================================================
+
+export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => {
+  console.log('[Supabase Operation] Generating unique Case ID for college code:', collegeCode);
+
+  try {
+    const currentYear = new Date().getFullYear();
+    const prefix = `${collegeCode.toUpperCase()}-${currentYear}-`;
+
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select('case_id')
+      .like('case_id', `${prefix}%`)
+      .order('case_id', { ascending: false })
+      .limit(1);
+
+    let nextNumber = 1;
+    if (data && data.length > 0 && data[0].case_id) {
+      const lastId = data[0].case_id;
+      const parts = lastId.split('-');
+      if (parts.length === 3) {
+        const parsedNum = parseInt(parts[2], 10);
+        if (!isNaN(parsedNum)) {
+          nextNumber = parsedNum + 1;
+        }
+      }
+    }
+
+    const formattedSequence = String(nextNumber).padStart(6, '0');
+    const generatedCaseId = `${prefix}${formattedSequence}`;
+
+    console.log('✅ [Supabase Success] Generated Case ID:', generatedCaseId);
+    return { success: true, caseId: generatedCaseId };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Case ID generation failed:', err);
+    return { success: false, caseId: `${collegeCode.toUpperCase()}-2026-000001` };
+  }
+};
+
+export const insertClinicalCaseToSupabase = async (casePayload) => {
+  console.log('[Supabase Operation] Inserting new Clinical Case:', casePayload);
+
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .insert([{
+        case_id: casePayload.caseId,
+        college_id: casePayload.collegeId,
+        student_id: casePayload.studentId,
+        preceptor_id: casePayload.preceptorId || null,
+        hospital_name: casePayload.hospitalName,
+        department: casePayload.department,
+        ward_unit: casePayload.wardUnit,
+        ip_op_type: casePayload.ipOpType,
+        date_of_admission: casePayload.dateOfAdmission,
+        date_of_collection: casePayload.dateOfCollection,
+        academic_year: casePayload.academicYear || '2026–2027',
+        status: casePayload.status || 'Draft'
+      }])
+      .select();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Insert clinical case failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Inserted clinical case:', data[0]);
+    return { success: true, data: data[0] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error inserting case:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const fetchStudentCasesFromSupabase = async (studentId) => {
+  console.log('[Supabase Operation] Fetching clinical cases for Student ID:', studentId);
+
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch student cases:', error);
+      return { success: false, data: [], error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Fetched student cases:', data);
+    return { success: true, data: data || [] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error fetching cases:', err);
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) => {
+  console.log('[Supabase Operation] Updating Clinical Case ID:', caseRecordId);
+
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .update({
+        hospital_name: casePayload.hospitalName,
+        department: casePayload.department,
+        ward_unit: casePayload.wardUnit,
+        ip_op_type: casePayload.ipOpType,
+        date_of_admission: casePayload.dateOfAdmission,
+        date_of_collection: casePayload.dateOfCollection,
+        status: casePayload.status || 'Draft'
+      })
+      .eq('id', caseRecordId)
+      .select();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Update clinical case failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Updated clinical case:', data[0]);
+    return { success: true, data: data[0] };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error updating case:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const deleteClinicalCaseFromSupabase = async (caseRecordId) => {
+  console.log('[Supabase Operation] Deleting Draft Clinical Case ID:', caseRecordId);
+
+  try {
+    const { error } = await supabase
+      .from('clinical_cases')
+      .delete()
+      .eq('id', caseRecordId);
+
+    if (error) {
+      console.error('❌ [Supabase Error] Delete clinical case failed:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ [Supabase Success] Deleted clinical case:', caseRecordId);
+    return { success: true };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error deleting case:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // PRECEPTOR PORTAL SERVICES
 // ====================================================================
 
 export const authenticatePreceptorInSupabase = async (username, password) => {
-  console.log('[Supabase Auth] Authenticating Preceptor Username:', username);
-
   try {
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
@@ -118,48 +268,27 @@ export const authenticatePreceptorInSupabase = async (username, password) => {
       .eq('username', username)
       .maybeSingle();
 
-    if (error || !preceptor) {
-      return { success: false, error: 'Invalid Username or Password' };
-    }
+    if (error || !preceptor) return { success: false, error: 'Invalid Username or Password' };
+    if (preceptor.status !== 'Active') return { success: false, error: 'Your Preceptor account is currently Inactive. Contact College Admin.' };
+    if (preceptor.password_hash !== inputHash) return { success: false, error: 'Invalid Username or Password' };
 
-    if (preceptor.status !== 'Active') {
-      return { success: false, error: 'Your Preceptor account is currently Inactive. Contact College Admin.' };
-    }
-
-    if (preceptor.password_hash !== inputHash) {
-      return { success: false, error: 'Invalid Username or Password' };
-    }
-
-    console.log('✅ [Supabase Auth Success] Preceptor authenticated:', preceptor.full_name);
     return { success: true, preceptor };
   } catch (err) {
-    console.error('❌ [Supabase Auth Error]:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const fetchPreceptorAssignedStudentsFromSupabase = async (preceptorId) => {
-  console.log('[Supabase Operation] Fetching assigned students for Preceptor ID:', preceptorId);
-
   try {
     const { data, error } = await supabase
       .from('student_preceptor_assignments')
-      .select(`
-        *,
-        students(*)
-      `)
+      .select(`*, students(*)`)
       .eq('preceptor_id', preceptorId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch assigned students:', error);
-      return { success: false, data: [], error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Fetched assigned students for preceptor:', data);
+    if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error:', err);
     return { success: false, data: [], error: err.message };
   }
 };
@@ -169,8 +298,6 @@ export const fetchPreceptorAssignedStudentsFromSupabase = async (preceptorId) =>
 // ====================================================================
 
 export const authenticateStudentInSupabase = async (username, password) => {
-  console.log('[Supabase Auth] Authenticating Student Username:', username);
-
   try {
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
@@ -181,49 +308,28 @@ export const authenticateStudentInSupabase = async (username, password) => {
       .eq('username', username)
       .maybeSingle();
 
-    if (error || !student) {
-      return { success: false, error: 'Invalid Username or Password' };
-    }
+    if (error || !student) return { success: false, error: 'Invalid Username or Password' };
+    if (student.status !== 'Active') return { success: false, error: 'Your Student account is currently Inactive. Contact College Admin.' };
+    if (student.password_hash !== inputHash) return { success: false, error: 'Invalid Username or Password' };
 
-    if (student.status !== 'Active') {
-      return { success: false, error: 'Your Student account is currently Inactive. Contact College Admin.' };
-    }
-
-    if (student.password_hash !== inputHash) {
-      return { success: false, error: 'Invalid Username or Password' };
-    }
-
-    console.log('✅ [Supabase Auth Success] Student authenticated:', student.full_name);
     return { success: true, student };
   } catch (err) {
-    console.error('❌ [Supabase Auth Error]:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const fetchStudentAssignedPreceptorFromSupabase = async (studentId) => {
-  console.log('[Supabase Operation] Fetching assigned preceptor for Student ID:', studentId);
-
   try {
     const { data, error } = await supabase
       .from('student_preceptor_assignments')
-      .select(`
-        *,
-        preceptors(*)
-      `)
+      .select(`*, preceptors(*)`)
       .eq('student_id', studentId)
       .eq('status', 'Active')
       .maybeSingle();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch assigned preceptor:', error);
-      return { success: false, data: null, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Fetched assigned preceptor for student:', data);
+    if (error) return { success: false, data: null, error: error.message };
     return { success: true, data: data ? data.preceptors : null, assignment: data };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error:', err);
     return { success: false, data: null, error: err.message };
   }
 };

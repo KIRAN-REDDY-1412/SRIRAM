@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Stethoscope, User, LogOut, Sun, Moon, Menu, X, UserCheck, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Stethoscope, User, LogOut, Sun, Moon, Menu, X, UserCheck, ShieldCheck, ClipboardList, FilePlus2, FolderKanban } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { StudentDashboardView } from './StudentDashboardView';
 import { StudentMyPreceptorView } from './StudentMyPreceptorView';
 import { StudentProfileView } from './StudentProfileView';
+import { AddNewCaseView } from './AddNewCaseView';
+import { MyClinicalCasesView } from './MyClinicalCasesView';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'my-preceptor' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'my-preceptor' | 'profile'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
@@ -73,6 +75,39 @@ export const StudentLayout = ({ student, onLogout }) => {
               <LayoutDashboard className="w-4 h-4 shrink-0" />
               <span>Dashboard</span>
             </button>
+
+            {/* CLINICAL CASE MANAGEMENT SECTION */}
+            <div className="pt-2">
+              <span className="px-3 text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block mb-1">
+                Clinical Case Management
+              </span>
+
+              <div className="space-y-1 pl-1">
+                <button
+                  onClick={() => handleNavigate('add-new-case')}
+                  className={`w-full h-10 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                    activeTab === 'add-new-case'
+                      ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <FilePlus2 className="w-4 h-4 shrink-0" />
+                  <span>Add New Case</span>
+                </button>
+
+                <button
+                  onClick={() => handleNavigate('my-cases')}
+                  className={`w-full h-10 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                    activeTab === 'my-cases'
+                      ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <FolderKanban className="w-4 h-4 shrink-0" />
+                  <span>My Clinical Cases</span>
+                </button>
+              </div>
+            </div>
 
             {/* My Preceptor */}
             <button
@@ -175,6 +210,21 @@ export const StudentLayout = ({ student, onLogout }) => {
         <main className="flex-1 p-4 sm:p-8">
           {activeTab === 'dashboard' && (
             <StudentDashboardView student={student} onNavigate={handleNavigate} />
+          )}
+
+          {activeTab === 'add-new-case' && (
+            <AddNewCaseView
+              student={student}
+              onCancel={() => handleNavigate('my-cases')}
+              onSuccess={() => handleNavigate('my-cases')}
+            />
+          )}
+
+          {activeTab === 'my-cases' && (
+            <MyClinicalCasesView
+              student={student}
+              onAddNew={() => handleNavigate('add-new-case')}
+            />
           )}
 
           {activeTab === 'my-preceptor' && (

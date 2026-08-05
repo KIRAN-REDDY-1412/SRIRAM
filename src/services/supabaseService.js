@@ -102,12 +102,168 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// ADR DOCUMENTATION SERVICES (ORIGINAL PHARMDVERSE MODULE)
+// ====================================================================
+
+export const generateUniqueAdrNumberInSupabase = async (collegeCode = 'AMRMCP') => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const prefix = `ADR-${currentYear}-`;
+
+    const { data, error } = await supabase
+      .from('adr_reports')
+      .select('adr_number')
+      .like('adr_number', `${prefix}%`)
+      .order('adr_number', { ascending: false })
+      .limit(1);
+
+    let nextNumber = 1;
+    if (data && data.length > 0 && data[0].adr_number) {
+      const lastId = data[0].adr_number;
+      const parts = lastId.split('-');
+      if (parts.length === 3) {
+        const parsedNum = parseInt(parts[2], 10);
+        if (!isNaN(parsedNum)) nextNumber = parsedNum + 1;
+      }
+    }
+
+    const formattedSequence = String(nextNumber).padStart(6, '0');
+    return { success: true, adrNumber: `${prefix}${formattedSequence}` };
+  } catch (err) {
+    return { success: false, adrNumber: `ADR-2026-000001` };
+  }
+};
+
+export const fetchADRReportByCaseIdFromSupabase = async (clinicalCaseId) => {
+  console.log('[Supabase Operation] Fetching ADR Report for Case ID:', clinicalCaseId);
+
+  try {
+    const { data: report, error: reportErr } = await supabase
+      .from('adr_reports')
+      .select('*')
+      .eq('clinical_case_id', clinicalCaseId)
+      .maybeSingle();
+
+    if (reportErr) return { success: false, error: reportErr.message };
+    if (!report) return { success: true, report: null, suspectedMeds: [], concomitantMeds: [], attachments: [] };
+
+    const [suspectedRes, concomitantRes, attachmentsRes] = await Promise.all([
+      supabase.from('adr_suspected_medications').select('*').eq('adr_report_id', report.id).order('created_at', { ascending: true }),
+      supabase.from('adr_concomitant_medications').select('*').eq('adr_report_id', report.id).order('created_at', { ascending: true }),
+      supabase.from('adr_attachments').select('*').eq('adr_report_id', report.id).order('uploaded_at', { ascending: true })
+    ]);
+
+    return {
+      success: true,
+      report,
+      suspectedMeds: suspectedRes.data || [],
+      concomitantMeds: concomitantRes.data || [],
+      attachments: attachmentsRes.data || []
+    };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error fetching ADR report:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveOrUpdateADRReportInSupabase = async (masterPayload, suspectedMeds = [], concomitantMeds = [], attachments = []) => {
+  console.log('[Supabase Operation] Saving/Updating ADR Report for Case ID:', masterPayload.clinical_case_id);
+
+  try {
+    const { data: existing } = await supabase
+      .from('adr_reports')
+      .select('id')
+      .eq('clinical_case_id', masterPayload.clinical_case_id)
+      .maybeSingle();
+
+    let savedReport = null;
+
+    if (existing && existing.id) {
+      const { data, error } = await supabase
+        .from('adr_reports')
+        .update(masterPayload)
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedReport = data[0];
+    } else {
+      const { data, error } = await supabase
+        .from('adr_reports')
+        .insert([masterPayload])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedReport = data[0];
+    }
+
+    const reportId = savedReport.id;
+
+    // SAVE SUSPECTED MEDS
+    await supabase.from('adr_suspected_medications').delete().eq('adr_report_id', reportId);
+    if (suspectedMeds && suspectedMeds.length > 0) {
+      const sPayloads = suspectedMeds.map(m => ({
+        adr_report_id: reportId,
+        clinical_case_id: masterPayload.clinical_case_id,
+        medicine_name: m.medicine_name,
+        generic_name: m.generic_name || null,
+        strength: m.strength || null,
+        dosage_form: m.dosage_form || null,
+        dose: m.dose || null,
+        route: m.route || null,
+        frequency: m.frequency || null,
+        start_date: m.start_date || null,
+        stop_date: m.stop_date || null,
+        clinical_indication: m.clinical_indication || null,
+        manufacturer: m.manufacturer || null,
+        batch_number: m.batch_number || null,
+        expiry_date: m.expiry_date || null
+      }));
+      await supabase.from('adr_suspected_medications').insert(sPayloads);
+    }
+
+    // SAVE CONCOMITANT MEDS
+    await supabase.from('adr_concomitant_medications').delete().eq('adr_report_id', reportId);
+    if (concomitantMeds && concomitantMeds.length > 0) {
+      const cPayloads = concomitantMeds.map(m => ({
+        adr_report_id: reportId,
+        clinical_case_id: masterPayload.clinical_case_id,
+        medicine_name: m.medicine_name,
+        dose: m.dose || null,
+        route: m.route || null,
+        frequency: m.frequency || null,
+        purpose: m.purpose || null,
+        start_date: m.start_date || null,
+        stop_date: m.stop_date || null
+      }));
+      await supabase.from('adr_concomitant_medications').insert(cPayloads);
+    }
+
+    // SAVE ATTACHMENTS
+    await supabase.from('adr_attachments').delete().eq('adr_report_id', reportId);
+    if (attachments && attachments.length > 0) {
+      const aPayloads = attachments.map(a => ({
+        adr_report_id: reportId,
+        clinical_case_id: masterPayload.clinical_case_id,
+        file_name: a.file_name,
+        file_type: a.file_type || 'Document',
+        file_url: a.file_url
+      }));
+      await supabase.from('adr_attachments').insert(aPayloads);
+    }
+
+    return { success: true, report: savedReport };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Saving ADR report failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // DRUG INFORMATION REQUEST SERVICES
 // ====================================================================
 
 export const fetchDrugInformationRequestByCaseIdFromSupabase = async (clinicalCaseId) => {
-  console.log('[Supabase Operation] Fetching Drug Information Request for Case ID:', clinicalCaseId);
-
   try {
     const { data: request, error } = await supabase
       .from('drug_information_requests')
@@ -115,21 +271,14 @@ export const fetchDrugInformationRequestByCaseIdFromSupabase = async (clinicalCa
       .eq('clinical_case_id', clinicalCaseId)
       .maybeSingle();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch drug info request:', error);
-      return { success: false, error: error.message };
-    }
-
+    if (error) return { success: false, error: error.message };
     return { success: true, request: request || null };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error fetching drug info request:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const saveOrUpdateDrugInformationRequestInSupabase = async (payload) => {
-  console.log('[Supabase Operation] Saving/Updating Drug Information Request for Case ID:', payload.clinical_case_id);
-
   try {
     const { data: existing } = await supabase
       .from('drug_information_requests')
@@ -160,7 +309,6 @@ export const saveOrUpdateDrugInformationRequestInSupabase = async (payload) => {
 
     return { success: true, request: savedData };
   } catch (err) {
-    console.error('❌ [Supabase Error] Saving drug info request failed:', err);
     return { success: false, error: err.message };
   }
 };

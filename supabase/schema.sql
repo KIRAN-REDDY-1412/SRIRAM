@@ -305,7 +305,57 @@ CREATE TABLE IF NOT EXISTS public.drug_information_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- TABLE 12: adr_reports
+CREATE TABLE IF NOT EXISTS public.adr_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    adr_number VARCHAR(100) NOT NULL UNIQUE,
+    reporting_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    reported_by_student_name VARCHAR(150) NULL,
+    assigned_preceptor_name VARCHAR(150) NULL,
+    patient_initials VARCHAR(50) NULL,
+    hospital_reg_number VARCHAR(50) NULL,
+    age VARCHAR(20) NULL,
+    gender VARCHAR(20) NULL,
+    weight VARCHAR(20) NULL,
+    department VARCHAR(100) NULL,
+    ward VARCHAR(100) NULL,
+    primary_diagnosis TEXT NULL,
+    reaction_title VARCHAR(255) NULL,
+    reaction_category VARCHAR(100) NULL,
+    reaction_description TEXT NULL,
+    reaction_started_at TIMESTAMP WITH TIME ZONE NULL,
+    reaction_ended_at TIMESTAMP WITH TIME ZONE NULL,
+    reaction_duration VARCHAR(100) NULL,
+    clinical_management_provided TEXT NULL,
+    current_patient_condition VARCHAR(100) NULL,
+    drug_allergy_history TEXT NULL,
+    previous_adr_history TEXT NULL,
+    relevant_medical_conditions TEXT NULL,
+    pregnancy_lactation_status VARCHAR(100) NULL,
+    renal_status VARCHAR(100) NULL,
+    hepatic_status VARCHAR(100) NULL,
+    lifestyle_factors TEXT NULL,
+    additional_clinical_notes TEXT NULL,
+    reaction_severity VARCHAR(50) NULL,
+    reaction_seriousness VARCHAR(100) NULL,
+    patient_outcome VARCHAR(100) NULL,
+    action_taken_on_suspected_drug VARCHAR(100) NULL,
+    rechallenge_information TEXT NULL,
+    dechallenge_information TEXT NULL,
+    initial_causality_opinion VARCHAR(100) NULL,
+    clinical_remarks TEXT NULL,
+    student_remarks TEXT NULL,
+    preceptor_review TEXT NULL,
+    faculty_comments TEXT NULL,
+    approval_status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (approval_status IN ('Draft', 'Submitted', 'Returned', 'Approved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
 -- RLS POLICIES FOR SUPABASE
-ALTER TABLE public.drug_information_requests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow All Operations Drug Information Requests" ON public.drug_information_requests;
-CREATE POLICY "Allow All Operations Drug Information Requests" ON public.drug_information_requests FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE public.adr_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow All ADR Reports" ON public.adr_reports;
+CREATE POLICY "Allow All ADR Reports" ON public.adr_reports FOR ALL USING (true) WITH CHECK (true);

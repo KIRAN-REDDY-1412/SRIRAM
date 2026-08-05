@@ -11,10 +11,11 @@ import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView
 import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsellingFormView';
 import { PharmacistInterventionFormView } from '../pharmacistIntervention/PharmacistInterventionFormView';
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
+import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'patient-counselling' | 'pharmacist-intervention' | 'drug-info-request' | 'my-preceptor' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'patient-counselling' | 'pharmacist-intervention' | 'drug-info-request' | 'adr-documentation' | 'my-preceptor' | 'profile'
   const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -42,6 +43,11 @@ export const StudentLayout = ({ student, onLogout }) => {
   const handleOpenDrugInformationRequest = (clinicalCase) => {
     setSelectedCaseForForm(clinicalCase);
     handleNavigate('drug-info-request');
+  };
+
+  const handleOpenADRDocumentation = (clinicalCase) => {
+    setSelectedCaseForForm(clinicalCase);
+    handleNavigate('adr-documentation');
   };
 
   return (
@@ -123,7 +129,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 <button
                   onClick={() => handleNavigate('my-cases')}
                   className={`w-full h-10 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                    activeTab === 'my-cases' || activeTab === 'patient-profile' || activeTab === 'patient-counselling' || activeTab === 'pharmacist-intervention' || activeTab === 'drug-info-request'
+                    activeTab === 'my-cases' || activeTab === 'patient-profile' || activeTab === 'patient-counselling' || activeTab === 'pharmacist-intervention' || activeTab === 'drug-info-request' || activeTab === 'adr-documentation'
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -253,6 +259,7 @@ export const StudentLayout = ({ student, onLogout }) => {
               onOpenPatientCounselling={handleOpenPatientCounselling}
               onOpenPharmacistIntervention={handleOpenPharmacistIntervention}
               onOpenDrugInformationRequest={handleOpenDrugInformationRequest}
+              onOpenADRDocumentation={handleOpenADRDocumentation}
             />
           )}
 
@@ -282,6 +289,14 @@ export const StudentLayout = ({ student, onLogout }) => {
 
           {activeTab === 'drug-info-request' && selectedCaseForForm && (
             <DrugInformationFormView
+              clinicalCase={selectedCaseForForm}
+              student={student}
+              onBack={() => handleNavigate('my-cases')}
+            />
+          )}
+
+          {activeTab === 'adr-documentation' && selectedCaseForForm && (
+            <ADRDocumentationFormView
               clinicalCase={selectedCaseForForm}
               student={student}
               onBack={() => handleNavigate('my-cases')}

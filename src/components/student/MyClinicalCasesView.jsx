@@ -3,7 +3,7 @@ import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronL
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 
-export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest }) => {
+export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest, onOpenADRDocumentation }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -268,45 +268,55 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                     </td>
 
                     <td className="py-3.5 px-5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
                         {/* Open Patient Profile */}
                         <button
                           onClick={() => onOpenPatientProfile(c)}
-                          className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
+                          className="px-1.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Profile Form"
                         >
-                          <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <Stethoscope className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                           <span>Profile</span>
                         </button>
 
                         {/* Open Patient Counselling */}
                         <button
                           onClick={() => onOpenPatientCounselling(c)}
-                          className="px-2 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[11px] font-bold border border-teal-200 dark:border-teal-800 flex items-center gap-1 transition-colors"
+                          className="px-1.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-bold border border-teal-200 dark:border-teal-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Counselling Form"
                         >
-                          <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                          <HeartHandshake className="w-3 h-3 text-teal-600 dark:text-teal-400" />
                           <span>Counselling</span>
                         </button>
 
                         {/* Open Pharmacist Intervention */}
                         <button
                           onClick={() => onOpenPharmacistIntervention(c)}
-                          className="px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition-colors"
+                          className="px-1.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition-colors"
                           title="Open Pharmacist Intervention Form"
                         >
-                          <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <ShieldAlert className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                           <span>Intervention</span>
                         </button>
 
                         {/* Open Drug Information Request */}
                         <button
                           onClick={() => onOpenDrugInformationRequest(c)}
-                          className="px-2 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[11px] font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1 transition-colors"
+                          className="px-1.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1 transition-colors"
                           title="Open Drug Information Request Form"
                         >
-                          <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                          <FileSearch className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
                           <span>Drug Info</span>
+                        </button>
+
+                        {/* Open ADR Documentation */}
+                        <button
+                          onClick={() => onOpenADRDocumentation(c)}
+                          className="px-1.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1 transition-colors"
+                          title="Open ADR Documentation System"
+                        >
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <span>ADR Log</span>
                         </button>
 
                         {/* Open Details Modal */}
@@ -315,10 +325,10 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                             setSelectedCase(c);
                             setIsViewModalOpen(true);
                           }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                           title="Open Quick View"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
                         </button>
 
                         {/* Edit (only if Draft) */}
@@ -326,26 +336,26 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                           <>
                             <button
                               onClick={() => handleOpenEditModal(c)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
+                              className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
                               title="Edit Case"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
 
                             <button
                               onClick={() => handleSubmitCase(c)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors"
+                              className="p-1 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors"
                               title="Submit Case to Preceptor"
                             >
-                              <Send className="w-4 h-4" />
+                              <Send className="w-3.5 h-3.5" />
                             </button>
 
                             <button
                               onClick={() => setCaseToDelete(c)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
+                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
                               title="Delete Draft"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </>
                         )}
@@ -471,6 +481,17 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
               >
                 <FileSearch className="w-3.5 h-3.5" />
                 <span>Drug Info</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  onOpenADRDocumentation(selectedCase);
+                }}
+                className="col-span-2 px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>ADR Documentation Wizard</span>
               </button>
             </div>
           </div>

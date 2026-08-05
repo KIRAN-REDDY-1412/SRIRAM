@@ -102,12 +102,162 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// PATIENT PROFILE & CHILD TABLES SERVICES
+// ====================================================================
+
+export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) => {
+  console.log('[Supabase Operation] Fetching Patient Profile for Case ID:', clinicalCaseId);
+
+  try {
+    const { data: profile, error: profileErr } = await supabase
+      .from('patient_profiles')
+      .select('*')
+      .eq('clinical_case_id', clinicalCaseId)
+      .maybeSingle();
+
+    if (profileErr) {
+      console.error('❌ [Supabase Error] Failed to fetch patient profile:', profileErr);
+      return { success: false, error: profileErr.message };
+    }
+
+    if (!profile) {
+      return { success: true, profile: null, labInvestigations: [], prescribedDrugs: [] };
+    }
+
+    // Fetch child tables
+    const [labRes, drugRes] = await Promise.all([
+      supabase.from('patient_lab_investigations').select('*').eq('patient_profile_id', profile.id).order('created_at', { ascending: true }),
+      supabase.from('patient_prescribed_drugs').select('*').eq('patient_profile_id', profile.id).order('s_no', { ascending: true })
+    ]);
+
+    return {
+      success: true,
+      profile,
+      labInvestigations: labRes.data || [],
+      prescribedDrugs: drugRes.data || []
+    };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error fetching patient profile:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
+  console.log('[Supabase Operation] Saving/Updating Patient Profile for Case ID:', payload.clinical_case_id);
+
+  try {
+    // 1. Check if profile already exists for this clinical_case_id
+    const { data: existing } = await supabase
+      .from('patient_profiles')
+      .select('id')
+      .eq('clinical_case_id', payload.clinical_case_id)
+      .maybeSingle();
+
+    let savedProfile = null;
+
+    if (existing && existing.id) {
+      // Update
+      const { data, error } = await supabase
+        .from('patient_profiles')
+        .update(payload)
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedProfile = data[0];
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('patient_profiles')
+        .insert([payload])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedProfile = data[0];
+    }
+
+    return { success: true, profile: savedProfile };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error saving patient profile:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveLabInvestigationsInSupabase = async (patientProfileId, labRecords) => {
+  console.log('[Supabase Operation] Saving Lab Investigations for Profile ID:', patientProfileId);
+
+  try {
+    // Clear old lab records
+    await supabase.from('patient_lab_investigations').delete().eq('patient_profile_id', patientProfileId);
+
+    if (!labRecords || labRecords.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const payloads = labRecords.map(r => ({
+      patient_profile_id: patientProfileId,
+      category: r.category || 'General',
+      parameter_name: r.parameter_name,
+      reference_range: r.reference_range || null,
+      test_date: r.test_date || new Date().toISOString().split('T')[0],
+      test_value: r.test_value || null,
+      unit: r.unit || null
+    }));
+
+    const { data, error } = await supabase
+      .from('patient_lab_investigations')
+      .insert(payloads)
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Saving lab investigations failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const savePrescribedDrugsInSupabase = async (patientProfileId, drugRecords) => {
+  console.log('[Supabase Operation] Saving Prescribed Drugs for Profile ID:', patientProfileId);
+
+  try {
+    // Clear old drug records
+    await supabase.from('patient_prescribed_drugs').delete().eq('patient_profile_id', patientProfileId);
+
+    if (!drugRecords || drugRecords.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const payloads = drugRecords.map((d, index) => ({
+      patient_profile_id: patientProfileId,
+      s_no: d.s_no || index + 1,
+      trade_name: d.trade_name,
+      generic_name: d.generic_name,
+      route_of_admin: d.route_of_admin || 'Oral',
+      dose: d.dose,
+      frequency: d.frequency || 'OD',
+      start_date: d.start_date || null,
+      stop_date: d.stop_date || null
+    }));
+
+    const { data, error } = await supabase
+      .from('patient_prescribed_drugs')
+      .insert(payloads)
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Saving prescribed drugs failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // CLINICAL CASES SERVICES
 // ====================================================================
 
 export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => {
-  console.log('[Supabase Operation] Generating unique Case ID for college code:', collegeCode);
-
   try {
     const currentYear = new Date().getFullYear();
     const prefix = `${collegeCode.toUpperCase()}-${currentYear}-`;
@@ -125,26 +275,18 @@ export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => 
       const parts = lastId.split('-');
       if (parts.length === 3) {
         const parsedNum = parseInt(parts[2], 10);
-        if (!isNaN(parsedNum)) {
-          nextNumber = parsedNum + 1;
-        }
+        if (!isNaN(parsedNum)) nextNumber = parsedNum + 1;
       }
     }
 
     const formattedSequence = String(nextNumber).padStart(6, '0');
-    const generatedCaseId = `${prefix}${formattedSequence}`;
-
-    console.log('✅ [Supabase Success] Generated Case ID:', generatedCaseId);
-    return { success: true, caseId: generatedCaseId };
+    return { success: true, caseId: `${prefix}${formattedSequence}` };
   } catch (err) {
-    console.error('❌ [Supabase Error] Case ID generation failed:', err);
     return { success: false, caseId: `${collegeCode.toUpperCase()}-2026-000001` };
   }
 };
 
 export const insertClinicalCaseToSupabase = async (casePayload) => {
-  console.log('[Supabase Operation] Inserting new Clinical Case:', casePayload);
-
   try {
     const { data, error } = await supabase
       .from('clinical_cases')
@@ -164,22 +306,14 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
       }])
       .select();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Insert clinical case failed:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Inserted clinical case:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error inserting case:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const fetchStudentCasesFromSupabase = async (studentId) => {
-  console.log('[Supabase Operation] Fetching clinical cases for Student ID:', studentId);
-
   try {
     const { data, error } = await supabase
       .from('clinical_cases')
@@ -187,22 +321,14 @@ export const fetchStudentCasesFromSupabase = async (studentId) => {
       .eq('student_id', studentId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch student cases:', error);
-      return { success: false, data: [], error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Fetched student cases:', data);
+    if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error fetching cases:', err);
     return { success: false, data: [], error: err.message };
   }
 };
 
 export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) => {
-  console.log('[Supabase Operation] Updating Clinical Case ID:', caseRecordId);
-
   try {
     const { data, error } = await supabase
       .from('clinical_cases')
@@ -218,37 +344,19 @@ export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) =>
       .eq('id', caseRecordId)
       .select();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Update clinical case failed:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Updated clinical case:', data[0]);
+    if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error updating case:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const deleteClinicalCaseFromSupabase = async (caseRecordId) => {
-  console.log('[Supabase Operation] Deleting Draft Clinical Case ID:', caseRecordId);
-
   try {
-    const { error } = await supabase
-      .from('clinical_cases')
-      .delete()
-      .eq('id', caseRecordId);
-
-    if (error) {
-      console.error('❌ [Supabase Error] Delete clinical case failed:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('✅ [Supabase Success] Deleted clinical case:', caseRecordId);
+    const { error } = await supabase.from('clinical_cases').delete().eq('id', caseRecordId);
+    if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error deleting case:', err);
     return { success: false, error: err.message };
   }
 };
@@ -544,7 +652,7 @@ export const insertStudentToSupabase = async (collegeId, studentData) => {
     if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    return { success: false, error: err.message };
+    return { success: false, error: error.message };
   }
 };
 

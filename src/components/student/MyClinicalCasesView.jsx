@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 
-export const MyClinicalCasesView = ({ student, onAddNew }) => {
+export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -269,14 +269,24 @@ export const MyClinicalCasesView = ({ student, onAddNew }) => {
 
                     <td className="py-3.5 px-5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Open Details */}
+                        {/* Open Patient Profile Form */}
+                        <button
+                          onClick={() => onOpenPatientProfile(c)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
+                          title="Open Patient Profile Form"
+                        >
+                          <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Patient Profile</span>
+                        </button>
+
+                        {/* Open Details Modal */}
                         <button
                           onClick={() => {
                             setSelectedCase(c);
                             setIsViewModalOpen(true);
                           }}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                          title="Open Case Details"
+                          title="Open Case Quick View"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -388,12 +398,23 @@ export const MyClinicalCasesView = ({ student, onAddNew }) => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between pt-2">
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  onOpenPatientProfile(selectedCase);
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
+              >
+                <Stethoscope className="w-4 h-4" />
+                <span>Fill / View Patient Profile</span>
+              </button>
+
               <button
                 onClick={() => setIsViewModalOpen(false)}
                 className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs"
               >
-                Close Case
+                Close
               </button>
             </div>
           </div>

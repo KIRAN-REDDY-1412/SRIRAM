@@ -7,16 +7,23 @@ import { StudentMyPreceptorView } from './StudentMyPreceptorView';
 import { StudentProfileView } from './StudentProfileView';
 import { AddNewCaseView } from './AddNewCaseView';
 import { MyClinicalCasesView } from './MyClinicalCasesView';
+import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'my-preceptor' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'my-preceptor' | 'profile'
+  const [selectedCaseForProfile, setSelectedCaseForProfile] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenPatientProfile = (clinicalCase) => {
+    setSelectedCaseForProfile(clinicalCase);
+    handleNavigate('patient-profile');
   };
 
   return (
@@ -98,7 +105,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 <button
                   onClick={() => handleNavigate('my-cases')}
                   className={`w-full h-10 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                    activeTab === 'my-cases'
+                    activeTab === 'my-cases' || activeTab === 'patient-profile'
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -224,6 +231,15 @@ export const StudentLayout = ({ student, onLogout }) => {
             <MyClinicalCasesView
               student={student}
               onAddNew={() => handleNavigate('add-new-case')}
+              onOpenPatientProfile={handleOpenPatientProfile}
+            />
+          )}
+
+          {activeTab === 'patient-profile' && selectedCaseForProfile && (
+            <PatientProfileFormView
+              clinicalCase={selectedCaseForProfile}
+              student={student}
+              onBack={() => handleNavigate('my-cases')}
             />
           )}
 

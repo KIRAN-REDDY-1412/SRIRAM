@@ -35,10 +35,10 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* MODAL ACTION BAR */}
-        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <FileSearch className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">Drug Information Request Form (2-Page PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">Drug Information Request Form (2-Page A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -59,10 +59,10 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
           </div>
         </div>
 
-        {/* PDF DOCUMENT WRAPPER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
+        {/* MULTI-PAGE PDF DOCUMENT WRAPPER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8 print:p-0 print:bg-white">
           
-          {/* ================= PAGE 1 ================= */}
+          {/* ================= PAGE 1: REQUESTER & ENQUIRY DETAILS ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
@@ -70,9 +70,10 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             caseId={clinicalCase?.case_id}
             student={student}
             pageNumber="1 of 2"
+            showSignatures={false}
           >
             {/* DATE & TIME & ENQUIRER DETAILS */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20">
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
               <div className="flex justify-between font-bold border-b border-slate-900 pb-2">
                 <span>DATE: <span className="font-mono underline">{dirData?.request_date || '—'}</span></span>
                 <span>Time: <span className="font-mono underline">{dirData?.request_time || '—'}</span></span>
@@ -101,14 +102,14 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             </div>
 
             {/* MODE OF REQUEST & TIMELINE & ENQUIRY DETAILS */}
-            <div className="space-y-3 border border-slate-900 p-3 bg-slate-50/20">
+            <div className="space-y-3 border border-slate-900 p-3 bg-slate-50/20 text-xs">
               <div className="flex justify-between font-bold">
                 <span>Mode of Request: <span className="underline">{dirData?.mode_of_request || 'Direct'}</span></span>
                 <span>Answer Needed: <span className="underline">{dirData?.answer_needed || 'Immediately'}</span></span>
               </div>
 
               <div>
-                <strong className="block font-serif uppercase">Details of Enquiry (Question):</strong>
+                <strong className="block font-serif uppercase font-bold">Details of Enquiry (Question):</strong>
                 <p className="p-2 border border-slate-900 rounded-xs min-h-[50px] bg-white font-serif font-bold text-slate-900">
                   {dirData?.details_of_enquiry || 'N/A'}
                 </p>
@@ -121,7 +122,7 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             </div>
 
             {/* PATIENT DETAILS (BACKGROUND INFORMATION) */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20">
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1">Patient Details (Background Information):</strong>
               
               <div className="flex justify-between font-bold">
@@ -149,7 +150,7 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             </div>
 
             {/* TIMELINE GIVEN & MODE OF REPLY */}
-            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 font-bold">
+            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
               <div className="flex justify-between">
                 <span>Answer given: <span className="underline">{dirData?.answer_given_timeframe || 'Immediately'}</span></span>
                 <span>Mode of Reply: <span className="underline">{dirData?.mode_of_reply || 'Written'}</span></span>
@@ -160,8 +161,7 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             </div>
           </PharmDVerseBrandedDocumentContainer>
 
-
-          {/* ================= PAGE 2 ================= */}
+          {/* ================= PAGE 2: RESPONSE PROVIDED, REFERENCES & SIGNATURES ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
@@ -169,9 +169,10 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             caseId={clinicalCase?.case_id}
             student={student}
             pageNumber="2 of 2"
+            isLastPage={true}
           >
             {/* RESPONSE PROVIDED (INFORMATION PROVIDED) */}
-            <div>
+            <div className="text-xs">
               <strong className="font-bold text-xs uppercase block font-serif mb-1">Information provided (Response):</strong>
               <p className="p-4 border-2 border-slate-900 rounded-xs min-h-[220px] bg-slate-50/50 whitespace-pre-line font-serif leading-relaxed text-slate-900 font-medium">
                 {dirData?.information_provided || 'N/A'}
@@ -179,7 +180,7 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             </div>
 
             {/* REFERENCES */}
-            <div className="border-2 border-slate-900 p-4 space-y-2 bg-slate-50/20 font-serif">
+            <div className="border-2 border-slate-900 p-4 space-y-2 bg-slate-50/20 font-serif text-xs">
               <strong className="font-bold text-xs uppercase block border-b border-slate-900 pb-1">References:</strong>
               
               <div>Text book (mention): <span className="font-bold italic">{dirData?.ref_textbooks || '—'}</span></div>

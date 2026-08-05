@@ -31,10 +31,10 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* MODAL ACTION BAR */}
-        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Documentation (A4 Print / PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Documentation (2-Page A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -55,9 +55,10 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
           </div>
         </div>
 
-        {/* A4 PRINT PREVIEW WRAPPER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
+        {/* MULTI-PAGE PDF DOCUMENT WRAPPER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8 print:p-0 print:bg-white">
           
+          {/* ================= PAGE 1: GENERAL RECORD, PATIENT OVERVIEW, REACTION & MEDICATION TABLES ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
@@ -65,7 +66,8 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             caseId={clinicalCase?.case_id}
             student={student}
             preceptorName={report?.assigned_preceptor_name}
-            pageNumber="1 of 1"
+            pageNumber="1 of 2"
+            showSignatures={false}
           >
             {/* SECTION 1: GENERAL RECORD */}
             <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2 text-xs">
@@ -184,7 +186,19 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
                 </table>
               </div>
             )}
+          </PharmDVerseBrandedDocumentContainer>
 
+          {/* ================= PAGE 2: CLINICAL BACKGROUND, CAUSALITY & REMARKS ================= */}
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="ADR Documentation (Continued)"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            preceptorName={report?.assigned_preceptor_name}
+            pageNumber="2 of 2"
+            isLastPage={true}
+          >
             {/* SECTIONS 6 & 7: CLINICAL BACKGROUND & REACTION ASSESSMENT */}
             <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30 text-xs">
               <div className="space-y-1 font-bold">

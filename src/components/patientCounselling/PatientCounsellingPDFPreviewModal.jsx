@@ -34,10 +34,10 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* MODAL ACTION BAR */}
-        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <HeartHandshake className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">Patient Counselling Documentation (A4 Print / PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">Patient Counselling Documentation (2-Page A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -58,16 +58,18 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
           </div>
         </div>
 
-        {/* PDF DOCUMENT WRAPPER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
+        {/* MULTI-PAGE PDF DOCUMENT WRAPPER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8 print:p-0 print:bg-white">
           
+          {/* ================= PAGE 1: PATIENT DEMOGRAPHICS, DISEASE, MEDICATIONS & POINTS COVERED ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
             documentTitle="Patient Counselling Documentation"
             caseId={clinicalCase?.case_id}
             student={student}
-            pageNumber="1 of 1"
+            pageNumber="1 of 2"
+            showSignatures={false}
           >
             {/* 1. COUNSELLING METADATA & PATIENT INFORMATION */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
@@ -126,7 +128,18 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
                 ))}
               </div>
             </div>
+          </PharmDVerseBrandedDocumentContainer>
 
+          {/* ================= PAGE 2: BARRIERS, RECIPIENT, MATERIALS & SIGNATURES ================= */}
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="Patient Counselling Documentation (Continued)"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            pageNumber="2 of 2"
+            isLastPage={true}
+          >
             {/* 5. BARRIERS INVOLVED */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
               <strong className="block uppercase border-b border-slate-900 pb-1 text-slate-900">5. Barriers & Resolution</strong>

@@ -9,7 +9,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
   student,
   preceptorName,
   children,
-  pageNumber = '1 of 1'
+  pageNumber = '1 of 1',
+  showSignatures = false,
+  isLastPage = false
 }) => {
   // Extract branding defaults if branding not fully loaded
   const showStudentSig = branding?.show_student_signature ?? true;
@@ -28,7 +30,6 @@ export const PharmDVerseBrandedDocumentContainer = ({
   const fontFamily = branding?.font_family || 'Times New Roman';
   const primaryColor = branding?.primary_color || '#0f172a';
   const borderCol = branding?.border_color || '#0f172a';
-  const tableHeaderBg = branding?.table_header_color || '#f1f5f9';
   const textColor = branding?.text_color || '#0f172a';
 
   const currentDateTimeStr = new Date().toLocaleDateString('en-US', {
@@ -37,15 +38,17 @@ export const PharmDVerseBrandedDocumentContainer = ({
     year: 'numeric'
   });
 
+  const shouldDisplaySignatures = showSignatures || isLastPage;
+
   return (
     <div
-      className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 shadow-xl space-y-6 text-xs relative overflow-hidden"
+      className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 shadow-xl space-y-6 text-xs relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break"
       style={{
         fontFamily: fontFamily,
         borderColor: borderCol,
         color: textColor,
-        marginTop: branding?.margin_top || '0',
-        marginBottom: branding?.margin_bottom || '0'
+        pageBreakAfter: 'always',
+        breakAfter: 'page'
       }}
     >
       {/* WATERMARK OVERLAY */}
@@ -79,8 +82,8 @@ export const PharmDVerseBrandedDocumentContainer = ({
         {/* CLINICAL DOCUMENT BODY CHILDREN */}
         {children}
 
-        {/* SIGNATURES SECTION */}
-        {(showStudentSig || showPreceptorSig) && (
+        {/* SIGNATURES SECTION (SHOWN ON LAST PAGE OR WHEN EXPLICITLY ENABLED) */}
+        {shouldDisplaySignatures && (showStudentSig || showPreceptorSig) && (
           <div className="pt-8 flex justify-between items-center text-xs font-bold font-serif border-t" style={{ borderColor: borderCol }}>
             {showStudentSig ? (
               <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>

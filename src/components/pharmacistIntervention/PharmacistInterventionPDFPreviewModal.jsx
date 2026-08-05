@@ -36,10 +36,10 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* MODAL ACTION BAR */}
-        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-teal-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">Pharmacist Intervention Documentation (A4 Print / PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">Pharmacist Intervention Documentation (2-Page A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -60,16 +60,18 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
           </div>
         </div>
 
-        {/* PDF DOCUMENT WRAPPER */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
+        {/* MULTI-PAGE PDF DOCUMENT WRAPPER */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8 print:p-0 print:bg-white">
           
+          {/* ================= PAGE 1: PATIENT, DIAGNOSIS, RX DETAILS & PROBLEM DESCRIPTION ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
             documentTitle="Pharmacist Intervention Documentation"
             caseId={clinicalCase?.case_id}
             student={student}
-            pageNumber="1 of 1"
+            pageNumber="1 of 2"
+            showSignatures={false}
           >
             {/* 1. PATIENT INFORMATION */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
@@ -90,31 +92,33 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
             </div>
 
             {/* 3. PRESCRIPTION DETAILS */}
-            {rxDetails && rxDetails.length > 0 && (
-              <div className="space-y-1 text-xs">
-                <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">3. Prescription Details</strong>
-                <table className="w-full text-left border border-slate-900 border-collapse text-xs">
-                  <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
-                    <tr>
-                      <th className="p-1.5 border-r border-slate-900">Drug Name</th>
-                      <th className="p-1.5 border-r border-slate-900">Dose</th>
-                      <th className="p-1.5 border-r border-slate-900">Route</th>
-                      <th className="p-1.5">Frequency</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900 font-serif">
-                    {rxDetails.map((rx, i) => (
+            <div className="space-y-1 text-xs">
+              <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">3. Prescription Details</strong>
+              <table className="w-full text-left border border-slate-900 border-collapse text-xs">
+                <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
+                  <tr>
+                    <th className="p-1.5 border-r border-slate-900">Drug Name</th>
+                    <th className="p-1.5 border-r border-slate-900">Dose</th>
+                    <th className="p-1.5 border-r border-slate-900">Route</th>
+                    <th className="p-1.5">Frequency</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900 font-serif">
+                  {rxDetails && rxDetails.length > 0 ? (
+                    rxDetails.map((rx, i) => (
                       <tr key={i} className="border-b border-slate-900">
                         <td className="p-1.5 border-r border-slate-900 font-bold">{rx.drug_name}</td>
                         <td className="p-1.5 border-r border-slate-900 font-mono">{rx.dose}</td>
                         <td className="p-1.5 border-r border-slate-900">{rx.route}</td>
                         <td className="p-1.5 font-bold">{rx.frequency}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    ))
+                  ) : (
+                    <tr><td colSpan={4} className="p-2 text-center italic text-slate-500">No prescription details recorded.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {/* 4. PRESCRIPTION PROBLEMS */}
             <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
@@ -129,7 +133,18 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
                 {interventionData?.description_of_problem || 'N/A'}
               </p>
             </div>
+          </PharmDVerseBrandedDocumentContainer>
 
+          {/* ================= PAGE 2: ACTIONS, RECOMMENDATIONS, OUTCOME & SIGNATURES ================= */}
+          <PharmDVerseBrandedDocumentContainer
+            college={college}
+            branding={branding}
+            documentTitle="Pharmacist Intervention Documentation (Continued)"
+            caseId={clinicalCase?.case_id}
+            student={student}
+            pageNumber="2 of 2"
+            isLastPage={true}
+          >
             {/* 6. ACTION TAKEN & 7. RECOMMENDATIONS */}
             <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
               <div>

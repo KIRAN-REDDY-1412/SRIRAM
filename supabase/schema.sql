@@ -1,6 +1,5 @@
 -- ====================================================================
--- PharmDVerse Complete Phase 1 Database Schema for Supabase (PostgreSQL)
--- Compatible with Express.js, Prisma ORM, and Supabase RLS
+-- PharmDVerse Complete Database Schema for Supabase (PostgreSQL)
 -- ====================================================================
 
 -- Enable pgcrypto extension for UUID generation
@@ -15,10 +14,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ====================================================================
 -- TABLE 1: registration_requests
--- Purpose: Stores college registration requests submitted from Landing Page.
--- ====================================================================
 CREATE TABLE IF NOT EXISTS public.registration_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     college_name VARCHAR(255) NOT NULL,
@@ -36,17 +32,7 @@ CREATE TABLE IF NOT EXISTS public.registration_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for registration_requests updated_at
-DROP TRIGGER IF EXISTS set_updated_at_registration_requests ON public.registration_requests;
-CREATE TRIGGER set_updated_at_registration_requests
-    BEFORE UPDATE ON public.registration_requests
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
 -- TABLE 2: colleges
--- Purpose: Stores approved pharmacy colleges with branding and admin auth credentials.
--- ====================================================================
 CREATE TABLE IF NOT EXISTS public.colleges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     registration_request_id UUID NULL REFERENCES public.registration_requests(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -73,17 +59,7 @@ CREATE TABLE IF NOT EXISTS public.colleges (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for colleges updated_at
-DROP TRIGGER IF EXISTS set_updated_at_colleges ON public.colleges;
-CREATE TRIGGER set_updated_at_colleges
-    BEFORE UPDATE ON public.colleges
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
 -- TABLE 3: subscriptions
--- Purpose: Stores subscription details assigned to colleges.
--- ====================================================================
 CREATE TABLE IF NOT EXISTS public.subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -96,46 +72,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for subscriptions updated_at
-DROP TRIGGER IF EXISTS set_updated_at_subscriptions ON public.subscriptions;
-CREATE TRIGGER set_updated_at_subscriptions
-    BEFORE UPDATE ON public.subscriptions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Add foreign key for colleges.subscription_id referencing subscriptions.id
-ALTER TABLE public.colleges 
-    DROP CONSTRAINT IF EXISTS fk_colleges_subscription,
-    ADD CONSTRAINT fk_colleges_subscription 
-    FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- ====================================================================
--- TABLE 4: super_admin
--- Purpose: Stores Super Admin login credentials.
--- ====================================================================
-CREATE TABLE IF NOT EXISTS public.super_admin (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(150) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'SUPER_ADMIN',
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    last_login TIMESTAMP WITH TIME ZONE NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
-);
-
--- Trigger for super_admin updated_at
-DROP TRIGGER IF EXISTS set_updated_at_super_admin ON public.super_admin;
-CREATE TRIGGER set_updated_at_super_admin
-    BEFORE UPDATE ON public.super_admin
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
--- TABLE 5: preceptors
--- Purpose: Stores preceptors assigned to a specific college.
--- ====================================================================
+-- TABLE 4: preceptors
 CREATE TABLE IF NOT EXISTS public.preceptors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -154,17 +91,7 @@ CREATE TABLE IF NOT EXISTS public.preceptors (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for preceptors updated_at
-DROP TRIGGER IF EXISTS set_updated_at_preceptors ON public.preceptors;
-CREATE TRIGGER set_updated_at_preceptors
-    BEFORE UPDATE ON public.preceptors
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
--- TABLE 6: students
--- Purpose: Stores PharmD students enrolled in a specific college.
--- ====================================================================
+-- TABLE 5: students
 CREATE TABLE IF NOT EXISTS public.students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -182,22 +109,10 @@ CREATE TABLE IF NOT EXISTS public.students (
     profile_photo_url TEXT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    CONSTRAINT unique_college_roll_number UNIQUE (college_id, roll_number),
-    CONSTRAINT unique_college_student_email UNIQUE (college_id, email)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for students updated_at
-DROP TRIGGER IF EXISTS set_updated_at_students ON public.students;
-CREATE TRIGGER set_updated_at_students
-    BEFORE UPDATE ON public.students
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
--- TABLE 7: student_preceptor_assignments
--- Purpose: Links PharmD students to assigned preceptors within a college.
--- ====================================================================
+-- TABLE 6: student_preceptor_assignments
 CREATE TABLE IF NOT EXISTS public.student_preceptor_assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -210,17 +125,7 @@ CREATE TABLE IF NOT EXISTS public.student_preceptor_assignments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for student_preceptor_assignments updated_at
-DROP TRIGGER IF EXISTS set_updated_at_assignments ON public.student_preceptor_assignments;
-CREATE TRIGGER set_updated_at_assignments
-    BEFORE UPDATE ON public.student_preceptor_assignments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ====================================================================
--- TABLE 8: clinical_cases
--- Purpose: Stores clinical case logbooks submitted by PharmD students.
--- ====================================================================
+-- TABLE 7: clinical_cases
 CREATE TABLE IF NOT EXISTS public.clinical_cases (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     case_id VARCHAR(100) NOT NULL UNIQUE,
@@ -239,56 +144,87 @@ CREATE TABLE IF NOT EXISTS public.clinical_cases (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- Trigger for clinical_cases updated_at
-DROP TRIGGER IF EXISTS set_updated_at_cases ON public.clinical_cases;
-CREATE TRIGGER set_updated_at_cases
-    BEFORE UPDATE ON public.clinical_cases
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+-- TABLE 8: patient_profiles
+CREATE TABLE IF NOT EXISTS public.patient_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    patient_name VARCHAR(150) NOT NULL,
+    age VARCHAR(20) NULL,
+    gender VARCHAR(20) NULL,
+    ip_no VARCHAR(50) NULL,
+    height VARCHAR(20) NULL,
+    weight VARCHAR(20) NULL,
+    bmi VARCHAR(20) NULL,
+    ward VARCHAR(100) NULL,
+    department VARCHAR(100) NULL,
+    doa DATE NULL,
+    doc DATE NULL,
+    dod DATE NULL,
+    physician VARCHAR(150) NULL,
+    chief_complaints TEXT NULL,
+    past_medical_history TEXT NULL,
+    past_medication_history TEXT NULL,
+    family_history TEXT NULL,
+    smoker_pack_day VARCHAR(50) NULL,
+    smoker_duration VARCHAR(50) NULL,
+    alcoholic_amount_day VARCHAR(50) NULL,
+    alcoholic_duration VARCHAR(50) NULL,
+    allergy_food TEXT NULL,
+    allergy_drugs TEXT NULL,
+    marital_status VARCHAR(50) NULL,
+    cyanosis VARCHAR(100) NULL,
+    icterus VARCHAR(100) NULL,
+    pallor VARCHAR(100) NULL,
+    cvs TEXT NULL,
+    gi TEXT NULL,
+    rs TEXT NULL,
+    cns TEXT NULL,
+    provisional_diagnosis TEXT NULL,
+    final_diagnosis TEXT NULL,
+    vital_signs JSONB DEFAULT '[]'::jsonb,
+    other_investigations TEXT NULL,
+    discharge_summary TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
--- ====================================================================
--- INDEXES FOR FREQUENTLY SEARCHED COLUMNS
--- ====================================================================
-CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON public.registration_requests(email);
-CREATE INDEX IF NOT EXISTS idx_registration_requests_status ON public.registration_requests(status);
+-- TABLE 9: patient_counselling
+CREATE TABLE IF NOT EXISTS public.patient_counselling (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    counselling_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    counselling_time VARCHAR(20) NULL,
+    patient_type VARCHAR(20) NOT NULL DEFAULT 'In patient',
+    ip_op_number VARCHAR(50) NULL,
+    unit_ward VARCHAR(100) NULL,
+    age VARCHAR(20) NULL,
+    sex VARCHAR(20) NULL,
+    allergies TEXT NULL,
+    specific_background_collected BOOLEAN NOT NULL DEFAULT false,
+    disease_counselled TEXT NULL,
+    medications_counselled TEXT NULL,
+    points_covered JSONB DEFAULT '[]'::jsonb,
+    major_barriers_involved BOOLEAN NOT NULL DEFAULT false,
+    barrier_details TEXT NULL,
+    barrier_overcome BOOLEAN NOT NULL DEFAULT false,
+    time_taken VARCHAR(50) NULL,
+    counselling_provided_to VARCHAR(50) NOT NULL DEFAULT 'Patient',
+    representative_reasons JSONB DEFAULT '[]'::jsonb,
+    representative_other_reason TEXT NULL,
+    counselling_aids_used TEXT NULL,
+    counselling_material_provided TEXT NULL,
+    understanding_ascertained BOOLEAN NOT NULL DEFAULT true,
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
 
-CREATE INDEX IF NOT EXISTS idx_colleges_code ON public.colleges(college_code);
-CREATE INDEX IF NOT EXISTS idx_colleges_status ON public.colleges(status);
-
-CREATE INDEX IF NOT EXISTS idx_subscriptions_college_id ON public.subscriptions(college_id);
-CREATE INDEX IF NOT EXISTS idx_preceptors_college_id ON public.preceptors(college_id);
-CREATE INDEX IF NOT EXISTS idx_students_college_id ON public.students(college_id);
-
-CREATE INDEX IF NOT EXISTS idx_assignments_college ON public.student_preceptor_assignments(college_id);
-CREATE INDEX IF NOT EXISTS idx_cases_case_id ON public.clinical_cases(case_id);
-CREATE INDEX IF NOT EXISTS idx_cases_student ON public.clinical_cases(student_id);
-
--- ====================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES FOR SUPABASE
--- ====================================================================
-ALTER TABLE public.registration_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.colleges ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.super_admin ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.preceptors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_preceptor_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.clinical_cases ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow All Operations Registration Requests" ON public.registration_requests;
-DROP POLICY IF EXISTS "Allow All Operations Colleges" ON public.colleges;
-DROP POLICY IF EXISTS "Allow All Operations Subscriptions" ON public.subscriptions;
-DROP POLICY IF EXISTS "Allow All Operations Super Admin" ON public.super_admin;
-DROP POLICY IF EXISTS "Allow All Operations Preceptors" ON public.preceptors;
-DROP POLICY IF EXISTS "Allow All Operations Students" ON public.students;
-DROP POLICY IF EXISTS "Allow All Operations Assignments" ON public.student_preceptor_assignments;
-DROP POLICY IF EXISTS "Allow All Operations Clinical Cases" ON public.clinical_cases;
-
-CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Colleges" ON public.colleges FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Subscriptions" ON public.subscriptions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Preceptors" ON public.preceptors FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Students" ON public.students FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Assignments" ON public.student_preceptor_assignments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow All Operations Clinical Cases" ON public.clinical_cases FOR ALL USING (true) WITH CHECK (true);
+-- RLS POLICIES FOR SUPABASE
+ALTER TABLE public.patient_counselling ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow All Operations Patient Counselling" ON public.patient_counselling;
+CREATE POLICY "Allow All Operations Patient Counselling" ON public.patient_counselling FOR ALL USING (true) WITH CHECK (true);

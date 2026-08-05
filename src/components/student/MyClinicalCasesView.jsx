@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope } from 'lucide-react';
+import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 
-export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile }) => {
+export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -269,14 +269,24 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile })
 
                     <td className="py-3.5 px-5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Open Patient Profile Form */}
+                        {/* Open Patient Profile */}
                         <button
                           onClick={() => onOpenPatientProfile(c)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
+                          className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Profile Form"
                         >
                           <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Patient Profile</span>
+                          <span>Profile</span>
+                        </button>
+
+                        {/* Open Patient Counselling */}
+                        <button
+                          onClick={() => onOpenPatientCounselling(c)}
+                          className="px-2 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[11px] font-bold border border-teal-200 dark:border-teal-800 flex items-center gap-1 transition-colors"
+                          title="Open Patient Counselling Form"
+                        >
+                          <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                          <span>Counselling</span>
                         </button>
 
                         {/* Open Details Modal */}
@@ -286,7 +296,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile })
                             setIsViewModalOpen(true);
                           }}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                          title="Open Case Quick View"
+                          title="Open Quick View"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -398,23 +408,27 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile })
               </div>
             </div>
 
-            <div className="flex justify-between pt-2">
+            <div className="flex justify-between gap-2 pt-2">
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
                   onOpenPatientProfile(selectedCase);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
               >
-                <Stethoscope className="w-4 h-4" />
-                <span>Fill / View Patient Profile</span>
+                <Stethoscope className="w-3.5 h-3.5" />
+                <span>Patient Profile</span>
               </button>
 
               <button
-                onClick={() => setIsViewModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs"
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  onOpenPatientCounselling(selectedCase);
+                }}
+                className="px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5"
               >
-                Close
+                <HeartHandshake className="w-3.5 h-3.5" />
+                <span>Counselling Form</span>
               </button>
             </div>
           </div>

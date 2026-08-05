@@ -102,12 +102,74 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// PATIENT COUNSELLING SERVICES
+// ====================================================================
+
+export const fetchPatientCounsellingByCaseIdFromSupabase = async (clinicalCaseId) => {
+  console.log('[Supabase Operation] Fetching Patient Counselling for Case ID:', clinicalCaseId);
+
+  try {
+    const { data: counselling, error } = await supabase
+      .from('patient_counselling')
+      .select('*')
+      .eq('clinical_case_id', clinicalCaseId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch patient counselling:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, counselling: counselling || null };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error fetching patient counselling:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
+  console.log('[Supabase Operation] Saving/Updating Patient Counselling for Case ID:', payload.clinical_case_id);
+
+  try {
+    const { data: existing } = await supabase
+      .from('patient_counselling')
+      .select('id')
+      .eq('clinical_case_id', payload.clinical_case_id)
+      .maybeSingle();
+
+    let savedData = null;
+
+    if (existing && existing.id) {
+      const { data, error } = await supabase
+        .from('patient_counselling')
+        .update(payload)
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    } else {
+      const { data, error } = await supabase
+        .from('patient_counselling')
+        .insert([payload])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    }
+
+    return { success: true, counselling: savedData };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Saving patient counselling failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // PATIENT PROFILE & CHILD TABLES SERVICES
 // ====================================================================
 
 export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) => {
-  console.log('[Supabase Operation] Fetching Patient Profile for Case ID:', clinicalCaseId);
-
   try {
     const { data: profile, error: profileErr } = await supabase
       .from('patient_profiles')
@@ -115,16 +177,9 @@ export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) =>
       .eq('clinical_case_id', clinicalCaseId)
       .maybeSingle();
 
-    if (profileErr) {
-      console.error('❌ [Supabase Error] Failed to fetch patient profile:', profileErr);
-      return { success: false, error: profileErr.message };
-    }
+    if (profileErr) return { success: false, error: profileErr.message };
+    if (!profile) return { success: true, profile: null, labInvestigations: [], prescribedDrugs: [] };
 
-    if (!profile) {
-      return { success: true, profile: null, labInvestigations: [], prescribedDrugs: [] };
-    }
-
-    // Fetch child tables
     const [labRes, drugRes] = await Promise.all([
       supabase.from('patient_lab_investigations').select('*').eq('patient_profile_id', profile.id).order('created_at', { ascending: true }),
       supabase.from('patient_prescribed_drugs').select('*').eq('patient_profile_id', profile.id).order('s_no', { ascending: true })
@@ -137,16 +192,12 @@ export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) =>
       prescribedDrugs: drugRes.data || []
     };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error fetching patient profile:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
-  console.log('[Supabase Operation] Saving/Updating Patient Profile for Case ID:', payload.clinical_case_id);
-
   try {
-    // 1. Check if profile already exists for this clinical_case_id
     const { data: existing } = await supabase
       .from('patient_profiles')
       .select('id')
@@ -156,7 +207,6 @@ export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
     let savedProfile = null;
 
     if (existing && existing.id) {
-      // Update
       const { data, error } = await supabase
         .from('patient_profiles')
         .update(payload)
@@ -166,7 +216,6 @@ export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
       if (error) return { success: false, error: error.message };
       savedProfile = data[0];
     } else {
-      // Insert
       const { data, error } = await supabase
         .from('patient_profiles')
         .insert([payload])
@@ -178,21 +227,14 @@ export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
 
     return { success: true, profile: savedProfile };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error saving patient profile:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const saveLabInvestigationsInSupabase = async (patientProfileId, labRecords) => {
-  console.log('[Supabase Operation] Saving Lab Investigations for Profile ID:', patientProfileId);
-
   try {
-    // Clear old lab records
     await supabase.from('patient_lab_investigations').delete().eq('patient_profile_id', patientProfileId);
-
-    if (!labRecords || labRecords.length === 0) {
-      return { success: true, data: [] };
-    }
+    if (!labRecords || labRecords.length === 0) return { success: true, data: [] };
 
     const payloads = labRecords.map(r => ({
       patient_profile_id: patientProfileId,
@@ -204,29 +246,18 @@ export const saveLabInvestigationsInSupabase = async (patientProfileId, labRecor
       unit: r.unit || null
     }));
 
-    const { data, error } = await supabase
-      .from('patient_lab_investigations')
-      .insert(payloads)
-      .select();
-
+    const { data, error } = await supabase.from('patient_lab_investigations').insert(payloads).select();
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (err) {
-    console.error('❌ [Supabase Error] Saving lab investigations failed:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const savePrescribedDrugsInSupabase = async (patientProfileId, drugRecords) => {
-  console.log('[Supabase Operation] Saving Prescribed Drugs for Profile ID:', patientProfileId);
-
   try {
-    // Clear old drug records
     await supabase.from('patient_prescribed_drugs').delete().eq('patient_profile_id', patientProfileId);
-
-    if (!drugRecords || drugRecords.length === 0) {
-      return { success: true, data: [] };
-    }
+    if (!drugRecords || drugRecords.length === 0) return { success: true, data: [] };
 
     const payloads = drugRecords.map((d, index) => ({
       patient_profile_id: patientProfileId,
@@ -240,15 +271,10 @@ export const savePrescribedDrugsInSupabase = async (patientProfileId, drugRecord
       stop_date: d.stop_date || null
     }));
 
-    const { data, error } = await supabase
-      .from('patient_prescribed_drugs')
-      .insert(payloads)
-      .select();
-
+    const { data, error } = await supabase.from('patient_prescribed_drugs').insert(payloads).select();
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (err) {
-    console.error('❌ [Supabase Error] Saving prescribed drugs failed:', err);
     return { success: false, error: err.message };
   }
 };
@@ -652,7 +678,7 @@ export const insertStudentToSupabase = async (collegeId, studentData) => {
     if (error) return { success: false, error: error.message };
     return { success: true, data: data[0] };
   } catch (err) {
-    return { success: false, error: error.message };
+    return { success: false, error: err.message };
   }
 };
 

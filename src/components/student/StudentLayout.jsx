@@ -8,11 +8,12 @@ import { StudentProfileView } from './StudentProfileView';
 import { AddNewCaseView } from './AddNewCaseView';
 import { MyClinicalCasesView } from './MyClinicalCasesView';
 import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
+import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsellingFormView';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'my-preceptor' | 'profile'
-  const [selectedCaseForProfile, setSelectedCaseForProfile] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'patient-counselling' | 'my-preceptor' | 'profile'
+  const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
@@ -22,8 +23,13 @@ export const StudentLayout = ({ student, onLogout }) => {
   };
 
   const handleOpenPatientProfile = (clinicalCase) => {
-    setSelectedCaseForProfile(clinicalCase);
+    setSelectedCaseForForm(clinicalCase);
     handleNavigate('patient-profile');
+  };
+
+  const handleOpenPatientCounselling = (clinicalCase) => {
+    setSelectedCaseForForm(clinicalCase);
+    handleNavigate('patient-counselling');
   };
 
   return (
@@ -105,7 +111,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 <button
                   onClick={() => handleNavigate('my-cases')}
                   className={`w-full h-10 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                    activeTab === 'my-cases' || activeTab === 'patient-profile'
+                    activeTab === 'my-cases' || activeTab === 'patient-profile' || activeTab === 'patient-counselling'
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -232,12 +238,21 @@ export const StudentLayout = ({ student, onLogout }) => {
               student={student}
               onAddNew={() => handleNavigate('add-new-case')}
               onOpenPatientProfile={handleOpenPatientProfile}
+              onOpenPatientCounselling={handleOpenPatientCounselling}
             />
           )}
 
-          {activeTab === 'patient-profile' && selectedCaseForProfile && (
+          {activeTab === 'patient-profile' && selectedCaseForForm && (
             <PatientProfileFormView
-              clinicalCase={selectedCaseForProfile}
+              clinicalCase={selectedCaseForForm}
+              student={student}
+              onBack={() => handleNavigate('my-cases')}
+            />
+          )}
+
+          {activeTab === 'patient-counselling' && selectedCaseForForm && (
+            <PatientCounsellingFormView
+              clinicalCase={selectedCaseForForm}
               student={student}
               onBack={() => handleNavigate('my-cases')}
             />

@@ -117,47 +117,54 @@ export const Hero = ({ onOpenPortal, onOpenAllColleges, onOpenRegisterModal }) =
                     </p>
                   </div>
                 ) : (
-                  featuredColleges.map((college) => (
-                    <div
-                      key={college.id}
-                      className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
-                    >
-                      <div>
-                        {/* Top: Logo & Active Badge */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-[11px] shadow-sm border border-white/20 shrink-0 transform group-hover:scale-105 transition-transform`}>
-                            {college.initials}
+                  featuredColleges.map((college) => {
+                    const locationText = [college.city, college.district, college.state]
+                      .filter(Boolean)
+                      .join(', ');
+
+                    return (
+                      <div
+                        key={college.id}
+                        className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                      >
+                        <div>
+                          {/* Top: Logo & Active Badge */}
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-[11px] shadow-sm border border-white/20 shrink-0 transform group-hover:scale-105 transition-transform`}>
+                              {college.initials}
+                            </div>
+
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100/90 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Active
+                            </span>
                           </div>
 
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100/90 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Active
-                          </span>
+                          {/* College Name */}
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 min-h-[36px]">
+                            {college.name}
+                          </h3>
+
+                          {/* CITY NAME, DISTRICT, STATE NAME */}
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate">{locationText}</span>
+                          </div>
                         </div>
 
-                        {/* College Name & State */}
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 min-h-[36px]">
-                          {college.name}
-                        </h3>
-
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{college.state}</span>
+                        {/* Open Portal Button */}
+                        <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-700/60">
+                          <button
+                            onClick={() => onOpenPortal(college)}
+                            className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-emerald-600 dark:bg-slate-700 dark:hover:bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <span>Open Portal</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Open Portal Button */}
-                      <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-700/60">
-                        <button
-                          onClick={() => onOpenPortal(college)}
-                          className="w-full py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-emerald-600 dark:bg-slate-700 dark:hover:bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <span>Open Portal</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

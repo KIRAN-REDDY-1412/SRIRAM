@@ -346,7 +346,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Opacity ({settings.watermark_opacity}%)</label>
-                  <input type="range" min={5} max={20} value={settings.watermark_opacity} onChange={(e) => handleChange('watermark_opacity', e.target.value)} className="w-full" />
+                  <input type="range" min={5} max={30} value={settings.watermark_opacity} onChange={(e) => handleChange('watermark_opacity', e.target.value)} className="w-full" />
                 </div>
 
                 <div>
@@ -394,14 +394,14 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
           </div>
 
-          {/* SECTIONS 5, 6, 7: PAGE SETTINGS, TYPOGRAPHY, COLORS */}
+          {/* SECTIONS 5, 6, 7: PAGE SETUP, MARGINS, TYPOGRAPHY, COLORS */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
-            {/* SECTION 5: PAGE SETUP */}
+            {/* SECTION 5: PAGE SETUP & MARGINS */}
             <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
                 <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                Setup
+                Page & Margins
               </h4>
 
               <div className="space-y-2 text-xs">
@@ -420,14 +420,33 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                     <option value="Landscape">Landscape</option>
                   </select>
                 </div>
+
+                <div className="pt-1 grid grid-cols-2 gap-1.5 text-[10px]">
+                  <div>
+                    <label className="block text-slate-400">Margin Top</label>
+                    <input type="text" value={settings.margin_top} onChange={(e) => handleChange('margin_top', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Bottom</label>
+                    <input type="text" value={settings.margin_bottom} onChange={(e) => handleChange('margin_bottom', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Left</label>
+                    <input type="text" value={settings.margin_left} onChange={(e) => handleChange('margin_left', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Right</label>
+                    <input type="text" value={settings.margin_right} onChange={(e) => handleChange('margin_right', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* SECTION 6: TYPOGRAPHY */}
+            {/* SECTION 6: TYPOGRAPHY & FONT SIZES */}
             <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
                 <Type className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Fonts
+                Typography
               </h4>
 
               <div className="space-y-2 text-xs">
@@ -440,10 +459,25 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                     <option value="Georgia">Georgia</option>
                   </select>
                 </div>
+
+                <div className="grid grid-cols-3 gap-1 text-[10px]">
+                  <div>
+                    <label className="block text-slate-400">Title Pt</label>
+                    <input type="text" value={settings.title_font_size} onChange={(e) => handleChange('title_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Heading Pt</label>
+                    <input type="text" value={settings.heading_font_size} onChange={(e) => handleChange('heading_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Body Pt</label>
+                    <input type="text" value={settings.body_font_size} onChange={(e) => handleChange('body_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* SECTION 7: COLORS */}
+            {/* SECTION 7: COLORS AUDIT */}
             <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
                 <Palette className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
@@ -456,8 +490,20 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                   <input type="color" value={settings.primary_color} onChange={(e) => handleChange('primary_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
                 </div>
                 <div>
+                  <label className="block text-[10px] text-slate-400">Secondary</label>
+                  <input type="color" value={settings.secondary_color} onChange={(e) => handleChange('secondary_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-400">Header Bg</label>
+                  <input type="color" value={settings.table_header_color} onChange={(e) => handleChange('table_header_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                </div>
+                <div>
                   <label className="block text-[10px] text-slate-400">Borders</label>
                   <input type="color" value={settings.border_color} onChange={(e) => handleChange('border_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-400">Text Color</label>
+                  <input type="color" value={settings.text_color} onChange={(e) => handleChange('text_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
                 </div>
               </div>
             </div>
@@ -519,8 +565,8 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                 preceptorName="Dr. Preceptor"
                 pageNumber="1 of 1"
               >
-                <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 font-bold text-xs">
-                  <strong className="block border-b border-slate-900 pb-1 uppercase">Sample Patient Information</strong>
+                <div className="space-y-2 border p-3 bg-slate-50/20 font-bold text-xs branded-border">
+                  <strong className="block border-b pb-1 uppercase branded-heading branded-border">Sample Patient Information</strong>
                   <div className="grid grid-cols-2 gap-2">
                     <div>Patient Name: <span className="underline">John Doe</span></div>
                     <div>Age / Gender: <span className="underline">45 yrs / Male</span></div>
@@ -530,26 +576,26 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <strong className="block uppercase font-bold text-xs border-b border-slate-900 pb-1">
+                  <strong className="block uppercase font-bold text-xs border-b pb-1 branded-heading branded-border">
                     Sample Prescribed Drugs:
                   </strong>
-                  <table className="w-full text-left border border-slate-900 border-collapse text-[11px]">
-                    <thead className="bg-slate-100 font-bold uppercase text-[9px] border-b border-slate-900">
+                  <table className="w-full text-left border border-collapse text-[11px] branded-border">
+                    <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
                       <tr>
-                        <th className="p-1 border-r border-slate-900">Brand</th>
-                        <th className="p-1 border-r border-slate-900">Generic</th>
+                        <th className="p-1 border-r branded-border">Brand</th>
+                        <th className="p-1 border-r branded-border">Generic</th>
                         <th className="p-1">Dose</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900 font-serif">
-                      <tr className="border-b border-slate-900">
-                        <td className="p-1 border-r border-slate-900 font-bold">Augmentin 625mg</td>
-                        <td className="p-1 border-r border-slate-900">Amoxicillin + Clavulanic Acid</td>
+                    <tbody className="divide-y font-serif branded-border">
+                      <tr className="border-b branded-border">
+                        <td className="p-1 border-r font-bold branded-border">Augmentin 625mg</td>
+                        <td className="p-1 border-r branded-border">Amoxicillin + Clavulanic Acid</td>
                         <td className="p-1 font-mono">1 Tab BD</td>
                       </tr>
                       <tr>
-                        <td className="p-1 border-r border-slate-900 font-bold">Paracetamol 650mg</td>
-                        <td className="p-1 border-r border-slate-900">Acetaminophen</td>
+                        <td className="p-1 border-r font-bold branded-border">Paracetamol 650mg</td>
+                        <td className="p-1 border-r branded-border">Acetaminophen</td>
                         <td className="p-1 font-mono">1 Tab TID</td>
                       </tr>
                     </tbody>
@@ -582,10 +628,10 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               pageNumber="1 of 1"
             >
               <div className="space-y-3 text-xs">
-                <div className="p-3 border border-slate-900 bg-slate-50 font-bold">
-                  <strong>Full A4 Page Layout Test</strong>
+                <div className="p-3 border bg-slate-50 font-bold branded-border">
+                  <strong className="branded-heading">Full A4 Page Layout Test</strong>
                   <p className="font-normal italic text-slate-600 mt-1">
-                    This preview uses your real-time configured font family ({settings.font_family}), opacity ({settings.watermark_opacity}%), header toggles, signature settings, and footer branding.
+                    This preview uses your real-time configured font family ({settings.font_family}), orientation ({settings.orientation}), opacity ({settings.watermark_opacity}%), header toggles, signature settings, and footer branding.
                   </p>
                 </div>
               </div>

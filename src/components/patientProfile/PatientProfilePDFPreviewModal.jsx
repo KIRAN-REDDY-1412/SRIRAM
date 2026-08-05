@@ -32,6 +32,31 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
     window.print();
   };
 
+  const patientName = profile?.patient_name || profile?.patient_initials || '—';
+  const ageStr = profile?.age ? `${profile.age} yrs` : '—';
+  const sexStr = profile?.gender || '—';
+  const ipNo = profile?.ip_no || profile?.ip_op_number || '—';
+  const heightStr = profile?.height || profile?.height_cm || '—';
+  const weightStr = profile?.weight || profile?.weight_kg || '—';
+  const bmiStr = profile?.bmi || '—';
+  const wardStr = profile?.ward || profile?.ward_unit || '—';
+  const deptStr = profile?.department || '—';
+  const doaStr = profile?.doa || profile?.date_of_admission || '—';
+  const docStr = profile?.doc || profile?.date_of_collection || '—';
+  const dodStr = profile?.dod || profile?.date_of_discharge || '—';
+  const physicianStr = profile?.physician || profile?.attending_physician || '—';
+
+  const vitalList = profile?.vital_signs && Array.isArray(profile.vital_signs) && profile.vital_signs.length > 0
+    ? profile.vital_signs
+    : [{
+        date: new Date().toISOString().split('T')[0],
+        temp: profile?.temperature_f || '—',
+        bp: profile?.bp_sys ? `${profile.bp_sys}/${profile.bp_dia}` : '—',
+        pr: profile?.pulse_rate || '—',
+        rr: profile?.respiratory_rate || '—',
+        spo2: profile?.spo2 || '—'
+      }];
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
@@ -40,13 +65,13 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
         <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">Patient Profile Documentation (3-Page A4 PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">Patient Documentation Form (Official 3-Page A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Printer className="w-4 h-4" />
               <span>Print / Download PDF</span>
@@ -64,129 +89,183 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
         {/* MULTI-PAGE PDF DOCUMENT WRAPPER */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8 print:p-0 print:bg-white">
           
-          {/* ================= PAGE 1: PATIENT INFO & CLINICAL HISTORIES ================= */}
+          {/* ================= PAGE 1: PATIENT DETAILS, HISTORIES, SOCIAL, PHYSICAL EXAM & VITALS ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
-            documentTitle="Patient Profile Documentation"
+            documentTitle="PATIENT DOCUMENTATION FORM"
             caseId={clinicalCase?.case_id}
             student={student}
             pageNumber="1 of 3"
             showSignatures={false}
           >
-            {/* 1. PATIENT DEMOGRAPHICS */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
-              <strong className="block uppercase border-b border-slate-900 pb-1 text-slate-900">1. Demographics & Admission Details</strong>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>Patient Initials: <span className="underline">{profile?.patient_initials || '—'}</span></div>
-                <div>Age / Sex: <span className="underline">{profile?.age} yrs / {profile?.gender}</span></div>
-                <div>Weight (kg): <span className="font-mono underline">{profile?.weight_kg || '—'}</span></div>
-                <div>Height (cm): <span className="font-mono underline">{profile?.height_cm || '—'}</span></div>
-                <div>BMI (kg/m²): <span className="font-mono underline">{profile?.bmi || '—'}</span></div>
-                <div>BSA (m²): <span className="font-mono underline">{profile?.bsa || '—'}</span></div>
-                <div>IP/OP No: <span className="font-mono underline">{profile?.ip_op_number || '—'}</span></div>
-                <div>Bed / Ward: <span className="underline">{profile?.bed_number || '—'} / {profile?.ward_unit || '—'}</span></div>
-                <div>Department: <span className="underline">{profile?.department || '—'}</span></div>
-                <div>Date of Admission: <span className="font-mono underline">{profile?.date_of_admission || '—'}</span></div>
-                {profile?.date_of_collection && <div>Date of Collection: <span className="font-mono underline">{profile.date_of_collection}</span></div>}
-                {profile?.date_of_discharge && <div>Date of Discharge: <span className="font-mono underline">{profile.date_of_discharge}</span></div>}
-                {profile?.attending_physician && <div>Attending Physician: <span className="underline">{profile.attending_physician}</span></div>}
-                <div className="col-span-2">Hospital Name: <span className="underline">{profile?.hospital_name || 'Lalitha Superspecialities Hospital'}</span></div>
-              </div>
+            {/* 1. PATIENT DETAILS GRID TABLE */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase text-slate-900">Patient details:</strong>
+              <table className="w-full text-left border border-slate-900 border-collapse text-[11px]">
+                <tbody className="divide-y divide-slate-900 font-serif">
+                  <tr className="border-b border-slate-900">
+                    <td className="p-1.5 border-r border-slate-900">Name: <strong className="font-bold underline">{patientName}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">Age/ Sex: <strong className="font-bold underline">{ageStr} / {sexStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">I.P No: <strong className="font-mono font-bold underline">{ipNo}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">Height: <strong className="font-mono font-bold underline">{heightStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">Weight: <strong className="font-mono font-bold underline">{weightStr}</strong></td>
+                    <td className="p-1.5">BMI: <strong className="font-mono font-bold underline">{bmiStr}</strong></td>
+                  </tr>
+                  <tr>
+                    <td className="p-1.5 border-r border-slate-900">Ward: <strong className="font-bold underline">{wardStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">Dept: <strong className="font-bold underline">{deptStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">DOA: <strong className="font-mono font-bold underline">{doaStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">DOC: <strong className="font-mono font-bold underline">{docStr}</strong></td>
+                    <td className="p-1.5 border-r border-slate-900">DOD: <strong className="font-mono font-bold underline">{dodStr}</strong></td>
+                    <td className="p-1.5">Physician: <strong className="font-bold underline">{physicianStr}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            {/* 2. CHIEF COMPLAINTS */}
-            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">2. Chief Complaints</strong>
-              <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">{profile?.chief_complaints || 'N/A'}</p>
+            {/* CHIEF COMPLAINTS */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Chief Complaints:</strong>
+              <p className="p-2 border border-slate-900 bg-slate-50/30 min-h-[40px] font-serif font-bold text-slate-900">
+                {profile?.chief_complaints || 'N/A'}
+              </p>
             </div>
 
-            {/* 3. MEDICAL & MEDICATION HISTORIES */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">3. Medical & Medication History</strong>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <span className="font-bold block text-slate-900">History of Present Illness:</span>
-                  <p className="italic">{profile?.history_of_present_illness || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="font-bold block text-slate-900">Past Medical History:</span>
-                  <p className="italic">{profile?.past_medical_history || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="font-bold block text-slate-900">Past Medication History:</span>
-                  <p className="italic">{profile?.past_medication_history || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="font-bold block text-slate-900">Allergy History:</span>
-                  <p className="italic text-rose-800 font-bold">
-                    {profile?.allergies || (profile?.allergy_drugs || profile?.allergy_food ? `Drug: ${profile?.allergy_drugs || 'None'}, Food: ${profile?.allergy_food || 'None'}` : 'No known drug allergies')}
-                  </p>
-                </div>
-              </div>
+            {/* PAST MEDICAL HISTORY */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Past Medical History:</strong>
+              <p className="p-2 border border-slate-900 bg-slate-50/30 min-h-[40px] font-serif italic">
+                {profile?.past_medical_history || profile?.history_of_present_illness || 'N/A'}
+              </p>
             </div>
 
-            {/* 4. FAMILY & SOCIAL HISTORY */}
-            <div className="grid grid-cols-2 gap-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <div>
-                <strong className="block uppercase font-bold border-b border-slate-900 pb-1">Family History:</strong>
-                <p className="italic">{profile?.family_history || 'N/A'}</p>
+            {/* PAST MEDICATION HISTORY */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Past Medication History:</strong>
+              <p className="p-2 border border-slate-900 bg-slate-50/30 min-h-[40px] font-serif italic">
+                {profile?.past_medication_history || 'N/A'}
+              </p>
+            </div>
+
+            {/* FAMILY MEDICAL HISTORY */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Family Medical History:</strong>
+              <p className="p-2 border border-slate-900 bg-slate-50/30 min-h-[36px] font-serif italic">
+                {profile?.family_history || 'N/A'}
+              </p>
+            </div>
+
+            {/* SOCIAL HISTORY TABLE */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Social history:</strong>
+              <table className="w-full text-left border border-slate-900 border-collapse text-[11px]">
+                <tbody className="divide-y divide-slate-900 font-serif">
+                  <tr>
+                    <td className="p-2 border-r border-slate-900 w-1/4 align-top">
+                      <strong className="block border-b border-slate-900 pb-0.5">Smoker:</strong>
+                      <div>Pack/day: <span className="underline font-bold">{profile?.smoker_pack_day || '—'}</span></div>
+                      <div>Duration: <span className="underline font-bold">{profile?.smoker_duration || '—'}</span></div>
+                    </td>
+                    <td className="p-2 border-r border-slate-900 w-1/4 align-top">
+                      <strong className="block border-b border-slate-900 pb-0.5">Alcoholic:</strong>
+                      <div>Amount/day: <span className="underline font-bold">{profile?.alcoholic_amount_day || '—'}</span></div>
+                      <div>Duration: <span className="underline font-bold">{profile?.alcoholic_duration || '—'}</span></div>
+                    </td>
+                    <td className="p-2 border-r border-slate-900 w-1/4 align-top">
+                      <strong className="block border-b border-slate-900 pb-0.5">Allergies:</strong>
+                      <div>Food: <span className="underline font-bold">{profile?.allergy_food || 'None'}</span></div>
+                      <div>Drugs: <span className="underline font-bold text-rose-800">{profile?.allergy_drugs || profile?.allergies || 'None'}</span></div>
+                    </td>
+                    <td className="p-2 w-1/4 align-top">
+                      <strong className="block border-b border-slate-900 pb-0.5">Marital status:</strong>
+                      <span className="font-bold underline text-slate-900">{profile?.marital_status || 'Single'}</span>
+                      {profile?.personal_social_history && (
+                        <p className="text-[10px] italic mt-1">{profile.personal_social_history}</p>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* PHYSICAL EXAMINATION */}
+            <div className="space-y-2 border border-slate-900 p-2.5 bg-slate-50/20 text-xs">
+              <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-center">Physical Examination</strong>
+              <div className="grid grid-cols-3 gap-2 font-bold text-center border-b border-slate-400 pb-1">
+                <div>Cyanosis: <span className="underline">{profile?.cyanosis || 'Absent'}</span></div>
+                <div>Icterus: <span className="underline">{profile?.icterus || 'Absent'}</span></div>
+                <div>Pallor: <span className="underline">{profile?.pallor || 'Absent'}</span></div>
               </div>
-              <div>
-                <strong className="block uppercase font-bold border-b border-slate-900 pb-1">Social & Personal History:</strong>
-                <p className="italic">{profile?.personal_social_history || 'N/A'}</p>
+              <div className="grid grid-cols-2 gap-2 font-serif pt-1">
+                <div>CVS: <span className="underline font-bold">{profile?.cvs || 'Normal'}</span></div>
+                <div>GI: <span className="underline font-bold">{profile?.gi || 'Normal'}</span></div>
+                <div>RS: <span className="underline font-bold">{profile?.rs || 'Normal'}</span></div>
+                <div>CNS: <span className="underline font-bold">{profile?.cns || 'Normal'}</span></div>
               </div>
+              {profile?.systemic_examination && (
+                <p className="p-1.5 border border-slate-300 bg-white font-serif text-[11px]">{profile.systemic_examination}</p>
+              )}
+            </div>
+
+            {/* PROVISIONAL DIAGNOSIS */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Provisional Diagnosis:</strong>
+              <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">
+                {profile?.provisional_diagnosis || 'N/A'}
+              </p>
+            </div>
+
+            {/* VITAL SIGNS TABLE */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Vital Signs:</strong>
+              <table className="w-full text-left border border-slate-900 border-collapse text-[11px]">
+                <thead className="bg-slate-100 font-bold uppercase text-[9px] border-b border-slate-900 text-center">
+                  <tr>
+                    <th className="p-1 border-r border-slate-900">Date</th>
+                    <th className="p-1 border-r border-slate-900">TEMP [°F]</th>
+                    <th className="p-1 border-r border-slate-900">BP [mmHg]</th>
+                    <th className="p-1 border-r border-slate-900">PR [bpm]</th>
+                    <th className="p-1 border-r border-slate-900">RR [cpm]</th>
+                    <th className="p-1">SPO2 [%]</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900 font-mono text-center">
+                  {vitalList.map((v, i) => (
+                    <tr key={i} className="border-b border-slate-900">
+                      <td className="p-1 border-r border-slate-900 font-bold">{v.date || '—'}</td>
+                      <td className="p-1 border-r border-slate-900">{v.temp || '—'}</td>
+                      <td className="p-1 border-r border-slate-900 font-bold">{v.bp || '—'}</td>
+                      <td className="p-1 border-r border-slate-900">{v.pr || '—'}</td>
+                      <td className="p-1 border-r border-slate-900">{v.rr || '—'}</td>
+                      <td className="p-1 font-bold">{v.spo2 || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </PharmDVerseBrandedDocumentContainer>
 
-          {/* ================= PAGE 2: EXAMINATIONS, VITAL SIGNS & LAB INVESTIGATIONS ================= */}
+          {/* ================= PAGE 2: LAB INVESTIGATIONS ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
-            documentTitle="Patient Profile Documentation (Continued)"
+            documentTitle="PATIENT DOCUMENTATION FORM (Continued)"
             caseId={clinicalCase?.case_id}
             student={student}
             pageNumber="2 of 3"
             showSignatures={false}
           >
-            {/* 5. PHYSICAL EXAMINATION */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">5. Physical & Systemic Examination</strong>
-              <div className="grid grid-cols-3 gap-2 font-bold pb-1 border-b border-slate-300">
-                <div>Pallor: <span className="underline">{profile?.pallor || 'Absent'}</span></div>
-                <div>Icterus: <span className="underline">{profile?.icterus || 'Absent'}</span></div>
-                <div>Cyanosis: <span className="underline">{profile?.cyanosis || 'Absent'}</span></div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 font-serif pt-1">
-                {profile?.cvs && <div>CVS: <span className="underline">{profile.cvs}</span></div>}
-                {profile?.rs && <div>RS: <span className="underline">{profile.rs}</span></div>}
-                {profile?.gi && <div>GIT: <span className="underline">{profile.gi}</span></div>}
-                {profile?.cns && <div>CNS: <span className="underline">{profile.cns}</span></div>}
-              </div>
-              <p className="p-2 border border-slate-900 bg-white font-serif">{profile?.systemic_examination || 'General examination normal.'}</p>
-            </div>
+            <div className="space-y-1">
+              <strong className="block font-bold text-center text-sm uppercase border-b-2 border-slate-900 pb-1">
+                LAB INVESTIGATIONS
+              </strong>
 
-            {/* 6. VITAL SIGNS TABLE */}
-            <div className="space-y-1 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">6. Vital Signs Log</strong>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border border-slate-900 p-3 bg-slate-50/20 font-bold">
-                <div>Blood Pressure: <span className="font-mono underline">{profile?.bp_sys ? `${profile.bp_sys}/${profile.bp_dia} mmHg` : '—'}</span></div>
-                <div>Pulse Rate: <span className="font-mono underline">{profile?.pulse_rate ? `${profile.pulse_rate} bpm` : '—'}</span></div>
-                <div>Resp Rate: <span className="font-mono underline">{profile?.respiratory_rate ? `${profile.respiratory_rate} bpm` : '—'}</span></div>
-                <div>Temperature: <span className="font-mono underline">{profile?.temperature_f ? `${profile.temperature_f} °F` : '—'}</span></div>
-                <div>SpO2: <span className="font-mono underline">{profile?.spo2 ? `${profile.spo2}%` : '—'}</span></div>
-                <div>Random Blood Sugar: <span className="font-mono underline">{profile?.rbs ? `${profile.rbs} mg/dL` : '—'}</span></div>
-              </div>
-            </div>
-
-            {/* 7. LABORATORY INVESTIGATIONS TABLE */}
-            <div className="space-y-1 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">7. Laboratory Investigations</strong>
-              <table className="w-full text-left border border-slate-900 border-collapse text-xs">
+              <table className="w-full text-left border-2 border-slate-900 border-collapse text-xs">
                 <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
                   <tr>
                     <th className="p-1.5 border-r border-slate-900">Category</th>
-                    <th className="p-1.5 border-r border-slate-900">Parameter</th>
+                    <th className="p-1.5 border-r border-slate-900">Parameter / Date</th>
                     <th className="p-1.5 border-r border-slate-900">Value</th>
                     <th className="p-1.5 border-r border-slate-900">Unit</th>
                     <th className="p-1.5">Ref Range</th>
@@ -196,93 +275,91 @@ export const PatientProfilePDFPreviewModal = ({ isOpen, onClose, clinicalCase, s
                   {labInvestigations && labInvestigations.length > 0 ? (
                     labInvestigations.map((lab, i) => (
                       <tr key={i} className="border-b border-slate-900">
-                        <td className="p-1.5 border-r border-slate-900 font-bold">{lab.category}</td>
-                        <td className="p-1.5 border-r border-slate-900">{lab.parameter_name}</td>
-                        <td className="p-1.5 border-r border-slate-900 font-mono font-bold text-indigo-900">{lab.test_value}</td>
-                        <td className="p-1.5 border-r border-slate-900 font-mono">{lab.unit}</td>
-                        <td className="p-1.5 font-mono">{lab.reference_range}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-bold text-indigo-950">{lab.category}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-semibold">{lab.parameter_name}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono font-bold text-indigo-900">{lab.test_value || '—'}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono">{lab.unit || '—'}</td>
+                        <td className="p-1.5 font-mono text-[11px]">{lab.reference_range || '—'}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={5} className="p-2 text-center italic text-slate-500">No laboratory investigations recorded.</td></tr>
+                    <tr><td colSpan={5} className="p-3 text-center italic text-slate-500">No laboratory investigations recorded.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
-
-            {profile?.other_investigations && (
-              <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-                <strong className="block uppercase font-bold border-b border-slate-900 pb-1">8. Radiological / Other Investigations</strong>
-                <p className="p-2 border border-slate-900 bg-white font-serif">{profile.other_investigations}</p>
-              </div>
-            )}
           </PharmDVerseBrandedDocumentContainer>
 
-          {/* ================= PAGE 3: DIAGNOSIS, PRESCRIBED DRUGS & SIGNATURES ================= */}
+          {/* ================= PAGE 3: OTHER INVESTIGATIONS, FINAL DIAGNOSIS, DRUGS PRESCRIBED & SIGNATURES ================= */}
           <PharmDVerseBrandedDocumentContainer
             college={college}
             branding={branding}
-            documentTitle="Patient Profile Documentation (Continued)"
+            documentTitle="PATIENT DOCUMENTATION FORM (Continued)"
             caseId={clinicalCase?.case_id}
             student={student}
             pageNumber="3 of 3"
             isLastPage={true}
           >
-            {/* 9. PROVISIONAL & FINAL DIAGNOSIS */}
-            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">9. Diagnosis</strong>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <span className="font-bold block text-slate-900">Provisional Diagnosis:</span>
-                  <p className="p-2 border border-slate-900 bg-white font-serif italic">{profile?.provisional_diagnosis || 'N/A'}</p>
-                </div>
-                <div>
-                  <span className="font-bold block text-slate-900">Final Diagnosis:</span>
-                  <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">{profile?.final_diagnosis || 'N/A'}</p>
-                </div>
-              </div>
+            {/* OTHER INVESTIGATIONS */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Other Investigations:</strong>
+              <p className="p-2 border border-slate-900 bg-white font-serif min-h-[50px]">
+                {profile?.other_investigations || 'N/A'}
+              </p>
             </div>
 
-            {/* 10. DRUGS PRESCRIBED TABLE */}
-            <div className="space-y-1 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1">10. Prescribed Medications</strong>
-              <table className="w-full text-left border border-slate-900 border-collapse text-xs">
+            {/* FINAL DIAGNOSIS */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Final Diagnosis:</strong>
+              <p className="p-2.5 border-2 border-slate-900 bg-slate-50/50 font-serif font-bold text-slate-900 min-h-[50px]">
+                {profile?.final_diagnosis || 'N/A'}
+              </p>
+            </div>
+
+            {/* DRUGS PRESCRIBED TABLE */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Drugs prescribed:</strong>
+              <table className="w-full text-left border-2 border-slate-900 border-collapse text-xs">
                 <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
                   <tr>
-                    <th className="p-1.5 border-r border-slate-900">S.No</th>
-                    <th className="p-1.5 border-r border-slate-900">Brand Name</th>
+                    <th className="p-1.5 border-r border-slate-900 text-center w-10">S.no</th>
+                    <th className="p-1.5 border-r border-slate-900">Trade Name</th>
                     <th className="p-1.5 border-r border-slate-900">Generic Name</th>
-                    <th className="p-1.5 border-r border-slate-900">Dose</th>
-                    <th className="p-1.5 border-r border-slate-900">Route</th>
-                    <th className="p-1.5">Freq</th>
+                    <th className="p-1.5 border-r border-slate-900 text-center">R.O. A</th>
+                    <th className="p-1.5 border-r border-slate-900 text-center">Dose</th>
+                    <th className="p-1.5 border-r border-slate-900 text-center">FRQ</th>
+                    <th className="p-1.5 border-r border-slate-900 text-center">Start Date</th>
+                    <th className="p-1.5 text-center">Stop Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-900 font-serif">
                   {prescribedDrugs && prescribedDrugs.length > 0 ? (
                     prescribedDrugs.map((d, i) => (
                       <tr key={i} className="border-b border-slate-900">
-                        <td className="p-1.5 border-r border-slate-900 font-mono text-center">{d.s_no || i + 1}</td>
-                        <td className="p-1.5 border-r border-slate-900 font-bold">{d.trade_name}</td>
-                        <td className="p-1.5 border-r border-slate-900">{d.generic_name}</td>
-                        <td className="p-1.5 border-r border-slate-900 font-mono">{d.dose}</td>
-                        <td className="p-1.5 border-r border-slate-900">{d.route_of_admin}</td>
-                        <td className="p-1.5 font-bold">{d.frequency}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono text-center font-bold">{d.s_no || i + 1}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-bold text-slate-900">{d.trade_name || '—'}</td>
+                        <td className="p-1.5 border-r border-slate-900 italic">{d.generic_name || '—'}</td>
+                        <td className="p-1.5 border-r border-slate-900 text-center">{d.route_of_admin || 'Oral'}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono text-center font-bold">{d.dose || '—'}</td>
+                        <td className="p-1.5 border-r border-slate-900 text-center font-bold">{d.frequency || 'OD'}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-mono text-[10px] text-center">{d.start_date || '—'}</td>
+                        <td className="p-1.5 font-mono text-[10px] text-center">{d.stop_date || '—'}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={6} className="p-2 text-center italic text-slate-500">No prescribed drugs recorded.</td></tr>
+                    <tr><td colSpan={8} className="p-3 text-center italic text-slate-500">No prescribed drugs recorded.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* 11. DISCHARGE SUMMARY */}
-            {profile?.discharge_summary && (
-              <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-                <strong className="block uppercase font-bold border-b border-slate-900 pb-1">11. Discharge Summary & Outcome</strong>
-                <p className="p-2 border border-slate-900 bg-white font-serif">{profile.discharge_summary}</p>
-              </div>
-            )}
+            {/* DISCHARGE SUMMARY */}
+            <div className="space-y-1">
+              <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-0.5">Discharge Summary:</strong>
+              <p className="p-3 border border-slate-900 bg-white font-serif min-h-[80px]">
+                {profile?.discharge_summary || 'N/A'}
+              </p>
+            </div>
           </PharmDVerseBrandedDocumentContainer>
 
         </div>

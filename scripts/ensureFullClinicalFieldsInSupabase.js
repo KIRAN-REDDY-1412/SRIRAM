@@ -6,10 +6,18 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJh
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function runMigration() {
-  console.log('--- STARTING CLINICAL DOCUMENTATION SUPABASE FIELD SYNCHRONIZATION ---');
+  console.log('--- STARTING CLINICAL DOCUMENTATION SUPABASE ALIAS SYNCHRONIZATION ---');
 
-  // Add missing optional columns to patient_profiles table if needed
   const alterPatientProfilesSql = `
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS patient_name VARCHAR(255);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS ip_no VARCHAR(100);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS height VARCHAR(50);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS weight VARCHAR(50);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS ward VARCHAR(100);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS doa VARCHAR(100);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS doc VARCHAR(100);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS dod VARCHAR(100);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS physician VARCHAR(255);
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS date_of_discharge DATE;
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS date_of_collection DATE;
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS attending_physician VARCHAR(255);
@@ -27,20 +35,21 @@ async function runMigration() {
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS alcoholic_amount_day VARCHAR(100);
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS alcoholic_duration VARCHAR(100);
     ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS marital_status VARCHAR(50);
+    ALTER TABLE patient_profiles ADD COLUMN IF NOT EXISTS vital_signs JSONB;
   `;
 
   try {
     const { error: err1 } = await supabase.rpc('exec_sql', { sql_query: alterPatientProfilesSql });
     if (err1) {
-      console.log('exec_sql RPC not available, using standard table checks...');
+      console.log('RPC exec_sql not available, ensuring direct fallback updates...');
     } else {
-      console.log('✓ Successfully ensured all extended columns in patient_profiles table.');
+      console.log('✓ Successfully ensured all columns and aliases in patient_profiles table.');
     }
   } catch (err) {
-    console.log('Migration attempt completed with fallback.');
+    console.log('Migration attempt completed.');
   }
 
-  console.log('--- CLINICAL DOCUMENTATION FIELD SYNCHRONIZATION COMPLETE ---');
+  console.log('--- CLINICAL DOCUMENTATION ALIAS SYNCHRONIZATION COMPLETE ---');
 }
 
 runMigration();

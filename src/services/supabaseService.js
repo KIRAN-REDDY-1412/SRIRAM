@@ -1,6 +1,24 @@
 import { supabase } from '../lib/supabaseClient';
 
 /**
+ * SHA-256 Password Hashing Helper
+ * Uses Web Crypto API (SubtleCrypto) compatible with Browser and Node.js
+ */
+export const hashPassword = async (password) => {
+  if (!password) return null;
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (err) {
+    console.error('Password hashing error:', err);
+    return null;
+  }
+};
+
+/**
  * Upload college logo file to Supabase Storage bucket 'college-logos'
  */
 export const uploadCollegeLogoToSupabaseStorage = async (file) => {
@@ -19,7 +37,6 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 
     if (error) {
       console.warn('⚠️ [Supabase Storage Warning] Bucket upload notice:', error.message);
-      // Fallback: Convert file to Base64 Data URL if bucket is not created or accessible
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -135,13 +152,14 @@ export const approveCollegeInSupabase = async (request) => {
     // 2. Generate unique college_code
     const collegeCode = request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`;
 
-    // 3. Prepare payload for colleges table
+    // 3. Prepare payload for colleges table with college_admin_username from email
     const collegePayload = {
       registration_request_id: request.id,
       college_code: collegeCode,
       college_name: request.collegeName || request.college_name,
       college_logo_url: request.collegeLogoUrl || null,
       college_description: request.collegeDescription || null,
+      college_admin_username: request.email,
       address: request.address || null,
       city: request.city,
       district: request.district || null,
@@ -240,18 +258,20 @@ export const rejectCollegeInSupabase = async (requestId, remarks = '') => {
 /**
  * STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
  * Tables: colleges, subscriptions
+ * Includes college_admin_username & hashed password
  */
 export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, profileData) => {
   console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
 
   try {
-    // 1. Update colleges table with college_logo_url & college_description
+    // 1. Prepare college update payload
     const collegeUpdatePayload = {
       college_code: profileData.collegeCode,
       college_name: profileData.collegeName,
       college_logo: profileData.collegeLogo || profileData.logoBg || null,
       college_logo_url: profileData.collegeLogoUrl || null,
       college_description: profileData.collegeDescription || null,
+      college_admin_username: profileData.principalEmail, // Auto-synced from Principal Email
       address: profileData.address || null,
       city: profileData.city,
       district: profileData.district || null,
@@ -264,6 +284,15 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       principal_email: profileData.principalEmail || null,
       status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive'
     };
+
+    // If new password entered, hash it before saving
+    if (profileData.adminPassword) {
+      const passwordHash = await hashPassword(profileData.adminPassword);
+      if (passwordHash) {
+        collegeUpdatePayload.college_admin_password_hash = passwordHash;
+        console.log('🔐 [Security] Password hashed successfully using SHA-256!');
+      }
+    }
 
     console.log('➜ Updating colleges table with Payload:', collegeUpdatePayload);
 
@@ -325,6 +354,45 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
     return { success: true, data: updatedCollege ? updatedCollege[0] : null };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during profile update:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * College Admin Authentication
+ * Authenticate against college_admin_username & college_admin_password_hash
+ */
+export const authenticateCollegeAdminInSupabase = async (username, password) => {
+  console.log('[Supabase Auth] Authenticating College Admin Username:', username);
+
+  try {
+    const inputHash = await hashPassword(password);
+    if (!inputHash) return { success: false, error: 'Invalid password format' };
+
+    const { data: college, error } = await supabase
+      .from('colleges')
+      .select('*')
+      .eq('college_admin_username', username)
+      .maybeSingle();
+
+    if (error || !college) {
+      console.warn('⚠️ [Supabase Auth Failed] No college found with username:', username);
+      return { success: false, error: 'Invalid User ID or Password' };
+    }
+
+    if (!college.college_admin_password_hash) {
+      return { success: false, error: 'College Admin password has not been set by Super Admin.' };
+    }
+
+    if (college.college_admin_password_hash !== inputHash) {
+      console.warn('⚠️ [Supabase Auth Failed] Password mismatch for username:', username);
+      return { success: false, error: 'Invalid User ID or Password' };
+    }
+
+    console.log('✅ [Supabase Auth Success] College Admin authenticated successfully for:', college.college_name);
+    return { success: true, college };
+  } catch (err) {
+    console.error('❌ [Supabase Auth Error] Unexpected error:', err);
     return { success: false, error: err.message };
   }
 };

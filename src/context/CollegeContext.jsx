@@ -8,7 +8,8 @@ import {
   updateCollegeProfileAndSubscriptionInSupabase, 
   deleteCollegeFromSupabase, 
   deleteMultipleCollegesFromSupabase,
-  uploadCollegeLogoToSupabaseStorage
+  uploadCollegeLogoToSupabaseStorage,
+  authenticateCollegeAdminInSupabase
 } from '../services/supabaseService';
 
 const CollegeContext = createContext();
@@ -20,7 +21,7 @@ export const CollegeProvider = ({ children }) => {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // STEP 3 & STEP 7: Pure Live Supabase Fetch (Including college_logo_url & college_description)
+  // STEP 3 & STEP 7: Pure Live Supabase Fetch (Including college_admin_username)
   const loadSupabaseData = async () => {
     setIsLoading(true);
     console.log('[CollegeContext] Loading live data from Supabase PostgreSQL...');
@@ -36,6 +37,7 @@ export const CollegeProvider = ({ children }) => {
           code: c.college_code || c.code || '',
           logoUrl: c.college_logo_url || null,
           description: c.college_description || '',
+          adminUsername: c.college_admin_username || c.principal_email || '',
           city: c.city || '',
           state: c.state || '',
           district: c.district || '',
@@ -157,11 +159,17 @@ export const CollegeProvider = ({ children }) => {
     if (result.success) {
       await loadSupabaseData();
     }
+    return result;
   };
 
   // Upload College Logo
   const uploadCollegeLogo = async (file) => {
     return await uploadCollegeLogoToSupabaseStorage(file);
+  };
+
+  // Authenticate College Admin
+  const loginCollegeAdmin = async (username, password) => {
+    return await authenticateCollegeAdminInSupabase(username, password);
   };
 
   // Delete Single College -> Direct Supabase Deletion
@@ -191,6 +199,7 @@ export const CollegeProvider = ({ children }) => {
       rejectCollege,
       updateCollegeProfile,
       uploadCollegeLogo,
+      loginCollegeAdmin,
       deleteCollege,
       deleteMultipleColleges
     }}>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { useColleges } from '../../context/CollegeContext';
-import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, FileText, Upload, Loader2, CheckCircle2 } from 'lucide-react';
+import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, Upload, Loader2, CheckCircle2, KeyRound, Eye, EyeOff, Lock } from 'lucide-react';
 
 export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, isFullPage = false }) => {
-  const { uploadCollegeLogo } = useColleges();
+  const { uploadCollegeLogo, activeColleges } = useColleges();
 
   const [formData, setFormData] = useState({
     collegeName: '',
@@ -22,6 +22,8 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     principalName: '',
     principalMobile: '',
     principalEmail: '',
+    adminPassword: '',
+    confirmAdminPassword: '',
     subscriptionPlan: 'Professional',
     subscriptionStartDate: new Date().toISOString().split('T')[0],
     subscriptionExpiryDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
@@ -29,6 +31,9 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     subscriptionStatus: 'Active'
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadSuccess, setLogoUploadSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -37,6 +42,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
   useEffect(() => {
     if (college) {
+      const email = college.principalEmail || college.principal_email || college.email || '';
       setFormData({
         collegeName: college.name || college.collegeName || college.college_name || '',
         collegeCode: college.code || college.collegeCode || college.college_code || '',
@@ -52,13 +58,16 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         pciApprovalNo: college.pciApprovalNo || college.pci_approval_number || '',
         principalName: college.principalName || college.principal_name || college.contactName || college.contact_person || '',
         principalMobile: college.principalMobile || college.principal_mobile || college.mobileNumber || college.mobile_number || '',
-        principalEmail: college.principalEmail || college.principal_email || college.email || '',
+        principalEmail: email,
+        adminPassword: '',
+        confirmAdminPassword: '',
         subscriptionPlan: college.subscriptionPlan || 'Professional',
         subscriptionStartDate: college.subscriptionStartDate || new Date().toISOString().split('T')[0],
         subscriptionExpiryDate: college.subscriptionExpiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
         maxStudentsAllowed: college.maxStudentsAllowed || 600,
         subscriptionStatus: college.subscriptionStatus || 'Active'
       });
+      setValidationError('');
     }
   }, [college]);
 
@@ -68,13 +77,13 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setValidationError('');
   };
 
   const handleLogoFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type (JPG, PNG, SVG)
     const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       alert('Please upload a valid image file (JPG, PNG, WEBP, or SVG).');
@@ -101,18 +110,57 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError('');
+
+    // 1. Mandatory Principal Email
+    if (!formData.principalEmail || !formData.principalEmail.trim()) {
+      setValidationError('Principal Email Address is required and will be used as College Admin User ID.');
+      return;
+    }
+
+    // 2. Check User ID Uniqueness across existing active colleges (excluding current college)
+    const existingCollegeWithSameEmail = activeColleges.find(
+      c => c.id !== college?.id && (c.adminUsername?.toLowerCase() === formData.principalEmail.trim().toLowerCase() || c.principalEmail?.toLowerCase() === formData.principalEmail.trim().toLowerCase())
+    );
+
+    if (existingCollegeWithSameEmail) {
+      setValidationError(`User ID '${formData.principalEmail}' is already assigned to another college (${existingCollegeWithSameEmail.name}). User ID must be unique.`);
+      return;
+    }
+
+    // 3. Password Validation if password entered or updating credentials
+    if (formData.adminPassword || formData.confirmAdminPassword) {
+      if (formData.adminPassword.length < 8) {
+        setValidationError('College Admin Password must be at least 8 characters long.');
+        return;
+      }
+
+      if (formData.adminPassword !== formData.confirmAdminPassword) {
+        setValidationError('Password and Confirm Password do not match. Please verify both fields.');
+        return;
+      }
+    }
+
     setSaving(true);
-    setTimeout(() => {
-      onSave(college ? college.id : null, formData);
+    try {
+      const res = await onSave(college ? college.id : null, formData);
       setSaving(false);
-      setSavedSuccess(true);
-      setTimeout(() => {
-        setSavedSuccess(false);
-        if (onClose) onClose();
-      }, 500);
-    }, 450);
+
+      if (res && res.error) {
+        setValidationError(res.error);
+      } else {
+        setSavedSuccess(true);
+        setTimeout(() => {
+          setSavedSuccess(false);
+          if (onClose) onClose();
+        }, 500);
+      }
+    } catch (err) {
+      setSaving(false);
+      setValidationError(err.message || 'Failed to save college profile.');
+    }
   };
 
   const handleDeleteConfirm = () => {
@@ -132,8 +180,16 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
+
+      {/* VALIDATION ERROR BANNER */}
+      {validationError && (
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
+          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <span>{validationError}</span>
+        </div>
+      )}
       
-      {/* SECTION 1: COLLEGE BRANDING (NEW REQUIRED SECTION) */}
+      {/* SECTION 1: COLLEGE BRANDING */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <Image className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -142,14 +198,13 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           
-          {/* 1. College Logo Upload & Preview */}
+          {/* Logo Upload & Preview */}
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
               College Logo (JPG / PNG / SVG)
             </label>
 
             <div className="flex items-start gap-4 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60">
-              {/* Logo Preview */}
               <div className="relative shrink-0">
                 {formData.collegeLogoUrl ? (
                   <img
@@ -164,7 +219,6 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                 )}
               </div>
 
-              {/* Upload Action */}
               <div className="flex-1 space-y-1.5">
                 <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-emerald-600 dark:bg-slate-800 dark:hover:bg-emerald-600 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs">
                   {uploadingLogo ? (
@@ -200,7 +254,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                     onClick={() => setFormData(prev => ({ ...prev, collegeLogoUrl: '' }))}
                     className="block text-[10px] text-rose-600 dark:text-rose-400 hover:underline font-semibold"
                   >
-                    Remove uploaded logo (Use default placeholder)
+                    Remove uploaded logo (Use placeholder)
                   </button>
                 )}
 
@@ -209,7 +263,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
             </div>
           </div>
 
-          {/* 2. College Description Textarea */}
+          {/* College Description Textarea */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -379,45 +433,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         </div>
       </div>
 
-      {/* SECTION 4: ACADEMIC INFORMATION */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          Academic Information
-        </h4>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              University Affiliation
-            </label>
-            <input
-              type="text"
-              name="universityAffiliation"
-              value={formData.universityAffiliation}
-              onChange={handleChange}
-              placeholder="Enter university affiliation"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              PCI Approval Number
-            </label>
-            <input
-              type="text"
-              name="pciApprovalNo"
-              value={formData.pciApprovalNo}
-              onChange={handleChange}
-              placeholder="Enter PCI approval number"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION 5: PRINCIPAL INFORMATION */}
+      {/* SECTION 4: PRINCIPAL INFORMATION */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -457,7 +473,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Email Address *
+              Email Address * (Used as User ID)
             </label>
             <input
               type="email"
@@ -465,7 +481,135 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.principalEmail}
               onChange={handleChange}
-              placeholder="Enter email address"
+              placeholder="e.g. principal@amrcp.edu.in"
+              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* SECTION 4.5: COLLEGE ADMIN LOGIN CREDENTIALS (NEW MANDATORY SECTION) */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-4">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h5 className="text-xs font-extrabold uppercase tracking-wider text-indigo-900 dark:text-indigo-300">
+              College Admin Login Credentials
+            </h5>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/60 space-y-4">
+            
+            {/* User ID (Read-Only, Auto-Synced from Principal Email) */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                User ID (Read Only • Auto-populated from Principal Email)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={formData.principalEmail}
+                  placeholder="Populates automatically from Principal Email"
+                  className="w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border border-indigo-200 dark:border-indigo-900/80 bg-white/80 dark:bg-slate-900/80 text-indigo-950 dark:text-indigo-200 font-bold cursor-not-allowed"
+                />
+                <Lock className="w-3.5 h-3.5 text-indigo-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Whenever the Principal Email Address above changes, this User ID updates automatically.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Admin Password * (Min 8 chars)
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="adminPassword"
+                    value={formData.adminPassword}
+                    onChange={handleChange}
+                    placeholder="Enter admin password (min 8 chars)"
+                    className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 absolute right-1.5 top-1/2 -translate-y-1/2 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmAdminPassword"
+                    value={formData.confirmAdminPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm admin password"
+                    className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 absolute right-1.5 top-1/2 -translate-y-1/2 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Password strength tips */}
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
+              🔒 Password will be securely hashed with SHA-256 before saving to database. Plain-text passwords are never stored.
+            </p>
+
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 5: ACADEMIC INFORMATION */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          Academic Information
+        </h4>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              University Affiliation
+            </label>
+            <input
+              type="text"
+              name="universityAffiliation"
+              value={formData.universityAffiliation}
+              onChange={handleChange}
+              placeholder="Enter university affiliation"
+              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              PCI Approval Number
+            </label>
+            <input
+              type="text"
+              name="pciApprovalNo"
+              value={formData.pciApprovalNo}
+              onChange={handleChange}
+              placeholder="Enter PCI approval number"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>

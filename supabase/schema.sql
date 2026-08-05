@@ -45,7 +45,7 @@ CREATE TRIGGER set_updated_at_registration_requests
 
 -- ====================================================================
 -- TABLE 2: colleges
--- Purpose: Stores approved pharmacy colleges with branding details.
+-- Purpose: Stores approved pharmacy colleges with branding and admin auth credentials.
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS public.colleges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS public.colleges (
     college_logo TEXT NULL,
     college_logo_url TEXT NULL,
     college_description TEXT NULL,
+    college_admin_username TEXT NULL UNIQUE,
+    college_admin_password_hash TEXT NULL,
     address TEXT NULL,
     city VARCHAR(100) NOT NULL,
     district VARCHAR(100) NULL,
@@ -138,6 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_registration_requests_status ON public.registrati
 
 CREATE INDEX IF NOT EXISTS idx_colleges_code ON public.colleges(college_code);
 CREATE INDEX IF NOT EXISTS idx_colleges_status ON public.colleges(status);
+CREATE INDEX IF NOT EXISTS idx_colleges_admin_username ON public.colleges(college_admin_username);
 CREATE INDEX IF NOT EXISTS idx_colleges_registration_request ON public.colleges(registration_request_id);
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_college_id ON public.subscriptions(college_id);

@@ -66,6 +66,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
 /**
  * STEP 4 & STEP 6: Approve registration request, insert into colleges & subscriptions tables
  * Tables: registration_requests, colleges, subscriptions
+ * (NO fake default suggestions - empty fields remain NULL/empty)
  */
 export const approveCollegeInSupabase = async (request) => {
   console.log('[Supabase Operation] Approving Request ID:', request.id);
@@ -88,25 +89,25 @@ export const approveCollegeInSupabase = async (request) => {
     // 2. Generate unique college_code
     const collegeCode = request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`;
 
-    // 3. Prepare payload for colleges table with all location and academic fields populated
+    // 3. Prepare payload for colleges table - ONLY actual user-entered data (NO fake defaults)
     const collegePayload = {
       registration_request_id: request.id,
       college_code: collegeCode,
       college_name: request.collegeName || request.college_name,
-      address: request.address || `${request.city}, ${request.state}`,
+      address: request.address || null,
       city: request.city,
-      district: request.district || request.city,
+      district: request.district || null,
       state: request.state,
-      pincode: request.pinCode || request.pincode || '500001',
-      university_affiliation: request.universityAffiliation || 'State Health Sciences University',
-      pci_approval_number: request.pciApprovalNo || `PCI-${(request.state || 'IND').substring(0, 3).toUpperCase()}-2026/100`,
+      pincode: request.pinCode || request.pincode || null,
+      university_affiliation: request.universityAffiliation || null,
+      pci_approval_number: request.pciApprovalNo || null,
       principal_name: request.contactName || request.contact_person,
       principal_mobile: request.mobileNumber || request.mobile_number,
       principal_email: request.email,
       status: 'Active'
     };
 
-    console.log('➜ Inserting into colleges table with Full Payload:', collegePayload);
+    console.log('➜ Inserting into colleges table with Payload:', collegePayload);
 
     const { data: collegeData, error: collegeErr } = await supabase
       .from('colleges')
@@ -191,6 +192,7 @@ export const rejectCollegeInSupabase = async (requestId, remarks = '') => {
 /**
  * STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
  * Tables: colleges, subscriptions
+ * (Saves exactly what Super Admin enters - NO fake defaults)
  */
 export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, profileData) => {
   console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
@@ -200,17 +202,17 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
     const collegeUpdatePayload = {
       college_code: profileData.collegeCode,
       college_name: profileData.collegeName,
-      college_logo: profileData.collegeLogo || profileData.logoBg,
-      address: profileData.address,
+      college_logo: profileData.collegeLogo || profileData.logoBg || null,
+      address: profileData.address || null,
       city: profileData.city,
-      district: profileData.district || profileData.city,
+      district: profileData.district || null,
       state: profileData.state,
-      pincode: profileData.pinCode || profileData.pincode,
-      university_affiliation: profileData.universityAffiliation,
-      pci_approval_number: profileData.pciApprovalNo || profileData.pci_approval_number,
-      principal_name: profileData.principalName,
-      principal_mobile: profileData.principalMobile,
-      principal_email: profileData.principalEmail,
+      pincode: profileData.pinCode || profileData.pincode || null,
+      university_affiliation: profileData.universityAffiliation || null,
+      pci_approval_number: profileData.pciApprovalNo || profileData.pci_approval_number || null,
+      principal_name: profileData.principalName || null,
+      principal_mobile: profileData.principalMobile || null,
+      principal_email: profileData.principalEmail || null,
       status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive'
     };
 

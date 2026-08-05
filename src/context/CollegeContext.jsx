@@ -19,7 +19,7 @@ export const CollegeProvider = ({ children }) => {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // STEP 3 & STEP 7: Pure Live Supabase Fetch
+  // STEP 3 & STEP 7: Pure Live Supabase Fetch (Zero Artificial Default Suggestions)
   const loadSupabaseData = async () => {
     setIsLoading(true);
     console.log('[CollegeContext] Loading live data from Supabase PostgreSQL...');
@@ -31,18 +31,18 @@ export const CollegeProvider = ({ children }) => {
         const sub = c.subscriptions && c.subscriptions[0] ? c.subscriptions[0] : null;
         return {
           id: c.id,
-          name: c.college_name || c.name,
-          code: c.college_code || c.code,
-          city: c.city,
-          state: c.state,
-          district: c.district,
-          pinCode: c.pincode || c.pin_code,
-          address: c.address,
-          universityAffiliation: c.university_affiliation,
-          pciApprovalNo: c.pci_approval_number || c.pci_approval_no,
-          principalName: c.principal_name,
-          principalMobile: c.principal_mobile,
-          principalEmail: c.principal_email,
+          name: c.college_name || c.name || '',
+          code: c.college_code || c.code || '',
+          city: c.city || '',
+          state: c.state || '',
+          district: c.district || '',
+          pinCode: c.pincode || c.pin_code || '',
+          address: c.address || '',
+          universityAffiliation: c.university_affiliation || '',
+          pciApprovalNo: c.pci_approval_number || c.pci_approval_no || '',
+          principalName: c.principal_name || '',
+          principalMobile: c.principal_mobile || '',
+          principalEmail: c.principal_email || '',
           logoBg: c.college_logo || c.logo_bg || 'from-emerald-600 to-teal-700',
           initials: (c.college_name || c.name) ? (c.college_name || c.name).split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
           studentsCount: sub ? sub.maximum_students : 600,
@@ -74,22 +74,22 @@ export const CollegeProvider = ({ children }) => {
     if (requestsRes.success && Array.isArray(requestsRes.data)) {
       const mappedRequests = requestsRes.data.map(r => ({
         id: r.id,
-        collegeName: r.college_name,
-        city: r.city,
-        state: r.state,
-        contactName: r.contact_person || r.contact_name,
-        mobileNumber: r.mobile_number,
-        email: r.email,
+        collegeName: r.college_name || '',
+        city: r.city || '',
+        state: r.state || '',
+        contactName: r.contact_person || r.contact_name || '',
+        mobileNumber: r.mobile_number || '',
+        email: r.email || '',
         status: r.status || 'Pending',
         remarks: r.remarks || '',
         submittedDate: r.submitted_at ? r.submitted_at.split('T')[0] : (r.created_at ? r.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
-        address: `${r.city}, ${r.state}`,
-        district: r.city,
-        pinCode: '500001',
-        universityAffiliation: 'State Health Sciences University',
-        pciApprovalNo: `PCI-${r.state.substring(0, 3).toUpperCase()}-2026/100`,
-        code: r.college_name.split(' ').map(w => w[0]).join('').toUpperCase() + `-${r.city.substring(0, 3).toUpperCase()}`,
-        initials: r.college_name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase(),
+        address: r.address || '',
+        district: r.district || '',
+        pinCode: r.pincode || r.pin_code || '',
+        universityAffiliation: r.university_affiliation || '',
+        pciApprovalNo: r.pci_approval_number || r.pci_approval_no || '',
+        code: r.college_name ? r.college_name.split(' ').map(w => w[0]).join('').toUpperCase() + `-${(r.city || 'CLG').substring(0, 3).toUpperCase()}` : '',
+        initials: r.college_name ? r.college_name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
         logoBg: 'from-teal-600 to-emerald-700',
         subscriptionPlan: 'Professional',
         subscriptionStartDate: new Date().toISOString().split('T')[0],

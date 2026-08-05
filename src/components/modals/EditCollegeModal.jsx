@@ -31,19 +31,19 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   useEffect(() => {
     if (college) {
       setFormData({
-        collegeName: college.name || college.collegeName || '',
-        collegeCode: college.code || '',
-        logoBg: college.logoBg || 'from-emerald-600 to-teal-700',
-        address: college.address || `${college.city || ''}, ${college.state || ''}`,
+        collegeName: college.name || college.collegeName || college.college_name || '',
+        collegeCode: college.code || college.collegeCode || college.college_code || '',
+        logoBg: college.logoBg || college.college_logo || 'from-emerald-600 to-teal-700',
+        address: college.address || '',
         city: college.city || '',
-        district: college.district || college.city || '',
+        district: college.district || '',
         state: college.state || '',
-        pinCode: college.pinCode || '500001',
-        universityAffiliation: college.universityAffiliation || 'State Health Sciences University',
-        pciApprovalNo: college.pciApprovalNo || `PCI-${(college.state || 'IND').substring(0, 3).toUpperCase()}-2026/102`,
-        principalName: college.principalName || college.contactName || '',
-        principalMobile: college.principalMobile || college.mobileNumber || '',
-        principalEmail: college.principalEmail || college.email || '',
+        pinCode: college.pinCode || college.pincode || '',
+        universityAffiliation: college.universityAffiliation || college.university_affiliation || '',
+        pciApprovalNo: college.pciApprovalNo || college.pci_approval_number || '',
+        principalName: college.principalName || college.principal_name || college.contactName || college.contact_person || '',
+        principalMobile: college.principalMobile || college.principal_mobile || college.mobileNumber || college.mobile_number || '',
+        principalEmail: college.principalEmail || college.principal_email || college.email || '',
         subscriptionPlan: college.subscriptionPlan || 'Professional',
         subscriptionStartDate: college.subscriptionStartDate || new Date().toISOString().split('T')[0],
         subscriptionExpiryDate: college.subscriptionExpiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
@@ -111,6 +111,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.collegeName}
               onChange={handleChange}
+              placeholder="Enter college name"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -125,6 +126,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.collegeCode}
               onChange={handleChange}
+              placeholder="Enter college code"
               className="w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -163,14 +165,14 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Campus Address *
+            Campus Address
           </label>
           <input
             type="text"
             name="address"
-            required
             value={formData.address}
             onChange={handleChange}
+            placeholder="Enter campus address"
             className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
           />
         </div>
@@ -186,6 +188,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.city}
               onChange={handleChange}
+              placeholder="Enter city"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -199,6 +202,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               name="district"
               value={formData.district}
               onChange={handleChange}
+              placeholder="Enter district"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -213,20 +217,21 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.state}
               onChange={handleChange}
+              placeholder="Enter state"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              PIN Code *
+              PIN Code
             </label>
             <input
               type="text"
               name="pinCode"
-              required
               value={formData.pinCode}
               onChange={handleChange}
+              placeholder="Enter PIN code"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -243,28 +248,28 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              University Affiliation *
+              University Affiliation
             </label>
             <input
               type="text"
               name="universityAffiliation"
-              required
               value={formData.universityAffiliation}
               onChange={handleChange}
+              placeholder="Enter university affiliation"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              PCI Approval Number *
+              PCI Approval Number
             </label>
             <input
               type="text"
               name="pciApprovalNo"
-              required
               value={formData.pciApprovalNo}
               onChange={handleChange}
+              placeholder="Enter PCI approval number"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -289,6 +294,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.principalName}
               onChange={handleChange}
+              placeholder="Enter principal name"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -303,6 +309,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.principalMobile}
               onChange={handleChange}
+              placeholder="Enter mobile number"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -317,6 +324,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               required
               value={formData.principalEmail}
               onChange={handleChange}
+              placeholder="Enter email address"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>

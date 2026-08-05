@@ -1,20 +1,47 @@
-import React, { useState } from 'react';
-import { Building2, User, Phone, Mail, KeyRound, Eye, EyeOff, Save, CheckCircle2, AlertTriangle, Image, Upload, Trash2, RefreshCw, X, ShieldCheck, Award } from 'lucide-react';
-import { updateCollegeProfileAndSubscriptionInSupabase, uploadCollegeLogoToSupabaseStorage } from '../../services/supabaseService';
+import React, { useState, useEffect } from 'react';
+import { Building2, User, KeyRound, Eye, EyeOff, Save, CheckCircle2, AlertTriangle, Upload, Trash2, RefreshCw, Award } from 'lucide-react';
+import { updateCollegeProfileAndSubscriptionInSupabase, uploadCollegeLogoToSupabaseStorage, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
-export const CollegeAdminProfileView = ({ college, onProfileUpdated }) => {
+export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpdated }) => {
+  const [currentCollege, setCurrentCollege] = useState(initialCollege);
+
   const [formData, setFormData] = useState({
-    collegeName: college?.name || college?.college_name || '',
-    isAutonomous: Boolean(college?.isAutonomous ?? college?.is_autonomous ?? false),
-    hospitalName: college?.hospitalName || college?.hospital_name || 'Lalitha Superspecialities Hospital',
-    collegeLogoUrl: college?.logoUrl || college?.college_logo_url || '',
-    hospitalLogoUrl: college?.hospitalLogoUrl || college?.hospital_logo_url || '',
-    principalName: college?.principalName || college?.principal_name || '',
-    principalMobile: college?.principalMobile || college?.principal_mobile || '',
-    principalEmail: college?.principalEmail || college?.principal_email || college?.adminUsername || '',
+    collegeName: initialCollege?.name || initialCollege?.college_name || '',
+    isAutonomous: Boolean(initialCollege?.isAutonomous ?? initialCollege?.is_autonomous ?? false),
+    hospitalName: initialCollege?.hospitalName || initialCollege?.hospital_name || 'Lalitha Superspecialities Hospital',
+    collegeLogoUrl: initialCollege?.logoUrl || initialCollege?.college_logo_url || '',
+    hospitalLogoUrl: initialCollege?.hospitalLogoUrl || initialCollege?.hospital_logo_url || '',
+    principalName: initialCollege?.principalName || initialCollege?.principal_name || '',
+    principalMobile: initialCollege?.principalMobile || initialCollege?.principal_mobile || '',
+    principalEmail: initialCollege?.principalEmail || initialCollege?.principal_email || initialCollege?.adminUsername || '',
     newPassword: '',
     confirmNewPassword: ''
   });
+
+  // FETCH FRESH COLLEGE RECORD DIRECTLY FROM SUPABASE ON MOUNT
+  useEffect(() => {
+    const loadFreshCollege = async () => {
+      if (initialCollege?.id) {
+        const res = await fetchCollegeByIdFromSupabase(initialCollege.id);
+        if (res.success && res.college) {
+          const fresh = res.college;
+          setCurrentCollege(fresh);
+          setFormData(prev => ({
+            ...prev,
+            collegeName: fresh.college_name || prev.collegeName,
+            isAutonomous: Boolean(fresh.is_autonomous),
+            hospitalName: fresh.hospital_name || prev.hospitalName,
+            collegeLogoUrl: fresh.college_logo_url || prev.collegeLogoUrl,
+            hospitalLogoUrl: fresh.hospital_logo_url || prev.hospitalLogoUrl,
+            principalName: fresh.principal_name || prev.principalName,
+            principalMobile: fresh.principal_mobile || prev.principalMobile,
+            principalEmail: fresh.principal_email || prev.principalEmail
+          }));
+        }
+      }
+    };
+    loadFreshCollege();
+  }, [initialCollege?.id]);
 
   const [uploadingCollegeLogo, setUploadingCollegeLogo] = useState(false);
   const [uploadingHospitalLogo, setUploadingHospitalLogo] = useState(false);
@@ -79,14 +106,14 @@ export const CollegeAdminProfileView = ({ college, onProfileUpdated }) => {
   const handleReset = () => {
     if (window.confirm('Reset all changes back to currently saved profile data?')) {
       setFormData({
-        collegeName: college?.name || college?.college_name || '',
-        isAutonomous: Boolean(college?.isAutonomous ?? college?.is_autonomous ?? false),
-        hospitalName: college?.hospitalName || college?.hospital_name || 'Lalitha Superspecialities Hospital',
-        collegeLogoUrl: college?.logoUrl || college?.college_logo_url || '',
-        hospitalLogoUrl: college?.hospitalLogoUrl || college?.hospital_logo_url || '',
-        principalName: college?.principalName || college?.principal_name || '',
-        principalMobile: college?.principalMobile || college?.principal_mobile || '',
-        principalEmail: college?.principalEmail || college?.principal_email || college?.adminUsername || '',
+        collegeName: currentCollege?.name || currentCollege?.college_name || '',
+        isAutonomous: Boolean(currentCollege?.isAutonomous ?? currentCollege?.is_autonomous ?? false),
+        hospitalName: currentCollege?.hospitalName || currentCollege?.hospital_name || 'Lalitha Superspecialities Hospital',
+        collegeLogoUrl: currentCollege?.logoUrl || currentCollege?.college_logo_url || '',
+        hospitalLogoUrl: currentCollege?.hospitalLogoUrl || currentCollege?.hospital_logo_url || '',
+        principalName: currentCollege?.principalName || currentCollege?.principal_name || '',
+        principalMobile: currentCollege?.principalMobile || currentCollege?.principal_mobile || '',
+        principalEmail: currentCollege?.principalEmail || currentCollege?.principal_email || currentCollege?.adminUsername || '',
         newPassword: '',
         confirmNewPassword: ''
       });
@@ -116,31 +143,37 @@ export const CollegeAdminProfileView = ({ college, onProfileUpdated }) => {
 
     setSaving(true);
     const updatePayload = {
-      collegeCode: college.code || college.college_code,
+      collegeCode: currentCollege.code || currentCollege.college_code,
       collegeName: formData.collegeName,
       collegeLogoUrl: formData.collegeLogoUrl,
       hospitalName: formData.hospitalName,
       hospitalLogoUrl: formData.hospitalLogoUrl,
       isAutonomous: formData.isAutonomous,
-      collegeDescription: college.description || college.college_description,
-      city: college.city,
-      state: college.state,
+      collegeDescription: currentCollege.description || currentCollege.college_description,
+      city: currentCollege.city,
+      state: currentCollege.state,
       principalName: formData.principalName,
       principalMobile: formData.principalMobile,
       principalEmail: formData.principalEmail,
       adminPassword: formData.newPassword || undefined,
-      subscriptionPlan: college.subscriptionPlan || 'Professional',
-      subscriptionStatus: college.status || 'Active'
+      subscriptionPlan: currentCollege.subscriptionPlan || 'Professional',
+      subscriptionStatus: currentCollege.status || 'Active'
     };
 
-    const res = await updateCollegeProfileAndSubscriptionInSupabase(college.id, updatePayload);
+    const res = await updateCollegeProfileAndSubscriptionInSupabase(currentCollege.id, updatePayload);
     setSaving(false);
 
-    if (res.success) {
-      setSuccessMsg('College & Hospital Identity and Admin Profile saved successfully! All generated Print & PDF documents will now reflect these updates.');
+    if (res.success && res.college) {
+      const updatedCollegeRecord = res.college;
+      setCurrentCollege(updatedCollegeRecord);
+
+      // BROADCAST LIVE SYNCHRONIZATION EVENT TO ALL LAYOUTS, PREVIEWS & BRANDING MODULES
+      window.dispatchEvent(new CustomEvent('pharmdverse_college_updated', { detail: updatedCollegeRecord }));
+
+      setSuccessMsg('College & Hospital Identity saved to Supabase! Autonomous status, logos, and headers have been updated everywhere across PharmDVerse.');
       setTimeout(() => {
         setSuccessMsg('');
-        if (onProfileUpdated) onProfileUpdated();
+        if (onProfileUpdated) onProfileUpdated(updatedCollegeRecord);
       }, 1500);
     } else {
       setErrorMsg(res.error || 'Failed to update College Profile.');
@@ -224,7 +257,7 @@ export const CollegeAdminProfileView = ({ college, onProfileUpdated }) => {
                   <option value="Yes">Yes (Autonomous)</option>
                 </select>
                 <p className="text-[10px] text-slate-400 mt-1 italic">
-                  When enabled, "(Autonomous)" will automatically display below College Name in all Print & PDF documents.
+                  When set to "Yes", "(Autonomous)" will automatically display below College Name in all Print & PDF documents.
                 </p>
               </div>
             </div>
@@ -436,7 +469,7 @@ export const CollegeAdminProfileView = ({ college, onProfileUpdated }) => {
           </div>
         </div>
 
-        {/* BUTTONS: SAVE CHANGES, RESET, CANCEL */}
+        {/* BUTTONS: SAVE CHANGES, RESET */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"

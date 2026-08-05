@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Palette, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info } from 'lucide-react';
-import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase } from '../../services/supabaseService';
+import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
@@ -40,7 +40,8 @@ const DEFAULT_SETTINGS = {
   show_preceptor_signature: true
 };
 
-export const DocumentBrandingView = ({ college }) => {
+export const DocumentBrandingView = ({ college: initialCollege }) => {
+  const [college, setCollege] = useState(initialCollege);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -50,14 +51,38 @@ export const DocumentBrandingView = ({ college }) => {
 
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
+  useEffect(() => {
+    setCollege(initialCollege);
+  }, [initialCollege]);
+
+  // LIVE SYNCHRONIZATION FOR COLLEGE IDENTITY
+  useEffect(() => {
+    const handleCollegeUpdated = (e) => {
+      if (e.detail) {
+        setCollege(e.detail);
+      }
+    };
+    window.addEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+    return () => window.removeEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+  }, []);
+
   const loadBranding = async () => {
-    if (!college) return;
+    if (!college?.id) return;
     setLoading(true);
-    const res = await fetchDocumentBrandingSettingsFromSupabase(college.id);
-    if (res.success && res.settings) {
+
+    const [brandingRes, collegeRes] = await Promise.all([
+      fetchDocumentBrandingSettingsFromSupabase(college.id),
+      fetchCollegeByIdFromSupabase(college.id)
+    ]);
+
+    if (collegeRes.success && collegeRes.college) {
+      setCollege(collegeRes.college);
+    }
+
+    if (brandingRes.success && brandingRes.settings) {
       const loadedSettings = {
         ...DEFAULT_SETTINGS,
-        ...res.settings
+        ...brandingRes.settings
       };
       setSettings(loadedSettings);
       window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: loadedSettings }));
@@ -69,7 +94,7 @@ export const DocumentBrandingView = ({ college }) => {
 
   useEffect(() => {
     loadBranding();
-  }, [college]);
+  }, [college?.id]);
 
   const handleToggle = (key) => {
     const nextVal = !settings[key];
@@ -93,7 +118,7 @@ export const DocumentBrandingView = ({ college }) => {
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
-    if (!college) return;
+    if (!college?.id) return;
 
     setSaving(true);
     setErrorMsg('');
@@ -136,7 +161,7 @@ export const DocumentBrandingView = ({ college }) => {
             <span>Document Branding Configuration</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Centralized PDF & Print Preview branding for all clinical documentation modules in <strong className="text-slate-800 dark:text-slate-200">{college?.college_name}</strong>.
+            Centralized PDF & Print Preview branding for all clinical documentation modules in <strong className="text-slate-800 dark:text-slate-200">{college?.college_name || college?.name}</strong>.
           </p>
         </div>
 

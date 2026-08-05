@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
 import { CollegeAdminDashboardView } from './CollegeAdminDashboardView';
 import { AddPreceptorView } from './AddPreceptorView';
@@ -12,15 +13,50 @@ import { AssignmentListView } from './AssignmentListView';
 import { DocumentBrandingView } from './DocumentBrandingView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 
-export const CollegeAdminLayout = ({ college, onLogout }) => {
+export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'document-branding' | 'profile'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [college, setCollege] = useState(initialCollege);
+
+  useEffect(() => {
+    setCollege(initialCollege);
+  }, [initialCollege]);
+
+  // LIVE SYNCHRONIZATION LISTENER FOR COLLEGE UPDATES
+  useEffect(() => {
+    const handleCollegeUpdated = (e) => {
+      if (e.detail) {
+        setCollege(e.detail);
+      }
+    };
+    window.addEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+    return () => window.removeEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+  }, []);
+
+  // ALSO FETCH FRESH COLLEGE RECORD DIRECTLY FROM SUPABASE ON MOUNT
+  useEffect(() => {
+    const loadFreshCollege = async () => {
+      if (initialCollege?.id) {
+        const res = await fetchCollegeByIdFromSupabase(initialCollege.id);
+        if (res.success && res.college) {
+          setCollege(res.college);
+        }
+      }
+    };
+    loadFreshCollege();
+  }, [initialCollege?.id]);
 
   const handleNavigate = (tab) => {
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleProfileUpdated = (updatedCollege) => {
+    if (updatedCollege) {
+      setCollege(updatedCollege);
+    }
   };
 
   return (
@@ -35,10 +71,10 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
           {/* SIDEBAR BRANDING HEADER */}
           <div className="h-16 px-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {college?.logoUrl ? (
+              {college?.college_logo_url || college?.logoUrl ? (
                 <img
-                  src={college.logoUrl}
-                  alt={college.name}
+                  src={college.college_logo_url || college.logoUrl}
+                  alt={college.college_name || college.name}
                   className="w-8 h-8 rounded-xl object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5 shadow-xs"
                 />
               ) : (
@@ -48,10 +84,10 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
               )}
               <div>
                 <strong className="block text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[130px]">
-                  {college?.name || 'College Admin'}
+                  {college?.college_name || college?.name || 'College Admin'}
                 </strong>
                 <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                  {college?.code || 'ADMIN'}
+                  {college?.college_code || college?.code || 'ADMIN'}
                 </span>
               </div>
             </div>
@@ -196,7 +232,7 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             <div className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                {college?.name} <span className="text-slate-400 font-normal text-xs hidden sm:inline">| College Admin Portal</span>
+                {college?.college_name || college?.name} <span className="text-slate-400 font-normal text-xs hidden sm:inline">| College Admin Portal</span>
               </h1>
             </div>
           </div>
@@ -274,14 +310,14 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
           {activeTab === 'profile' && (
             <CollegeAdminProfileView
               college={college}
-              onProfileUpdated={() => handleNavigate('dashboard')}
+              onProfileUpdated={handleProfileUpdated}
             />
           )}
         </main>
 
         {/* FOOTER */}
         <footer className="py-4 px-6 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-center text-xs text-slate-500 dark:text-slate-400">
-          <p>© 2026 PharmDVerse Cloud. College Admin Module for {college?.name}. All rights reserved.</p>
+          <p>© 2026 PharmDVerse Cloud. College Admin Module for {college?.college_name || college?.name}. All rights reserved.</p>
         </footer>
 
       </div>

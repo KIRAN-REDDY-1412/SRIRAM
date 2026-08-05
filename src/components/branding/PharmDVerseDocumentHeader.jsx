@@ -1,17 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
-export const PharmDVerseDocumentHeader = ({ college, branding, documentTitle, caseId }) => {
+export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, documentTitle, caseId }) => {
+  const [currentCollege, setCurrentCollege] = useState(initialCollege);
+
+  useEffect(() => {
+    setCurrentCollege(initialCollege);
+  }, [initialCollege]);
+
+  // LIVE SYNCHRONIZATION FOR COLLEGE IDENTITY (AUTONOMOUS STATUS, LOGOS, NAMES)
+  useEffect(() => {
+    const handleCollegeUpdated = (e) => {
+      if (e.detail) {
+        setCurrentCollege(e.detail);
+      }
+    };
+
+    window.addEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+    return () => window.removeEventListener('pharmdverse_college_updated', handleCollegeUpdated);
+  }, []);
+
+  // ALSO FETCH FRESH COLLEGE RECORD DIRECTLY FROM SUPABASE IF ID EXISTS
+  useEffect(() => {
+    const fetchFreshCollege = async () => {
+      if (initialCollege?.id) {
+        const res = await fetchCollegeByIdFromSupabase(initialCollege.id);
+        if (res.success && res.college) {
+          setCurrentCollege(res.college);
+        }
+      }
+    };
+    fetchFreshCollege();
+  }, [initialCollege?.id]);
+
   const showCollegeLogo = branding?.show_college_logo ?? true;
   const showCollegeName = branding?.show_college_name ?? true;
   const showAutonomous = branding?.show_autonomous ?? true;
   const showHospitalLogo = branding?.show_hospital_logo ?? true;
   const showHospitalName = branding?.show_hospital_name ?? true;
 
-  const collegeName = college?.college_name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const collegeLogoUrl = college?.college_logo_url;
-  const hospitalName = college?.hospital_name || 'Lalitha Superspecialities Hospital';
-  const hospitalLogoUrl = college?.hospital_logo_url;
-  const isAutonomous = Boolean(college?.is_autonomous);
+  const collegeName = currentCollege?.college_name || currentCollege?.name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
+  const collegeLogoUrl = currentCollege?.college_logo_url || currentCollege?.logoUrl;
+  const hospitalName = currentCollege?.hospital_name || currentCollege?.hospitalName || 'Lalitha Superspecialities Hospital';
+  const hospitalLogoUrl = currentCollege?.hospital_logo_url || currentCollege?.hospitalLogoUrl;
+  
+  // SINGLE SOURCE OF TRUTH FOR AUTONOMOUS STATUS
+  const isAutonomous = Boolean(currentCollege?.is_autonomous ?? currentCollege?.isAutonomous);
 
   return (
     <div className="space-y-2 mb-6 text-slate-900 font-serif">

@@ -65,10 +65,19 @@ export const uploadProfilePhotoToSupabaseStorage = async (file, folder = 'profil
 };
 
 /**
- * Upload college logo file to Supabase Storage bucket 'college-logos'
+ * Upload college logo file to Supabase Storage bucket 'college-logos' (500 KB limit)
  */
 export const uploadCollegeLogoToSupabaseStorage = async (file) => {
   if (!file) return { success: false, error: 'No file provided' };
+
+  if (file.size > 500 * 1024) {
+    return { success: false, error: 'File size exceeds 500 KB limit. Please choose a smaller image.' };
+  }
+
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  if (!validTypes.includes(file.type.toLowerCase())) {
+    return { success: false, error: 'Invalid file format. Only JPG, JPEG, and PNG images are allowed.' };
+  }
 
   try {
     const fileExt = file.name.split('.').pop();
@@ -98,6 +107,25 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
       reader.onloadend = () => resolve({ success: true, url: reader.result });
       reader.readAsDataURL(file);
     });
+  }
+};
+
+// ====================================================================
+// COLLEGE FETCH SERVICE
+// ====================================================================
+
+export const fetchCollegeByIdFromSupabase = async (collegeId) => {
+  try {
+    const { data, error } = await supabase
+      .from('colleges')
+      .select('*')
+      .eq('id', collegeId)
+      .maybeSingle();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, college: data };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 };
 
@@ -225,8 +253,6 @@ export const generateUniqueAdrNumberInSupabase = async (collegeCode = 'AMRMCP') 
 };
 
 export const fetchADRReportByCaseIdFromSupabase = async (clinicalCaseId) => {
-  console.log('[Supabase Operation] Fetching ADR Report for Case ID:', clinicalCaseId);
-
   try {
     const { data: report, error } = await supabase
       .from('adr_reports')
@@ -245,14 +271,11 @@ export const fetchADRReportByCaseIdFromSupabase = async (clinicalCaseId) => {
       attachments: report.attachments || []
     };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error fetching ADR report:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const saveOrUpdateADRReportInSupabase = async (masterPayload, suspectedMeds = [], concomitantMeds = [], attachments = []) => {
-  console.log('[Supabase Operation] Saving/Updating ADR Report in single table for Case ID:', masterPayload.clinical_case_id);
-
   try {
     const fullPayload = {
       ...masterPayload,
@@ -290,7 +313,6 @@ export const saveOrUpdateADRReportInSupabase = async (masterPayload, suspectedMe
 
     return { success: true, report: savedReport };
   } catch (err) {
-    console.error('❌ [Supabase Error] Saving ADR report failed:', err);
     return { success: false, error: err.message };
   }
 };
@@ -778,7 +800,7 @@ export const fetchAssignmentsFromSupabase = async (collegeId, preceptorId = null
     if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    return { success: false, data: [], error: error.message };
+    return { success: false, data: [], error: err.message };
   }
 };
 
@@ -1044,7 +1066,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
     if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    return { success: false, data: [], error: error.message };
+    return { success: false, data: [], error: err.message };
   }
 };
 
@@ -1133,7 +1155,8 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       hospital_name: profileData.hospitalName || null,
       hospital_logo_url: profileData.hospitalLogoUrl || null,
       is_autonomous: Boolean(profileData.isAutonomous),
-      status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive'
+      status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive',
+      updated_at: new Date().toISOString()
     };
 
     if (profileData.adminPassword) {
@@ -1141,29 +1164,22 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       if (passwordHash) collegeUpdatePayload.college_admin_password_hash = passwordHash;
     }
 
-    const { data: updatedCollege, error: updateCollegeErr } = await supabase.from('colleges').update(collegeUpdatePayload).eq('id', collegeId).select();
+    const { data: updatedCollege, error: updateCollegeErr } = await supabase
+      .from('colleges')
+      .update(collegeUpdatePayload)
+      .eq('id', collegeId)
+      .select();
+
     if (updateCollegeErr) return { success: false, error: updateCollegeErr.message };
 
-    const subscriptionPayload = {
-      college_id: collegeId,
-      plan_name: profileData.subscriptionPlan || 'Professional',
-      subscription_start_date: profileData.subscriptionStartDate || new Date().toISOString().split('T')[0],
-      subscription_expiry_date: profileData.subscriptionExpiryDate || '2027-08-04',
-      maximum_students: parseInt(profileData.maxStudentsAllowed, 10) || 600,
-      status: profileData.subscriptionStatus || 'Active'
-    };
+    // Fetch fresh college record directly from Supabase
+    const { data: freshCollege } = await supabase
+      .from('colleges')
+      .select('*')
+      .eq('id', collegeId)
+      .maybeSingle();
 
-    const { data: existingSub } = await supabase.from('subscriptions').select('id').eq('college_id', collegeId).maybeSingle();
-    if (existingSub && existingSub.id) {
-      await supabase.from('subscriptions').update(subscriptionPayload).eq('id', existingSub.id);
-    } else {
-      const { data: newSub } = await supabase.from('subscriptions').insert([subscriptionPayload]).select();
-      if (newSub && newSub[0]) {
-        await supabase.from('colleges').update({ subscription_id: newSub[0].id }).eq('id', collegeId);
-      }
-    }
-
-    return { success: true, data: updatedCollege ? updatedCollege[0] : null };
+    return { success: true, college: freshCollege || (updatedCollege ? updatedCollege[0] : null) };
   } catch (err) {
     return { success: false, error: err.message };
   }

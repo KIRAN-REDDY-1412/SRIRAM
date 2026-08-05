@@ -130,13 +130,21 @@ export const Hero = ({ onOpenPortal, onOpenAllColleges, onOpenRegisterModal }) =
                         <div>
                           {/* Top: Logo & Active Badge */}
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-[11px] shadow-sm border border-white/20 shrink-0 transform group-hover:scale-105 transition-transform`}>
-                              {college.initials}
-                            </div>
+                            {college.logoUrl ? (
+                              <img
+                                src={college.logoUrl}
+                                alt={college.name}
+                                className="w-10 h-10 rounded-xl object-contain bg-white border border-slate-200 p-0.5 shadow-xs shrink-0 transform group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-[11px] shadow-sm border border-white/20 shrink-0 transform group-hover:scale-105 transition-transform`}>
+                                {college.initials}
+                              </div>
+                            )}
 
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100/90 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Active
+                              {college.status || 'Active'}
                             </span>
                           </div>
 

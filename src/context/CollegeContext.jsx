@@ -7,7 +7,8 @@ import {
   rejectCollegeInSupabase,
   updateCollegeProfileAndSubscriptionInSupabase, 
   deleteCollegeFromSupabase, 
-  deleteMultipleCollegesFromSupabase 
+  deleteMultipleCollegesFromSupabase,
+  uploadCollegeLogoToSupabaseStorage
 } from '../services/supabaseService';
 
 const CollegeContext = createContext();
@@ -19,7 +20,7 @@ export const CollegeProvider = ({ children }) => {
   const [expiredSubscriptions, setExpiredSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // STEP 3 & STEP 7: Pure Live Supabase Fetch (Zero Artificial Default Suggestions)
+  // STEP 3 & STEP 7: Pure Live Supabase Fetch (Including college_logo_url & college_description)
   const loadSupabaseData = async () => {
     setIsLoading(true);
     console.log('[CollegeContext] Loading live data from Supabase PostgreSQL...');
@@ -33,6 +34,8 @@ export const CollegeProvider = ({ children }) => {
           id: c.id,
           name: c.college_name || c.name || '',
           code: c.college_code || c.code || '',
+          logoUrl: c.college_logo_url || null,
+          description: c.college_description || '',
           city: c.city || '',
           state: c.state || '',
           district: c.district || '',
@@ -156,6 +159,11 @@ export const CollegeProvider = ({ children }) => {
     }
   };
 
+  // Upload College Logo
+  const uploadCollegeLogo = async (file) => {
+    return await uploadCollegeLogoToSupabaseStorage(file);
+  };
+
   // Delete Single College -> Direct Supabase Deletion
   const deleteCollege = async (collegeId) => {
     console.log('[CollegeContext] Deleting college directly in Supabase:', collegeId);
@@ -182,6 +190,7 @@ export const CollegeProvider = ({ children }) => {
       approveCollege,
       rejectCollege,
       updateCollegeProfile,
+      uploadCollegeLogo,
       deleteCollege,
       deleteMultipleColleges
     }}>

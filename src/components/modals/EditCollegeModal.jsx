@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { ModalWrapper } from './ModalWrapper';
-import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle } from 'lucide-react';
+import { useColleges } from '../../context/CollegeContext';
+import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, FileText, Upload, Loader2, CheckCircle2 } from 'lucide-react';
 
 export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, isFullPage = false }) => {
+  const { uploadCollegeLogo } = useColleges();
+
   const [formData, setFormData] = useState({
     collegeName: '',
     collegeCode: '',
+    collegeLogoUrl: '',
+    collegeDescription: '',
     logoBg: 'from-emerald-600 to-teal-700',
     address: '',
     city: '',
@@ -24,6 +29,8 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     subscriptionStatus: 'Active'
   });
 
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadSuccess, setLogoUploadSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -33,6 +40,8 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
       setFormData({
         collegeName: college.name || college.collegeName || college.college_name || '',
         collegeCode: college.code || college.collegeCode || college.college_code || '',
+        collegeLogoUrl: college.logoUrl || college.college_logo_url || '',
+        collegeDescription: college.description || college.college_description || '',
         logoBg: college.logoBg || college.college_logo || 'from-emerald-600 to-teal-700',
         address: college.address || '',
         city: college.city || '',
@@ -59,6 +68,37 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLogoFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type (JPG, PNG, SVG)
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPG, PNG, WEBP, or SVG).');
+      return;
+    }
+
+    setUploadingLogo(true);
+    setLogoUploadSuccess(false);
+
+    try {
+      const res = await uploadCollegeLogo(file);
+      setUploadingLogo(false);
+
+      if (res.success && res.url) {
+        setFormData(prev => ({ ...prev, collegeLogoUrl: res.url }));
+        setLogoUploadSuccess(true);
+        setTimeout(() => setLogoUploadSuccess(false), 2500);
+      } else {
+        alert('Failed to upload logo image. Please try again.');
+      }
+    } catch (err) {
+      setUploadingLogo(false);
+      console.error('Logo upload error:', err);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -93,7 +133,108 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
       
-      {/* SECTION 1: BASIC INFORMATION */}
+      {/* SECTION 1: COLLEGE BRANDING (NEW REQUIRED SECTION) */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Image className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          College Branding
+        </h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          
+          {/* 1. College Logo Upload & Preview */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              College Logo (JPG / PNG / SVG)
+            </label>
+
+            <div className="flex items-start gap-4 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60">
+              {/* Logo Preview */}
+              <div className="relative shrink-0">
+                {formData.collegeLogoUrl ? (
+                  <img
+                    src={formData.collegeLogoUrl}
+                    alt="College Logo Preview"
+                    className="w-16 h-16 rounded-xl object-contain bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 shadow-sm"
+                  />
+                ) : (
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${formData.logoBg} flex items-center justify-center text-white font-extrabold text-sm shadow-sm border border-white/20`}>
+                    {formData.collegeName ? formData.collegeName.substring(0, 4).toUpperCase() : 'LOGO'}
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Action */}
+              <div className="flex-1 space-y-1.5">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-emerald-600 dark:bg-slate-800 dark:hover:bg-emerald-600 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs">
+                  {uploadingLogo ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Uploading Logo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{formData.collegeLogoUrl ? 'Change Logo Image' : 'Upload Logo Image'}</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/svg+xml,image/webp"
+                    disabled={uploadingLogo}
+                    onChange={handleLogoFileChange}
+                    className="hidden"
+                  />
+                </label>
+
+                {logoUploadSuccess && (
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Logo uploaded successfully!
+                  </span>
+                )}
+
+                {formData.collegeLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, collegeLogoUrl: '' }))}
+                    className="block text-[10px] text-rose-600 dark:text-rose-400 hover:underline font-semibold"
+                  >
+                    Remove uploaded logo (Use default placeholder)
+                  </button>
+                )}
+
+                <p className="text-[10px] text-slate-400">Recommended size: 200x200px or SVG vector</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. College Description Textarea */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                College Description (Max 500 characters)
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                {formData.collegeDescription.length}/500
+              </span>
+            </div>
+
+            <textarea
+              name="collegeDescription"
+              rows={4}
+              maxLength={500}
+              value={formData.collegeDescription}
+              onChange={handleChange}
+              placeholder="e.g. Established in 2007, A.M.Reddy Memorial College of Pharmacy is committed to excellence in pharmacy education, clinical training, research, and patient care."
+              className="w-full p-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none leading-relaxed"
+            />
+          </div>
+
+        </div>
+      </div>
+
+      {/* SECTION 2: BASIC INFORMATION */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -134,7 +275,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
 
         <div>
           <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            College Logo Theme Gradient
+            Fallback Placeholder Theme Gradient
           </label>
           <div className="flex items-center gap-2 flex-wrap">
             {logoPresetGradients.map((preset) => (
@@ -156,7 +297,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         </div>
       </div>
 
-      {/* SECTION 2: LOCATION DETAILS */}
+      {/* SECTION 3: LOCATION DETAILS */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -238,7 +379,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         </div>
       </div>
 
-      {/* SECTION 3: ACADEMIC INFORMATION */}
+      {/* SECTION 4: ACADEMIC INFORMATION */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -276,7 +417,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         </div>
       </div>
 
-      {/* SECTION 4: PRINCIPAL INFORMATION */}
+      {/* SECTION 5: PRINCIPAL INFORMATION */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -331,7 +472,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         </div>
       </div>
 
-      {/* SECTION 5: SUBSCRIPTION PLAN SECTION */}
+      {/* SECTION 6: SUBSCRIPTION PLAN SECTION */}
       <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/50 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 border border-emerald-300/60 dark:border-emerald-800/80 shadow-xs space-y-4">
         <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center gap-2 pb-2 border-b border-emerald-200/60 dark:border-emerald-800/60">
           <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

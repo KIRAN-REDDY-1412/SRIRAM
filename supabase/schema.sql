@@ -45,7 +45,7 @@ CREATE TRIGGER set_updated_at_registration_requests
 
 -- ====================================================================
 -- TABLE 2: colleges
--- Purpose: Stores approved pharmacy colleges.
+-- Purpose: Stores approved pharmacy colleges with branding details.
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS public.colleges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,6 +53,8 @@ CREATE TABLE IF NOT EXISTS public.colleges (
     college_code VARCHAR(50) NOT NULL UNIQUE,
     college_name VARCHAR(255) NOT NULL,
     college_logo TEXT NULL,
+    college_logo_url TEXT NULL,
+    college_description TEXT NULL,
     address TEXT NULL,
     city VARCHAR(100) NOT NULL,
     district VARCHAR(100) NULL,

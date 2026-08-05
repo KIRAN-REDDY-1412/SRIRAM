@@ -1,11 +1,12 @@
 import React from 'react';
 import { ModalWrapper } from './ModalWrapper';
-import { ExternalLink, ShieldCheck, UserCheck, Stethoscope, Building2, ChevronRight } from 'lucide-react';
+import { ExternalLink, ShieldCheck, UserCheck, Stethoscope, Building2, ChevronRight, MapPin } from 'lucide-react';
 
 export const PortalModal = ({ isOpen, onClose, college }) => {
   if (!college) return null;
 
   const baseUrl = college.portalUrl || `https://${(college.code || 'clg').toLowerCase()}.pharmdverse.com`;
+  const locationText = [college.city, college.district, college.state].filter(Boolean).join(', ');
 
   const portals = [
     {
@@ -19,7 +20,7 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
     },
     {
       id: 'preceptor',
-      name: 'Preceptor Review',
+      name: 'Preceptor Portal',
       description: 'Hospital Doctors & Clinical Preceptors',
       icon: Stethoscope,
       url: `${baseUrl}/preceptor`,
@@ -28,7 +29,7 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
     },
     {
       id: 'student',
-      name: 'Student Logbook',
+      name: 'Student Portal',
       description: 'PharmD 1st - 6th Year Candidates',
       icon: UserCheck,
       url: `${baseUrl}/student`,
@@ -42,25 +43,50 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
       isOpen={isOpen}
       onClose={onClose}
       title={`${college.name} Portal`}
-      subtitle={`Dedicated PharmDVerse Cloud Gateway • ${[college.city, college.district, college.state].filter(Boolean).join(', ')}`}
+      subtitle={`Dedicated PharmDVerse Cloud Gateway • ${locationText}`}
       maxWidth="max-w-xl"
     >
       <div className="space-y-4">
-        {/* College Banner Card */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-lg">
+        {/* Dynamic College Branding Banner Card (No hardcoded values) */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-lg border border-slate-700/60">
           <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-base shadow-md border border-white/20 shrink-0`}>
-              {college.initials}
-            </div>
-            <div>
-              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mb-1">
-                {college.status || 'Active'}
-              </span>
-              <h4 className="text-base font-bold text-white leading-tight">{college.name}</h4>
-              <p className="text-xs text-slate-300 mt-1 flex items-center gap-2">
-                <span>{college.maxStudentsAllowed || college.studentsCount || 600} Active PharmD Candidates</span>
+          
+          <div className="flex items-start gap-4 relative z-10">
+            {/* Dynamic College Logo or Placeholder */}
+            {college.logoUrl ? (
+              <img
+                src={college.logoUrl}
+                alt={college.name}
+                className="w-14 h-14 rounded-2xl object-contain bg-white p-1 border border-white/30 shadow-md shrink-0"
+              />
+            ) : (
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-base shadow-md border border-white/20 shrink-0`}>
+                {college.initials}
+              </div>
+            )}
+
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-base font-extrabold text-white leading-snug tracking-tight truncate">
+                  {college.name}
+                </h4>
+
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {college.status || 'Active'}
+                </span>
+              </div>
+
+              {/* Dynamic College Description (fallback if empty) */}
+              <p className="text-xs text-slate-300 leading-relaxed font-normal line-clamp-3">
+                {college.description ? college.description : 'No college description available.'}
               </p>
+
+              {/* Location Line */}
+              <div className="pt-1 flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="truncate">{locationText}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -68,7 +94,7 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
         {/* Portal Access Roles Selection (THREE PORTALS: ADMIN, PRECEPTOR, STUDENT) */}
         <div>
           <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5">
-            Select Portal Gateway to Access (3 Portals):
+            Select Portal Gateway to Access:
           </p>
           
           <div className="grid grid-cols-1 gap-2.5">

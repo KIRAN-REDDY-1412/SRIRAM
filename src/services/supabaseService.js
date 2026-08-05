@@ -1,6 +1,53 @@
 import { supabase } from '../lib/supabaseClient';
 
 /**
+ * Upload college logo file to Supabase Storage bucket 'college-logos'
+ */
+export const uploadCollegeLogoToSupabaseStorage = async (file) => {
+  if (!file) return { success: false, error: 'No file provided' };
+
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `logo_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const filePath = `logos/${fileName}`;
+
+    console.log('[Supabase Storage] Uploading logo image:', filePath);
+
+    const { data, error } = await supabase.storage
+      .from('college-logos')
+      .upload(filePath, file, { upsert: true });
+
+    if (error) {
+      console.warn('⚠️ [Supabase Storage Warning] Bucket upload notice:', error.message);
+      // Fallback: Convert file to Base64 Data URL if bucket is not created or accessible
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve({ success: true, url: reader.result });
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('college-logos')
+      .getPublicUrl(filePath);
+
+    console.log('✅ [Supabase Storage Success] Public Logo URL:', publicUrlData.publicUrl);
+    return { success: true, url: publicUrlData.publicUrl };
+  } catch (err) {
+    console.error('❌ [Supabase Storage Error] Upload failed:', err);
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve({ success: true, url: reader.result });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
+/**
  * STEP 2: Submit new college registration request
  * Table: registration_requests
  */
@@ -93,6 +140,8 @@ export const approveCollegeInSupabase = async (request) => {
       registration_request_id: request.id,
       college_code: collegeCode,
       college_name: request.collegeName || request.college_name,
+      college_logo_url: request.collegeLogoUrl || null,
+      college_description: request.collegeDescription || null,
       address: request.address || null,
       city: request.city,
       district: request.district || null,
@@ -196,11 +245,13 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
   console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
 
   try {
-    // 1. Update colleges table
+    // 1. Update colleges table with college_logo_url & college_description
     const collegeUpdatePayload = {
       college_code: profileData.collegeCode,
       college_name: profileData.collegeName,
       college_logo: profileData.collegeLogo || profileData.logoBg || null,
+      college_logo_url: profileData.collegeLogoUrl || null,
+      college_description: profileData.collegeDescription || null,
       address: profileData.address || null,
       city: profileData.city,
       district: profileData.district || null,
@@ -316,7 +367,7 @@ export const fetchActiveCollegesFromSupabase = async () => {
 };
 
 /**
- * Delete single college record permanently from ALL Supabase tables (registration_requests, colleges, subscriptions)
+ * Delete single college record permanently from ALL Supabase tables
  */
 export const deleteCollegeFromSupabase = async (targetId) => {
   console.log('🗑️ [Supabase Operation] Deleting ID from Supabase:', targetId);
@@ -325,7 +376,6 @@ export const deleteCollegeFromSupabase = async (targetId) => {
     let requestId = targetId;
     let collegeId = targetId;
 
-    // 1. Query colleges table to find any linked registration_request_id
     const { data: colMatch } = await supabase
       .from('colleges')
       .select('id, registration_request_id')
@@ -337,7 +387,6 @@ export const deleteCollegeFromSupabase = async (targetId) => {
       if (colMatch.registration_request_id) requestId = colMatch.registration_request_id;
     }
 
-    // 2. Delete from registration_requests (with ON DELETE CASCADE enabled in Supabase, this automatically purges linked colleges and subscriptions)
     const { error: reqErr } = await supabase
       .from('registration_requests')
       .delete()
@@ -347,7 +396,6 @@ export const deleteCollegeFromSupabase = async (targetId) => {
       console.warn('Notice deleting from registration_requests:', reqErr.message);
     }
 
-    // 3. Fallback delete directly from colleges & subscriptions if targetId was a college ID
     await supabase.from('subscriptions').delete().eq('college_id', collegeId);
     await supabase.from('colleges').delete().eq('id', collegeId);
 
@@ -366,7 +414,6 @@ export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
   console.log('🗑️ [Supabase Operation] Bulk Deleting IDs from Supabase:', targetIds);
 
   try {
-    // 1. Query colleges to collect linked registration_request_ids
     const { data: colMatches } = await supabase
       .from('colleges')
       .select('id, registration_request_id')
@@ -382,10 +429,7 @@ export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
       });
     }
 
-    // 2. Delete from registration_requests (cascades to colleges and subscriptions)
     await supabase.from('registration_requests').delete().in('id', allRequestIds);
-
-    // 3. Fallback delete from subscriptions and colleges
     await supabase.from('subscriptions').delete().in('college_id', allCollegeIds);
     await supabase.from('colleges').delete().in('id', allCollegeIds);
 

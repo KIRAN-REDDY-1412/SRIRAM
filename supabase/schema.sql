@@ -305,7 +305,7 @@ CREATE TABLE IF NOT EXISTS public.drug_information_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- TABLE 12: adr_reports
+-- TABLE 12: adr_reports (SINGLE CONSOLIDATED TABLE FOR ALL ADR DATA)
 CREATE TABLE IF NOT EXISTS public.adr_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -331,6 +331,8 @@ CREATE TABLE IF NOT EXISTS public.adr_reports (
     reaction_duration VARCHAR(100) NULL,
     clinical_management_provided TEXT NULL,
     current_patient_condition VARCHAR(100) NULL,
+    suspected_medications JSONB DEFAULT '[]'::jsonb,
+    concomitant_medications JSONB DEFAULT '[]'::jsonb,
     drug_allergy_history TEXT NULL,
     previous_adr_history TEXT NULL,
     relevant_medical_conditions TEXT NULL,
@@ -347,6 +349,7 @@ CREATE TABLE IF NOT EXISTS public.adr_reports (
     dechallenge_information TEXT NULL,
     initial_causality_opinion VARCHAR(100) NULL,
     clinical_remarks TEXT NULL,
+    attachments JSONB DEFAULT '[]'::jsonb,
     student_remarks TEXT NULL,
     preceptor_review TEXT NULL,
     faculty_comments TEXT NULL,

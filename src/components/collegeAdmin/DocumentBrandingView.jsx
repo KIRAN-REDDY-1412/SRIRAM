@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Palette, Layout, ShieldCheck, Printer, Building, MonitorPlay } from 'lucide-react';
+import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Palette, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info } from 'lucide-react';
 import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
@@ -191,41 +191,49 @@ export const DocumentBrandingView = ({ college }) => {
         {/* LEFT COLUMN: BRANDING CONTROLS */}
         <div className={`${showLivePreviewPanel ? 'lg:col-span-7' : 'col-span-1'} space-y-6`}>
           
-          {/* SECTION 1: COLLEGE BRANDING (RETRIEVED FROM COLLEGES TABLE) */}
+          {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY WITH MANDATORY MESSAGE) */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <Building className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 Section 1: College & Hospital Identity
               </h3>
-              <span className="text-[10px] text-slate-400 font-mono">From Colleges Table</span>
+              <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800">
+                Read Only
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* MANDATORY PROMINENT MESSAGE */}
+            <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-2.5 shadow-xs">
+              <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span>These details are managed from My College Profile.</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs opacity-90">
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
-                {college?.college_logo_url ? (
-                  <img src={college.college_logo_url} alt="College Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
+                {college?.college_logo_url || college?.logoUrl ? (
+                  <img src={college?.college_logo_url || college?.logoUrl} alt="College Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
                 ) : (
                   <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 font-bold flex items-center justify-center">CL</div>
                 )}
                 <div>
                   <span className="text-[10px] text-slate-400 block">College Name:</span>
-                  <strong className="text-slate-900 dark:text-white font-bold">{college?.college_name}</strong>
-                  {college?.is_autonomous && (
+                  <strong className="text-slate-900 dark:text-white font-bold">{college?.college_name || college?.name}</strong>
+                  {Boolean(college?.is_autonomous ?? college?.isAutonomous) && (
                     <span className="block text-[10px] text-indigo-600 dark:text-indigo-400 font-bold italic">(Autonomous)</span>
                   )}
                 </div>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
-                {college?.hospital_logo_url ? (
-                  <img src={college.hospital_logo_url} alt="Hospital Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
+                {college?.hospital_logo_url || college?.hospitalLogoUrl ? (
+                  <img src={college?.hospital_logo_url || college?.hospitalLogoUrl} alt="Hospital Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
                 ) : (
                   <div className="w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-700 font-bold flex items-center justify-center">HL</div>
                 )}
                 <div>
                   <span className="text-[10px] text-slate-400 block">Hospital Name:</span>
-                  <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || 'Lalitha Superspecialities Hospital'}</strong>
+                  <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || 'Lalitha Superspecialities Hospital'}</strong>
                 </div>
               </div>
             </div>

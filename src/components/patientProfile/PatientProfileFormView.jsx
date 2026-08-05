@@ -115,19 +115,19 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       if (res.success && res.profile) {
         const p = res.profile;
         setExistingProfileId(p.id);
-        setPatientName(p.patient_name || '');
+        setPatientName(p.patient_name || p.patient_initials || '');
         setAge(p.age || '');
         setGender(p.gender || 'Male');
-        setIpNo(p.ip_no || '');
-        setHeight(p.height || '');
-        setWeight(p.weight || '');
+        setIpNo(p.ip_no || p.ip_op_number || '');
+        setHeight(p.height || p.height_cm || '');
+        setWeight(p.weight || p.weight_kg || '');
         setBmi(p.bmi || '');
-        setWard(p.ward || clinicalCase.ward_unit || '');
+        setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
         setDepartment(p.department || clinicalCase.department || '');
-        setDoa(p.doa || clinicalCase.date_of_admission || '');
-        setDoc(p.doc || clinicalCase.date_of_collection || '');
-        setDod(p.dod || '');
-        setPhysician(p.physician || '');
+        setDoa(p.doa || p.date_of_admission || clinicalCase.date_of_admission || '');
+        setDoc(p.doc || p.date_of_collection || clinicalCase.date_of_collection || '');
+        setDod(p.dod || p.date_of_discharge || '');
+        setPhysician(p.physician || p.attending_physician || '');
 
         setChiefComplaints(p.chief_complaints || '');
         setPastMedicalHistory(p.past_medical_history || '');
@@ -139,7 +139,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         setAlcoholicAmountDay(p.alcoholic_amount_day || '');
         setAlcoholicDuration(p.alcoholic_duration || '');
         setAllergyFood(p.allergy_food || '');
-        setAllergyDrugs(p.allergy_drugs || '');
+        setAllergyDrugs(p.allergy_drugs || p.allergies || '');
         setMaritalStatus(p.marital_status || 'Single');
 
         setCyanosis(p.cyanosis || 'Absent');
@@ -172,7 +172,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
     loadProfileData();
   }, [clinicalCase]);
 
-  // Auto-calculate BMI from height (cm) and weight (kg)
+  // Height Weight BMI Calculation Helper
   const handleWeightHeightChange = (w, h) => {
     setWeight(w);
     setHeight(h);
@@ -227,18 +227,27 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       student_id: student.id,
       college_id: student.college_id,
       patient_name: patientName.trim(),
+      patient_initials: patientName.trim(),
       age,
       gender,
       ip_no: ipNo,
+      ip_op_number: ipNo,
       height,
+      height_cm: height,
       weight,
+      weight_kg: weight,
       bmi,
       ward,
+      ward_unit: ward,
       department,
       doa: doa || null,
+      date_of_admission: doa || null,
       doc: doc || null,
+      date_of_collection: doc || null,
       dod: dod || null,
+      date_of_discharge: dod || null,
       physician,
+      attending_physician: physician,
       chief_complaints: chiefComplaints,
       past_medical_history: pastMedicalHistory,
       past_medication_history: pastMedicationHistory,
@@ -249,6 +258,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       alcoholic_duration: alcoholicDuration,
       allergy_food: allergyFood,
       allergy_drugs: allergyDrugs,
+      allergies: allergyDrugs || allergyFood ? `Food: ${allergyFood || 'None'}, Drugs: ${allergyDrugs || 'None'}` : 'None',
       marital_status: maritalStatus,
       cyanosis,
       icterus,
@@ -498,6 +508,16 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           </div>
 
           <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Collection (DOC)</label>
+            <input
+              type="date"
+              value={doc}
+              onChange={(e) => setDoc(e.target.value)}
+              className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Discharge (DOD)</label>
             <input
               type="date"
@@ -534,7 +554,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={pastMedicalHistory}
               onChange={(e) => setPastMedicalHistory(e.target.value)}
-              placeholder="Diabetes Mellitus, Hypertension, Asthma, T2DM x 5 yrs..."
+              placeholder="Previous medical conditions (e.g. Type 2 DM x 5 yrs, HTN)..."
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -545,7 +565,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={pastMedicationHistory}
               onChange={(e) => setPastMedicationHistory(e.target.value)}
-              placeholder="Tab. Metformin 500mg BD, Tab. Telmisartan 40mg OD..."
+              placeholder="Medications taken prior to admission (Name, Dose, Frequency)..."
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -556,7 +576,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={familyHistory}
               onChange={(e) => setFamilyHistory(e.target.value)}
-              placeholder="History of HTN in father, T2DM in mother..."
+              placeholder="Heritable conditions in family (e.g. Father had CAD, Mother DM)..."
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -570,99 +590,54 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           3. Social History & Allergies
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Smoker History</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={smokerPackDay}
-                onChange={(e) => setSmokerPackDay(e.target.value)}
-                placeholder="Pack/day"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={smokerDuration}
-                onChange={(e) => setSmokerDuration(e.target.value)}
-                placeholder="Duration (yrs)"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
+            <div className="space-y-2">
+              <input type="text" value={smokerPackDay} onChange={(e) => setSmokerPackDay(e.target.value)} placeholder="Pack / Day" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={smokerDuration} onChange={(e) => setSmokerDuration(e.target.value)} placeholder="Duration (e.g. 5 Yrs)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Alcoholic History</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={alcoholicAmountDay}
-                onChange={(e) => setAlcoholicAmountDay(e.target.value)}
-                placeholder="Amount/day"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
-              <input
-                type="text"
-                value={alcoholicDuration}
-                onChange={(e) => setAlcoholicDuration(e.target.value)}
-                placeholder="Duration (yrs)"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-              />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Alcohol History</label>
+            <div className="space-y-2">
+              <input type="text" value={alcoholicAmountDay} onChange={(e) => setAlcoholicAmountDay(e.target.value)} placeholder="Amount / Day" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={alcoholicDuration} onChange={(e) => setAlcoholicDuration(e.target.value)} placeholder="Duration (e.g. 3 Yrs)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Allergies</label>
+            <div className="space-y-2">
+              <input type="text" value={allergyFood} onChange={(e) => setAllergyFood(e.target.value)} placeholder="Food Allergies" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={allergyDrugs} onChange={(e) => setAllergyDrugs(e.target.value)} placeholder="Drug Allergies (e.g. Penicillin)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-rose-600" />
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Marital Status</label>
-            <select
-              value={maritalStatus}
-              onChange={(e) => setMaritalStatus(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            >
+            <select value={maritalStatus} onChange={(e) => setMaritalStatus(e.target.value)} className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
               <option value="Single">Single</option>
               <option value="Married">Married</option>
-              <option value="Other">Other</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Widowed">Widowed</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Food Allergies</label>
-            <input
-              type="text"
-              value={allergyFood}
-              onChange={(e) => setAllergyFood(e.target.value)}
-              placeholder="e.g. Nuts, Dairy, None"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Drug Allergies</label>
-            <input
-              type="text"
-              value={allergyDrugs}
-              onChange={(e) => setAllergyDrugs(e.target.value)}
-              placeholder="e.g. Penicillin, Sulfa drugs, Aspirin"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400"
-            />
           </div>
         </div>
       </div>
 
-      {/* 4. PHYSICAL EXAMINATION & VITAL SIGNS */}
+      {/* 4. PHYSICAL EXAMINATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          4. Physical Examination & Vital Signs
+          4. Physical Examination & Systemic Status
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Cyanosis</label>
-            <select
-              value={cyanosis}
-              onChange={(e) => setCyanosis(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            >
+            <select value={cyanosis} onChange={(e) => setCyanosis(e.target.value)} className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
               <option value="Absent">Absent</option>
               <option value="Present">Present</option>
             </select>
@@ -670,11 +645,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Icterus</label>
-            <select
-              value={icterus}
-              onChange={(e) => setIcterus(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            >
+            <select value={icterus} onChange={(e) => setIcterus(e.target.value)} className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
               <option value="Absent">Absent</option>
               <option value="Present">Present</option>
             </select>
@@ -682,216 +653,78 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pallor</label>
-            <select
-              value={pallor}
-              onChange={(e) => setPallor(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            >
+            <select value={pallor} onChange={(e) => setPallor(e.target.value)} className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
               <option value="Absent">Absent</option>
               <option value="Present">Present</option>
             </select>
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">CVS (Cardiovascular)</label>
-            <input type="text" value={cvs} onChange={(e) => setCvs(e.target.value)} placeholder="S1 S2 heard, No murmur" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <input type="text" value={cvs} onChange={(e) => setCvs(e.target.value)} placeholder="S1 S2 heard, no murmurs" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">GI (Gastrointestinal)</label>
-            <input type="text" value={gi} onChange={(e) => setGi(e.target.value)} placeholder="Soft, Non-tender" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <input type="text" value={gi} onChange={(e) => setGi(e.target.value)} placeholder="Soft, non-tender" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">RS (Respiratory)</label>
-            <input type="text" value={rs} onChange={(e) => setRs(e.target.value)} placeholder="NVBS, No wheeze" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">RS (Respiratory System)</label>
+            <input type="text" value={rs} onChange={(e) => setRs(e.target.value)} placeholder="NVBS, no wheeze" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
-          <div className="sm:col-span-3">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Provisional Diagnosis *</label>
-            <input type="text" value={provisionalDiagnosis} onChange={(e) => setProvisionalDiagnosis(e.target.value)} placeholder="Provisional clinical assessment..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">CNS (Central Nervous System)</label>
+            <input type="text" value={cns} onChange={(e) => setCns(e.target.value)} placeholder="Conscious, oriented to time, place, person" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
         </div>
 
-        {/* DYNAMIC VITAL SIGNS TABLE */}
-        <div className="pt-2">
-          <div className="flex items-center justify-between pb-2">
-            <strong className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase">Vital Signs Log (Multiple Daily Readings)</strong>
-            <button type="button" onClick={handleAddVitalRow} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
-              <Plus className="w-3.5 h-3.5" /> Add Vital Entry
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px]">
-                <tr>
-                  <th className="py-2.5 px-3">Date</th>
-                  <th className="py-2.5 px-3">TEMP (°F)</th>
-                  <th className="py-2.5 px-3">BP (mmHg)</th>
-                  <th className="py-2.5 px-3">PR (bpm)</th>
-                  <th className="py-2.5 px-3">RR (cpm)</th>
-                  <th className="py-2.5 px-3">SPO2 (%)</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {vitalSigns.map((row, i) => (
-                  <tr key={i}>
-                    <td className="py-2 px-2"><input type="date" value={row.date} onChange={(e) => { const newV = [...vitalSigns]; newV[i].date = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono" /></td>
-                    <td className="py-2 px-2"><input type="text" placeholder="98.6" value={row.temp} onChange={(e) => { const newV = [...vitalSigns]; newV[i].temp = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono" /></td>
-                    <td className="py-2 px-2"><input type="text" placeholder="120/80" value={row.bp} onChange={(e) => { const newV = [...vitalSigns]; newV[i].bp = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono" /></td>
-                    <td className="py-2 px-2"><input type="text" placeholder="72" value={row.pr} onChange={(e) => { const newV = [...vitalSigns]; newV[i].pr = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono" /></td>
-                    <td className="py-2 px-2"><input type="text" placeholder="18" value={row.rr} onChange={(e) => { const newV = [...vitalSigns]; newV[i].rr = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono" /></td>
-                    <td className="py-2 px-2"><input type="text" placeholder="98" value={row.spo2} onChange={(e) => { const newV = [...vitalSigns]; newV[i].spo2 = e.target.value; setVitalSigns(newV); }} className="w-full h-9 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-mono font-bold text-emerald-600" /></td>
-                    <td className="py-2 px-2 text-right">
-                      {vitalSigns.length > 1 && (
-                        <button type="button" onClick={() => handleRemoveVitalRow(i)} className="p-1 text-slate-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div>
+          <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 text-xs">Provisional Diagnosis</label>
+          <input type="text" value={provisionalDiagnosis} onChange={(e) => setProvisionalDiagnosis(e.target.value)} placeholder="Provisional Diagnosis..." className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-xs" />
         </div>
       </div>
 
-      {/* 5. LABORATORY INVESTIGATIONS (CHILD TABLE) */}
+      {/* 5. VITAL SIGNS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            5. Laboratory Investigations (Child Table)
+            <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            5. Vital Signs Log
           </h3>
-
-          <button type="button" onClick={handleAddLabRow} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
-            <Plus className="w-3.5 h-3.5" /> Add Lab Parameter
+          <button type="button" onClick={handleAddVitalRow} className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1">
+            <Plus className="w-3.5 h-3.5" /> Add Vital Row
           </button>
         </div>
 
-        <div className="overflow-x-auto max-h-80 overflow-y-auto pr-1">
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px] sticky top-0">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300">
               <tr>
-                <th className="py-2.5 px-3">Category</th>
-                <th className="py-2.5 px-3">Parameter Name</th>
-                <th className="py-2.5 px-3">Reference Range</th>
-                <th className="py-2.5 px-3">Date</th>
-                <th className="py-2.5 px-3">Test Value</th>
-                <th className="py-2.5 px-3 text-right">Action</th>
+                <th className="p-2">Date</th>
+                <th className="p-2">Temp (°F)</th>
+                <th className="p-2">BP (mmHg)</th>
+                <th className="p-2">Pulse (bpm)</th>
+                <th className="p-2">RR (cpm)</th>
+                <th className="p-2">SpO2 (%)</th>
+                <th className="p-2 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {labInvestigations.map((row, i) => (
-                <tr key={i}>
-                  <td className="py-1.5 px-2"><input type="text" value={row.category} onChange={(e) => { const newL = [...labInvestigations]; newL[i].category = e.target.value; setLabInvestigations(newL); }} className="w-full h-8 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-semibold" /></td>
-                  <td className="py-1.5 px-2"><input type="text" value={row.parameter_name} onChange={(e) => { const newL = [...labInvestigations]; newL[i].parameter_name = e.target.value; setLabInvestigations(newL); }} className="w-full h-8 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-bold" /></td>
-                  <td className="py-1.5 px-2"><input type="text" value={row.reference_range} onChange={(e) => { const newL = [...labInvestigations]; newL[i].reference_range = e.target.value; setLabInvestigations(newL); }} className="w-full h-8 px-2 text-[11px] font-mono rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500" /></td>
-                  <td className="py-1.5 px-2"><input type="date" value={row.test_date} onChange={(e) => { const newL = [...labInvestigations]; newL[i].test_date = e.target.value; setLabInvestigations(newL); }} className="w-full h-8 px-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800" /></td>
-                  <td className="py-1.5 px-2"><input type="text" placeholder="Value (e.g. 12.5)" value={row.test_value} onChange={(e) => { const newL = [...labInvestigations]; newL[i].test_value = e.target.value; setLabInvestigations(newL); }} className="w-full h-8 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-extrabold font-mono text-emerald-600 dark:text-emerald-400" /></td>
-                  <td className="py-1.5 px-2 text-right">
-                    <button type="button" onClick={() => handleRemoveLabRow(i)} className="p-1 text-slate-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 6. OTHER INVESTIGATIONS & FINAL DIAGNOSIS */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          6. Other Investigations & Final Diagnosis
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Other Investigations (ECG, X-Ray, CT Scan, Ultrasound)</label>
-            <textarea
-              rows={3}
-              value={otherInvestigations}
-              onChange={(e) => setOtherInvestigations(e.target.value)}
-              placeholder="ECG shows sinus tachycardia, Chest X-ray reveals right lower lobe consolidation..."
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis *</label>
-            <textarea
-              rows={3}
-              value={finalDiagnosis}
-              onChange={(e) => setFinalDiagnosis(e.target.value)}
-              placeholder="Confirmed clinical final diagnosis..."
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 7. DRUGS PRESCRIBED (CHILD TABLE) */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            7. Drugs Prescribed (Child Table)
-          </h3>
-
-          <button type="button" onClick={handleAddDrugRow} className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
-            <Plus className="w-3.5 h-3.5" /> Add Drug Row
-          </button>
-        </div>
-
-        <div className="overflow-x-auto max-h-80 overflow-y-auto pr-1">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px] sticky top-0">
-              <tr>
-                <th className="py-2.5 px-2 text-center w-10">S.No</th>
-                <th className="py-2.5 px-3">Trade Name</th>
-                <th className="py-2.5 px-3">Generic Name</th>
-                <th className="py-2.5 px-3">R.O.A</th>
-                <th className="py-2.5 px-3">Dose</th>
-                <th className="py-2.5 px-3">FRQ</th>
-                <th className="py-2.5 px-3">Start Date</th>
-                <th className="py-2.5 px-3">Stop Date</th>
-                <th className="py-2.5 px-2 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {prescribedDrugs.map((row, i) => (
-                <tr key={i}>
-                  <td className="py-1.5 px-2 text-center font-bold font-mono">{i + 1}</td>
-                  <td className="py-1.5 px-2"><input type="text" placeholder="e.g. Augmentin" value={row.trade_name} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].trade_name = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-bold" /></td>
-                  <td className="py-1.5 px-2"><input type="text" placeholder="Amoxicillin + Clav" value={row.generic_name} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].generic_name = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 italic" /></td>
-                  <td className="py-1.5 px-2">
-                    <select value={row.route_of_admin} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].route_of_admin = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-1 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-semibold">
-                      <option value="Oral">Oral</option>
-                      <option value="IV">IV</option>
-                      <option value="IM">IM</option>
-                      <option value="SC">SC</option>
-                      <option value="Topical">Topical</option>
-                      <option value="Inhalation">Inhalation</option>
-                    </select>
-                  </td>
-                  <td className="py-1.5 px-2"><input type="text" placeholder="625mg" value={row.dose} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].dose = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 font-bold" /></td>
-                  <td className="py-1.5 px-2">
-                    <select value={row.frequency} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].frequency = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-1 text-xs rounded-lg border border-slate-200 dark:border-slate-800 font-bold">
-                      <option value="OD">OD (1x)</option>
-                      <option value="BD">BD (2x)</option>
-                      <option value="TDS">TDS (3x)</option>
-                      <option value="QID">QID (4x)</option>
-                      <option value="STAT">STAT</option>
-                      <option value="PRN">PRN</option>
-                    </select>
-                  </td>
-                  <td className="py-1.5 px-2"><input type="date" value={row.start_date} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].start_date = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-1 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800" /></td>
-                  <td className="py-1.5 px-2"><input type="date" value={row.stop_date} onChange={(e) => { const newD = [...prescribedDrugs]; newD[i].stop_date = e.target.value; setPrescribedDrugs(newD); }} className="w-full h-8 px-1 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800" /></td>
-                  <td className="py-1.5 px-2 text-right">
-                    {prescribedDrugs.length > 1 && (
-                      <button type="button" onClick={() => handleRemoveDrugRow(i)} className="p-1 text-slate-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
+              {vitalSigns.map((row, idx) => (
+                <tr key={idx}>
+                  <td className="p-2"><input type="date" value={row.date} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].date = e.target.value; setVitalSigns(copy); }} className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.temp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].temp = e.target.value; setVitalSigns(copy); }} placeholder="98.6" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.bp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].bp = e.target.value; setVitalSigns(copy); }} placeholder="120/80" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
+                  <td className="p-2"><input type="text" value={row.pr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].pr = e.target.value; setVitalSigns(copy); }} placeholder="72" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.rr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].rr = e.target.value; setVitalSigns(copy); }} placeholder="18" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.spo2} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].spo2 = e.target.value; setVitalSigns(copy); }} placeholder="99" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2 text-center">
+                    {vitalSigns.length > 1 && (
+                      <button type="button" onClick={() => handleRemoveVitalRow(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                     )}
                   </td>
                 </tr>
@@ -901,73 +734,173 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         </div>
       </div>
 
-      {/* 8. DISCHARGE SUMMARY */}
+      {/* 6. LAB INVESTIGATIONS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          8. Discharge Summary
-        </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            6. Laboratory Investigations
+          </h3>
+          <button type="button" onClick={handleAddLabRow} className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1">
+            <Plus className="w-3.5 h-3.5" /> Add Lab Parameter
+          </button>
+        </div>
 
-        <div>
-          <textarea
-            rows={4}
-            value={dischargeSummary}
-            onChange={(e) => setDischargeSummary(e.target.value)}
-            placeholder="Clinical course during hospital stay, treatment outcome, discharge advice and medication..."
-            className="w-full p-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
-          />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <tr>
+                <th className="p-2">Category</th>
+                <th className="p-2">Parameter Name</th>
+                <th className="p-2">Test Value</th>
+                <th className="p-2">Unit</th>
+                <th className="p-2">Ref Range</th>
+                <th className="p-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {labInvestigations.map((lab, idx) => (
+                <tr key={idx}>
+                  <td className="p-2"><input type="text" value={lab.category} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].category = e.target.value; setLabInvestigations(copy); }} className="w-36 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-indigo-900 dark:text-indigo-300" /></td>
+                  <td className="p-2"><input type="text" value={lab.parameter_name} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].parameter_name = e.target.value; setLabInvestigations(copy); }} placeholder="Parameter" className="w-40 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-semibold" /></td>
+                  <td className="p-2"><input type="text" value={lab.test_value} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].test_value = e.target.value; setLabInvestigations(copy); }} placeholder="Value" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold text-indigo-600 dark:text-indigo-400" /></td>
+                  <td className="p-2"><input type="text" value={lab.unit} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].unit = e.target.value; setLabInvestigations(copy); }} placeholder="Unit" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={lab.reference_range} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].reference_range = e.target.value; setLabInvestigations(copy); }} placeholder="Ref Range" className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
+                  <td className="p-2 text-center">
+                    <button type="button" onClick={() => handleRemoveLabRow(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* BOTTOM ACTION BUTTONS */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={onBack}
-          className="h-[48px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors"
-        >
-          Cancel & Back
-        </button>
+      {/* 7. OTHER INVESTIGATIONS & FINAL DIAGNOSIS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          7. Other Investigations & Final Diagnosis
+        </h3>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[48px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Radiological / Other Investigations</label>
+            <textarea rows={3} value={otherInvestigations} onChange={(e) => setOtherInvestigations(e.target.value)} placeholder="X-Ray, ECG, CT Scan, Ultrasound findings..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          </div>
 
-          <button
-            type="button"
-            onClick={() => handleSaveProfile('Draft')}
-            disabled={saving}
-            className="h-[48px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Draft</span>
-          </button>
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis *</label>
+            <textarea rows={3} value={finalDiagnosis} onChange={(e) => setFinalDiagnosis(e.target.value)} placeholder="Confirmed Final Diagnosis..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+          </div>
+        </div>
+      </div>
 
-          <button
-            type="button"
-            onClick={() => handleSaveProfile('Submitted')}
-            disabled={saving}
-            className="h-[48px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Submitting Profile...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Submit Profile</span>
-              </>
-            )}
+      {/* 8. PRESCRIBED MEDICATIONS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            8. Prescribed Medications
+          </h3>
+          <button type="button" onClick={handleAddDrugRow} className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1">
+            <Plus className="w-3.5 h-3.5" /> Add Drug Row
           </button>
         </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              <tr>
+                <th className="p-2 w-10 text-center">S.No</th>
+                <th className="p-2">Brand / Trade Name</th>
+                <th className="p-2">Generic Name</th>
+                <th className="p-2">Route</th>
+                <th className="p-2">Dose</th>
+                <th className="p-2">Freq</th>
+                <th className="p-2">Start Date</th>
+                <th className="p-2">Stop Date</th>
+                <th className="p-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {prescribedDrugs.map((d, idx) => (
+                <tr key={idx}>
+                  <td className="p-2 font-mono font-bold text-center">{idx + 1}</td>
+                  <td className="p-2"><input type="text" value={d.trade_name} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].trade_name = e.target.value; setPrescribedDrugs(copy); }} placeholder="Trade Name" className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold" /></td>
+                  <td className="p-2"><input type="text" value={d.generic_name} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].generic_name = e.target.value; setPrescribedDrugs(copy); }} placeholder="Generic Name" className="w-36 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent italic" /></td>
+                  <td className="p-2">
+                    <select value={d.route_of_admin} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].route_of_admin = e.target.value; setPrescribedDrugs(copy); }} className="w-20 h-8 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent">
+                      <option value="Oral">Oral</option>
+                      <option value="IV">IV</option>
+                      <option value="IM">IM</option>
+                      <option value="SC">SC</option>
+                      <option value="Inhalation">Inhalation</option>
+                      <option value="Topical">Topical</option>
+                    </select>
+                  </td>
+                  <td className="p-2"><input type="text" value={d.dose} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].dose = e.target.value; setPrescribedDrugs(copy); }} placeholder="500 mg" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
+                  <td className="p-2"><input type="text" value={d.frequency} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].frequency = e.target.value; setPrescribedDrugs(copy); }} placeholder="OD / BD" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold" /></td>
+                  <td className="p-2"><input type="date" value={d.start_date} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].start_date = e.target.value; setPrescribedDrugs(copy); }} className="w-28 h-8 px-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
+                  <td className="p-2"><input type="date" value={d.stop_date} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].stop_date = e.target.value; setPrescribedDrugs(copy); }} className="w-28 h-8 px-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
+                  <td className="p-2 text-center">
+                    {prescribedDrugs.length > 1 && (
+                      <button type="button" onClick={() => handleRemoveDrugRow(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 9. DISCHARGE SUMMARY */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          9. Discharge Summary & Outcome
+        </h3>
+
+        <textarea
+          rows={3}
+          value={dischargeSummary}
+          onChange={(e) => setDischargeSummary(e.target.value)}
+          placeholder="Condition at discharge, advice on discharge, follow-up instructions..."
+          className="w-full p-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+        />
+      </div>
+
+      {/* BOTTOM ACTIONS */}
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <button
+          type="button"
+          onClick={() => setIsPreviewOpen(true)}
+          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+        >
+          <Eye className="w-4 h-4 text-indigo-500" />
+          <span>Preview Form PDF</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSaveProfile('Draft')}
+          disabled={saving}
+          className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSaveProfile('Submitted')}
+          disabled={saving}
+          className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          <Send className="w-4 h-4" />
+          <span>Submit Profile</span>
+        </button>
       </div>
 
       {/* PDF PREVIEW MODAL */}
@@ -979,18 +912,27 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           student={student}
           profile={{
             patient_name: patientName,
+            patient_initials: patientName,
             age,
             gender,
             ip_no: ipNo,
+            ip_op_number: ipNo,
             height,
+            height_cm: height,
             weight,
+            weight_kg: weight,
             bmi,
             ward,
+            ward_unit: ward,
             department,
             doa,
+            date_of_admission: doa,
             doc,
+            date_of_collection: doc,
             dod,
+            date_of_discharge: dod,
             physician,
+            attending_physician: physician,
             chief_complaints: chiefComplaints,
             past_medical_history: pastMedicalHistory,
             past_medication_history: pastMedicationHistory,
@@ -1001,6 +943,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             alcoholic_duration: alcoholicDuration,
             allergy_food: allergyFood,
             allergy_drugs: allergyDrugs,
+            allergies: allergyDrugs || allergyFood ? `Food: ${allergyFood || 'None'}, Drugs: ${allergyDrugs || 'None'}` : 'None',
             marital_status: maritalStatus,
             cyanosis,
             icterus,

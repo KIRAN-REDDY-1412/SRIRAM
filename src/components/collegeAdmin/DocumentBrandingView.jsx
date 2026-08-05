@@ -55,10 +55,12 @@ export const DocumentBrandingView = ({ college }) => {
     setLoading(true);
     const res = await fetchDocumentBrandingSettingsFromSupabase(college.id);
     if (res.success && res.settings) {
-      setSettings({
+      const loadedSettings = {
         ...DEFAULT_SETTINGS,
         ...res.settings
-      });
+      };
+      setSettings(loadedSettings);
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: loadedSettings }));
     } else {
       setSettings(DEFAULT_SETTINGS);
     }
@@ -70,16 +72,22 @@ export const DocumentBrandingView = ({ college }) => {
   }, [college]);
 
   const handleToggle = (key) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    const nextVal = !settings[key];
+    const updated = { ...settings, [key]: nextVal };
+    setSettings(updated);
+    window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
   };
 
   const handleChange = (key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    const updated = { ...settings, [key]: value };
+    setSettings(updated);
+    window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
   };
 
   const handleRestoreDefault = () => {
     if (window.confirm('Are you sure you want to restore default branding settings?')) {
       setSettings(DEFAULT_SETTINGS);
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: DEFAULT_SETTINGS }));
     }
   };
 
@@ -95,8 +103,13 @@ export const DocumentBrandingView = ({ college }) => {
     setSaving(false);
 
     if (res.success) {
-      setSettings({ ...DEFAULT_SETTINGS, ...res.settings });
-      setSuccessMsg('Document Branding Settings saved successfully! All Print & Download PDFs across PharmDVerse will now instantly use this branding.');
+      const updatedSettings = { ...DEFAULT_SETTINGS, ...res.settings };
+      setSettings(updatedSettings);
+
+      // BROADCAST LIVE SYNCHRONIZATION EVENT TO ALL OPEN MODALS AND PREVIEWS
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updatedSettings }));
+
+      setSuccessMsg('Document Branding Settings saved successfully to Supabase! Live Preview, Print Previews, and PDFs across PharmDVerse have been synchronized instantly.');
       setTimeout(() => setSuccessMsg(''), 4000);
     } else {
       setErrorMsg(res.error || 'Failed to save Document Branding Settings.');

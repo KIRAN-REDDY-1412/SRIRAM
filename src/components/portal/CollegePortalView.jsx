@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-export const CollegePortalView = ({ college, onBackToLanding }) => {
+export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin }) => {
   const { isDark } = useTheme();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
       subtitle: 'Institutional Administration & Governance',
       description: 'Central management login for Principal, HODs, Academic Coordinators, and Institutional Admin to manage faculty, students, and hospital affiliations.',
       icon: Building2,
-      url: `${baseUrl}/admin/login`,
+      actionType: 'modal',
       badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
       btnBg: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20',
       iconColor: 'text-indigo-600 dark:text-indigo-400'
@@ -33,6 +33,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
       description: 'Dedicated evaluation login workspace for Hospital Doctors, Ward Preceptors, and Clinical Faculty to review student patient cases, logbooks, and ward rounds.',
       icon: Stethoscope,
       url: `${baseUrl}/preceptor/login`,
+      actionType: 'link',
       badgeBg: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
       btnBg: 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-cyan-600/20',
       iconColor: 'text-cyan-600 dark:text-cyan-400'
@@ -44,6 +45,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
       description: 'Comprehensive digital logbook login for PharmD students to document clinical cases, SOAP notes, drug interactions, ADR reports, and ward round activities.',
       icon: UserCheck,
       url: `${baseUrl}/student/login`,
+      actionType: 'link',
       badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
       btnBg: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400'
@@ -199,15 +201,25 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
                   </div>
 
                   <div className="pt-5 mt-5 border-t border-slate-100 dark:border-slate-800">
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 ${item.btnBg}`}
-                    >
-                      <span>{item.name}</span>
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                    {item.actionType === 'modal' ? (
+                      <button
+                        onClick={() => onOpenAdminLogin(college)}
+                        className={`w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 ${item.btnBg}`}
+                      >
+                        <span>{item.name}</span>
+                        <LogIn className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 ${item.btnBg}`}
+                      >
+                        <span>{item.name}</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
                   </div>
                 </div>
               );

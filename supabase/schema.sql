@@ -1,5 +1,5 @@
 -- ====================================================================
--- PharmDVerse Phase 1 Database Schema for Supabase (PostgreSQL)
+-- PharmDVerse Complete Phase 1 Database Schema for Supabase (PostgreSQL)
 -- Compatible with Express.js, Prisma ORM, and Supabase RLS
 -- ====================================================================
 
@@ -133,6 +133,68 @@ CREATE TRIGGER set_updated_at_super_admin
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ====================================================================
+-- TABLE 5: preceptors
+-- Purpose: Stores preceptors assigned to a specific college.
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.preceptors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    full_name VARCHAR(150) NOT NULL,
+    gender VARCHAR(20) NOT NULL,
+    mobile_number VARCHAR(20) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    qualification VARCHAR(100) NOT NULL,
+    designation VARCHAR(100) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    profile_photo_url TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Trigger for preceptors updated_at
+DROP TRIGGER IF EXISTS set_updated_at_preceptors ON public.preceptors;
+CREATE TRIGGER set_updated_at_preceptors
+    BEFORE UPDATE ON public.preceptors
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ====================================================================
+-- TABLE 6: students
+-- Purpose: Stores PharmD students enrolled in a specific college.
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.students (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    roll_number VARCHAR(100) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    gender VARCHAR(20) NOT NULL,
+    mobile_number VARCHAR(20) NULL,
+    email VARCHAR(255) NOT NULL,
+    batch VARCHAR(50) NOT NULL,
+    course VARCHAR(50) NOT NULL DEFAULT 'Pharm.D',
+    academic_year VARCHAR(50) NOT NULL DEFAULT '2026–2027',
+    year VARCHAR(50) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    profile_photo_url TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT unique_college_roll_number UNIQUE (college_id, roll_number),
+    CONSTRAINT unique_college_student_email UNIQUE (college_id, email)
+);
+
+-- Trigger for students updated_at
+DROP TRIGGER IF EXISTS set_updated_at_students ON public.students;
+CREATE TRIGGER set_updated_at_students
+    BEFORE UPDATE ON public.students
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ====================================================================
 -- INDEXES FOR FREQUENTLY SEARCHED COLUMNS
 -- ====================================================================
 CREATE INDEX IF NOT EXISTS idx_registration_requests_email ON public.registration_requests(email);
@@ -141,37 +203,31 @@ CREATE INDEX IF NOT EXISTS idx_registration_requests_status ON public.registrati
 CREATE INDEX IF NOT EXISTS idx_colleges_code ON public.colleges(college_code);
 CREATE INDEX IF NOT EXISTS idx_colleges_status ON public.colleges(status);
 CREATE INDEX IF NOT EXISTS idx_colleges_admin_username ON public.colleges(college_admin_username);
-CREATE INDEX IF NOT EXISTS idx_colleges_registration_request ON public.colleges(registration_request_id);
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_college_id ON public.subscriptions(college_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
-
-CREATE INDEX IF NOT EXISTS idx_super_admin_email ON public.super_admin(email);
+CREATE INDEX IF NOT EXISTS idx_preceptors_college_id ON public.preceptors(college_id);
+CREATE INDEX IF NOT EXISTS idx_students_college_id ON public.students(college_id);
 
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES FOR SUPABASE
--- Enable open policies so anon API key can SELECT, INSERT, UPDATE, DELETE
 -- ====================================================================
 ALTER TABLE public.registration_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.colleges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admin ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.preceptors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if any
 DROP POLICY IF EXISTS "Allow All Operations Registration Requests" ON public.registration_requests;
 DROP POLICY IF EXISTS "Allow All Operations Colleges" ON public.colleges;
 DROP POLICY IF EXISTS "Allow All Operations Subscriptions" ON public.subscriptions;
 DROP POLICY IF EXISTS "Allow All Operations Super Admin" ON public.super_admin;
+DROP POLICY IF EXISTS "Allow All Operations Preceptors" ON public.preceptors;
+DROP POLICY IF EXISTS "Allow All Operations Students" ON public.students;
 
--- Create open policies for all roles (anon, authenticated, service_role)
-CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests
-    FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow All Operations Colleges" ON public.colleges
-    FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow All Operations Subscriptions" ON public.subscriptions
-    FOR ALL USING (true) WITH CHECK (true);
-
-CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin
-    FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Registration Requests" ON public.registration_requests FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Colleges" ON public.colleges FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Subscriptions" ON public.subscriptions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Super Admin" ON public.super_admin FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Preceptors" ON public.preceptors FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All Operations Students" ON public.students FOR ALL USING (true) WITH CHECK (true);

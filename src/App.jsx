@@ -10,9 +10,10 @@ import { APP_CONFIG } from './config/appConfig';
 import { useDeveloperShortcut } from './hooks/useDeveloperShortcut';
 import { getActiveAdminSession } from './services/authService';
 
-// Full Page Admin Dashboard & Dedicated College Portal Landing Page
+// Full Page Components
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
 import { CollegePortalView } from './components/portal/CollegePortalView';
+import { CollegeAdminLayout } from './components/collegeAdmin/CollegeAdminLayout';
 
 // Modals
 import { PricingModal } from './components/modals/PricingModal';
@@ -21,18 +22,22 @@ import { RegisterModal } from './components/modals/RegisterModal';
 import { AllCollegesModal } from './components/modals/AllCollegesModal';
 import { DeveloperAccessModal } from './components/modals/DeveloperAccessModal';
 import { SuperAdminModal } from './components/modals/SuperAdminModal';
+import { CollegeAdminLoginModal } from './components/modals/CollegeAdminLoginModal';
 import { InfoModal } from './components/modals/InfoModal';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin' | 'college_portal'
+  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin' | 'college_portal' | 'college_admin'
   const [pricingOpen, setPricingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [allCollegesOpen, setAllCollegesOpen] = useState(false);
   const [devAccessOpen, setDevAccessOpen] = useState(false);
   const [superAdminLoginOpen, setSuperAdminLoginOpen] = useState(false);
+  const [collegeAdminLoginOpen, setCollegeAdminLoginOpen] = useState(false);
   const [infoContentType, setInfoContentType] = useState(null);
+  
   const [activePortalCollege, setActivePortalCollege] = useState(null);
+  const [loggedCollegeAdmin, setLoggedCollegeAdmin] = useState(null);
 
   // Check active admin session on initial load
   useEffect(() => {
@@ -42,7 +47,7 @@ export default function App() {
     }
   }, []);
 
-  // Hidden Developer Mode Keyboard Shortcut (Ctrl + Alt + D / Ctrl + Alt + S)
+  // Hidden Developer Mode Keyboard Shortcut (Ctrl + Alt + D)
   useDeveloperShortcut({
     enabled: APP_CONFIG.DEVELOPER_MODE,
     onTrigger: () => {
@@ -50,24 +55,6 @@ export default function App() {
     },
     isModalOpen: devAccessOpen || superAdminLoginOpen || viewMode === 'admin'
   });
-
-  // Secure URL Route Check for Production (/super-admin/login or #super-admin-login)
-  useEffect(() => {
-    const checkRoute = () => {
-      const path = window.location.pathname;
-      const hash = window.location.hash;
-      if (path === APP_CONFIG.SUPER_ADMIN_ROUTE || hash === '#super-admin-login') {
-        setSuperAdminLoginOpen(true);
-      }
-    };
-    checkRoute();
-    window.addEventListener('popstate', checkRoute);
-    window.addEventListener('hashchange', checkRoute);
-    return () => {
-      window.removeEventListener('popstate', checkRoute);
-      window.removeEventListener('hashchange', checkRoute);
-    };
-  }, []);
 
   // Open Full-Page College Portal Landing Page
   const handleOpenPortal = (college) => {
@@ -79,6 +66,13 @@ export default function App() {
   const handleBackToLanding = () => {
     setViewMode('landing');
     setActivePortalCollege(null);
+    setLoggedCollegeAdmin(null);
+  };
+
+  const handleCollegeAdminLoginSuccess = (college) => {
+    setLoggedCollegeAdmin(college);
+    setViewMode('college_admin');
+    setCollegeAdminLoginOpen(false);
   };
 
   return (
@@ -90,16 +84,28 @@ export default function App() {
           <SuperAdminDashboard
             onExitToLanding={handleBackToLanding}
           />
+        ) : viewMode === 'college_admin' && loggedCollegeAdmin ? (
+          
+          /* 2. FULL PAGE COLLEGE ADMIN MODULE VIEW */
+          <CollegeAdminLayout
+            college={loggedCollegeAdmin}
+            onLogout={handleBackToLanding}
+          />
+
         ) : viewMode === 'college_portal' && activePortalCollege ? (
           
-          /* 2. FULL PAGE DEDICATED COLLEGE PORTAL LANDING PAGE */
+          /* 3. FULL PAGE DEDICATED COLLEGE PORTAL LANDING PAGE */
           <CollegePortalView
             college={activePortalCollege}
             onBackToLanding={handleBackToLanding}
+            onOpenAdminLogin={(col) => {
+              setActivePortalCollege(col);
+              setCollegeAdminLoginOpen(true);
+            }}
           />
 
         ) : (
-          /* 3. PUBLIC SAAS LANDING PAGE VIEW */
+          /* 4. PUBLIC SAAS LANDING PAGE VIEW */
           <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500 selection:text-white transition-colors duration-300 flex flex-col justify-between">
             
             {/* Sticky Glass Header */}
@@ -111,7 +117,7 @@ export default function App() {
             {/* Main Landing Page Content */}
             <main className="flex-grow">
               
-              {/* Hero Section (Left: Copy, 3 Badges & Register College CTA | Right: Active Pharmacy Colleges Grid) */}
+              {/* Hero Section */}
               <Hero
                 onOpenPortal={handleOpenPortal}
                 onOpenAllColleges={() => setAllCollegesOpen(true)}
@@ -164,14 +170,22 @@ export default function App() {
               onSuccess={() => setSuperAdminLoginOpen(true)}
             />
 
-            {/* Super Admin Login Modal (Triggers full page dashboard on success) */}
+            {/* Super Admin Login Modal */}
             <SuperAdminModal
               isOpen={superAdminLoginOpen}
               onClose={() => setSuperAdminLoginOpen(false)}
               onLoginSuccess={() => setViewMode('admin')}
             />
 
-            {/* Informational Modals (About, Features, Help, Privacy, Terms) */}
+            {/* College Admin Login Modal */}
+            <CollegeAdminLoginModal
+              isOpen={collegeAdminLoginOpen}
+              onClose={() => setCollegeAdminLoginOpen(false)}
+              initialCollege={activePortalCollege}
+              onLoginSuccess={handleCollegeAdminLoginSuccess}
+            />
+
+            {/* Informational Modals */}
             <InfoModal
               isOpen={Boolean(infoContentType)}
               onClose={() => setInfoContentType(null)}
@@ -179,6 +193,16 @@ export default function App() {
             />
 
           </div>
+        )}
+
+        {/* Global College Admin Login Modal when on College Portal page */}
+        {viewMode === 'college_portal' && (
+          <CollegeAdminLoginModal
+            isOpen={collegeAdminLoginOpen}
+            onClose={() => setCollegeAdminLoginOpen(false)}
+            initialCollege={activePortalCollege}
+            onLoginSuccess={handleCollegeAdminLoginSuccess}
+          />
         )}
 
       </CollegeProvider>

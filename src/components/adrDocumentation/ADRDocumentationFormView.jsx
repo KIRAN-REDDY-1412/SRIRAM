@@ -1,30 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, ArrowRight, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock } from 'lucide-react';
+import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import { fetchADRReportByCaseIdFromSupabase, generateUniqueAdrNumberInSupabase, saveOrUpdateADRReportInSupabase } from '../../services/supabaseService';
 import { ADRReportPreviewModal } from './ADRReportPreviewModal';
 
-const STEPS = [
-  { id: 1, title: 'Record & Patient', subtitle: 'Sections 1 & 2' },
-  { id: 2, title: 'Reaction Details', subtitle: 'Section 3' },
-  { id: 3, title: 'Medications', subtitle: 'Sections 4 & 5' },
-  { id: 4, title: 'Background & Assessment', subtitle: 'Sections 6 & 7' },
-  { id: 5, title: 'Files & Review', subtitle: 'Sections 8 & 9' }
-];
-
 export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
-  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState('');
 
-  // SECTION 1: GENERAL RECORD
+  // 1. GENERAL RECORD & PATIENT INFORMATION
   const [adrNumber, setAdrNumber] = useState('');
   const [reportingDate, setReportingDate] = useState(new Date().toISOString().split('T')[0]);
   const [assignedPreceptorName, setAssignedPreceptorName] = useState('Faculty Preceptor');
   const [approvalStatus, setApprovalStatus] = useState('Draft');
 
-  // SECTION 2: PATIENT OVERVIEW
   const [patientInitials, setPatientInitials] = useState('');
   const [hospitalRegNumber, setHospitalRegNumber] = useState('');
   const [age, setAge] = useState('');
@@ -34,7 +24,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [ward, setWard] = useState('');
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState('');
 
-  // SECTION 3: REACTION OVERVIEW
+  // 2. REACTION OVERVIEW
   const [reactionTitle, setReactionTitle] = useState('');
   const [reactionCategory, setReactionCategory] = useState('Dermatological');
   const [reactionDescription, setReactionDescription] = useState('');
@@ -44,7 +34,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [clinicalManagementProvided, setClinicalManagementProvided] = useState('');
   const [currentPatientCondition, setCurrentPatientCondition] = useState('Recovering');
 
-  // SECTION 4: SUSPECTED MEDICATION (DYNAMIC TABLE)
+  // 3. SUSPECTED MEDICATION (DYNAMIC TABLE)
   const [suspectedMeds, setSuspectedMeds] = useState([
     {
       medicine_name: '',
@@ -63,10 +53,10 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     }
   ]);
 
-  // SECTION 5: CONCOMITANT MEDICATIONS (DYNAMIC TABLE)
+  // 4. OTHER CONCURRENT MEDICATIONS (DYNAMIC TABLE)
   const [concomitantMeds, setConcomitantMeds] = useState([]);
 
-  // SECTION 6: PATIENT BACKGROUND
+  // 5. PATIENT CLINICAL BACKGROUND
   const [drugAllergyHistory, setDrugAllergyHistory] = useState('None known');
   const [previousAdrHistory, setPreviousAdrHistory] = useState('None');
   const [relevantMedicalConditions, setRelevantMedicalConditions] = useState('');
@@ -76,7 +66,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [lifestyleFactors, setLifestyleFactors] = useState('Non-smoker, Non-alcoholic');
   const [additionalClinicalNotes, setAdditionalClinicalNotes] = useState('');
 
-  // SECTION 7: REACTION ASSESSMENT
+  // 6. REACTION ASSESSMENT & CAUSALITY
   const [reactionSeverity, setReactionSeverity] = useState('Moderate');
   const [reactionSeriousness, setReactionSeriousness] = useState('Hospitalization-Initial/Prolonged');
   const [patientOutcome, setPatientOutcome] = useState('Recovered');
@@ -86,10 +76,10 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [initialCausalityOpinion, setInitialCausalityOpinion] = useState('Probable/Likely');
   const [clinicalRemarks, setClinicalRemarks] = useState('');
 
-  // SECTION 8: SUPPORTING DOCUMENTS (FILES)
+  // 7. SUPPORTING DOCUMENTS (FILES)
   const [attachments, setAttachments] = useState([]);
 
-  // SECTION 9: REVIEW INFORMATION
+  // 8. REVIEW INFORMATION & REMARKS
   const [studentRemarks, setStudentRemarks] = useState('');
   const [preceptorReview, setPreceptorReview] = useState('');
   const [facultyComments, setFacultyComments] = useState('');
@@ -230,7 +220,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     setConcomitantMeds(updated);
   };
 
-  // FILE ATTACHMENT HANDLER (Simulated file object metadata up to 5 files)
+  // FILE ATTACHMENT HANDLER
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
     if (attachments.length + files.length > 5) {
@@ -258,13 +248,11 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
     if (!reactionTitle.trim() || !reactionDescription.trim()) {
       setFormError('Please provide Reaction Title and Reaction Description.');
-      setCurrentStep(2);
       return;
     }
 
     if (suspectedMeds.length === 0 || !suspectedMeds[0].medicine_name.trim()) {
       setFormError('Please add at least one Suspected Medication with medicine name.');
-      setCurrentStep(3);
       return;
     }
 
@@ -322,18 +310,18 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     if (res.success) {
       setExistingReportId(res.report.id);
       setApprovalStatus(newStatus);
-      setSaveSuccess(newStatus === 'Submitted' ? 'ADR Report submitted to Preceptor successfully!' : 'ADR Report saved as Draft.');
+      setSaveSuccess(newStatus === 'Submitted' ? 'Adverse Drug Reaction Form submitted successfully!' : 'Adverse Drug Reaction Form saved as Draft.');
       setTimeout(() => setSaveSuccess(''), 3000);
     } else {
-      setFormError(res.error || 'Failed to save ADR Report.');
+      setFormError(res.error || 'Failed to save ADR Documentation.');
     }
   };
 
   if (loading) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
-        <p className="text-xs font-semibold text-slate-500">Loading ADR Digital Documentation Wizard...</p>
+        <Loader2 className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-2" />
+        <p className="text-xs font-semibold text-slate-500">Loading Adverse Drug Reaction Documentation Form...</p>
       </div>
     );
   }
@@ -353,16 +341,13 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           </button>
 
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] uppercase">
-                Clinical Services
-              </span>
-              <span className="text-slate-400 text-xs">• ADR Documentation</span>
-            </div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 mt-0.5">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-500" />
-              <span>Adverse Drug Event Wizard</span>
+              <span>Adverse Drug Reaction Documentation Form</span>
             </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Case ID: <strong className="font-mono text-amber-600 dark:text-amber-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
+            </p>
           </div>
         </div>
 
@@ -373,7 +358,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
             className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
           >
             <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview ADR Summary</span>
+            <span>Preview Form PDF</span>
           </button>
 
           <button
@@ -390,10 +375,10 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
             type="button"
             onClick={() => handleSaveADR('Submitted')}
             disabled={saving}
-            className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 disabled:opacity-50"
+            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
-            <span>Submit to Preceptor</span>
+            <span>Submit Form</span>
           </button>
         </div>
       </div>
@@ -412,544 +397,479 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
         </div>
       )}
 
-      {/* MULTI-STEP WIZARD PROGRESS BAR */}
-      <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:pb-0">
-          {STEPS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setCurrentStep(s.id)}
-              className={`flex-1 min-w-[140px] p-3 rounded-2xl border text-left transition-all ${
-                currentStep === s.id
-                  ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20'
-                  : currentStep > s.id
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-500'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider mb-1">
-                <span>Step {s.id}</span>
-                <span>{s.subtitle}</span>
+      {/* 1. GENERAL RECORD & PATIENT INFORMATION */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Clock className="w-4 h-4 text-amber-500" />
+          1. General Record & Patient Information
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ADR Record Number (Auto)</label>
+            <input type="text" readOnly value={adrNumber} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-mono font-extrabold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reporting Date *</label>
+            <input type="date" value={reportingDate} onChange={(e) => setReportingDate(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reported By (Student)</label>
+            <input type="text" readOnly value={student?.full_name} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assigned Preceptor</label>
+            <input type="text" value={assignedPreceptorName} onChange={(e) => setAssignedPreceptorName(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Initials *</label>
+            <input type="text" value={patientInitials} onChange={(e) => setPatientInitials(e.target.value)} placeholder="e.g. R.K." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hosp Reg / IP No.</label>
+            <input type="text" value={hospitalRegNumber} onChange={(e) => setHospitalRegNumber(e.target.value)} placeholder="Reg Number" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Gender / Wt (kg)</label>
+            <div className="flex gap-2">
+              <input type="text" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+              <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+                <option value="M">M</option>
+                <option value="F">F</option>
+              </select>
+              <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Wt" className="w-20 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Department / Ward</label>
+            <div className="flex gap-2">
+              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Dept" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+              <input type="text" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="Ward" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            </div>
+          </div>
+
+          <div className="sm:col-span-4">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Primary Diagnosis</label>
+            <textarea rows={2} value={primaryDiagnosis} onChange={(e) => setPrimaryDiagnosis(e.target.value)} placeholder="Primary clinical diagnosis..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
+          </div>
+        </div>
+      </div>
+
+      {/* 2. ADVERSE REACTION DETAILS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Activity className="w-4 h-4 text-rose-500" />
+          2. Adverse Reaction Details
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Title *</label>
+            <input type="text" required value={reactionTitle} onChange={(e) => setReactionTitle(e.target.value)} placeholder="e.g. Severe Maculopapular Rash / Fixed Drug Eruption" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Category</label>
+            <select value={reactionCategory} onChange={(e) => setReactionCategory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+              <option value="Dermatological">Dermatological</option>
+              <option value="Gastrointestinal">Gastrointestinal</option>
+              <option value="Cardiovascular">Cardiovascular</option>
+              <option value="Neurological">Neurological</option>
+              <option value="Renal">Renal</option>
+              <option value="Hepatic">Hepatic</option>
+              <option value="Immunological / Allergy">Immunological / Allergy</option>
+              <option value="Hematological">Hematological</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+
+          <div className="sm:col-span-3">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Description *</label>
+            <textarea rows={3} required value={reactionDescription} onChange={(e) => setReactionDescription(e.target.value)} placeholder="Detailed clinical description of the adverse reaction..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Started</label>
+            <input type="datetime-local" value={reactionStartedAt} onChange={(e) => setReactionStartedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Ended</label>
+            <input type="datetime-local" value={reactionEndedAt} onChange={(e) => setReactionEndedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Duration</label>
+            <input type="text" value={reactionDuration} onChange={(e) => setReactionDuration(e.target.value)} placeholder="e.g. 48 Hours" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Management Provided</label>
+            <textarea rows={2} value={clinicalManagementProvided} onChange={(e) => setClinicalManagementProvided(e.target.value)} placeholder="Antihistamines, IV fluids, corticosteroid therapy..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Patient Condition</label>
+            <select value={currentPatientCondition} onChange={(e) => setCurrentPatientCondition(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+              <option value="Recovering">Recovering</option>
+              <option value="Fully Recovered">Fully Recovered</option>
+              <option value="Not Recovered">Not Recovered</option>
+              <option value="Critical">Critical</option>
+              <option value="Fatal">Fatal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. SUSPECTED MEDICATION(S) */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Pill className="w-4 h-4 text-amber-500" />
+            3. Suspected Medication(s)
+          </h3>
+
+          <button
+            type="button"
+            onClick={handleAddSuspectedMed}
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Suspected Medicine</span>
+          </button>
+        </div>
+
+        <div className="space-y-4 text-xs">
+          {suspectedMeds.map((med, index) => (
+            <div key={index} className="p-4 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-extrabold text-amber-800 dark:text-amber-300 text-xs">
+                  Suspected Medicine #{index + 1}
+                </span>
+                {suspectedMeds.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSuspectedMed(index)}
+                    className="p-1 rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <div className="text-xs font-bold truncate">{s.title}</div>
-            </button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Brand Name *</label>
+                  <input type="text" required value={med.medicine_name} onChange={(e) => handleUpdateSuspectedMed(index, 'medicine_name', e.target.value)} placeholder="Medicine name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Generic Name</label>
+                  <input type="text" value={med.generic_name} onChange={(e) => handleUpdateSuspectedMed(index, 'generic_name', e.target.value)} placeholder="Generic name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dose / Route / Freq</label>
+                  <div className="flex gap-1">
+                    <input type="text" value={med.dose} onChange={(e) => handleUpdateSuspectedMed(index, 'dose', e.target.value)} placeholder="Dose" className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                    <input type="text" value={med.route} onChange={(e) => handleUpdateSuspectedMed(index, 'route', e.target.value)} placeholder="Route" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                    <input type="text" value={med.frequency} onChange={(e) => handleUpdateSuspectedMed(index, 'frequency', e.target.value)} placeholder="Freq" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Indication</label>
+                  <input type="text" value={med.clinical_indication} onChange={(e) => handleUpdateSuspectedMed(index, 'clinical_indication', e.target.value)} placeholder="Indication" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
+                  <input type="date" value={med.start_date} onChange={(e) => handleUpdateSuspectedMed(index, 'start_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Stop Date</label>
+                  <input type="date" value={med.stop_date} onChange={(e) => handleUpdateSuspectedMed(index, 'stop_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Manufacturer (Opt)</label>
+                  <input type="text" value={med.manufacturer} onChange={(e) => handleUpdateSuspectedMed(index, 'manufacturer', e.target.value)} placeholder="Pharma company" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Batch / Lot (Opt)</label>
+                  <input type="text" value={med.batch_number} onChange={(e) => handleUpdateSuspectedMed(index, 'batch_number', e.target.value)} placeholder="Batch No" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* WIZARD STEP CONTENT */}
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 text-xs">
-        
-        {/* STEP 1: GENERAL RECORD & PATIENT OVERVIEW */}
-        {currentStep === 1 && (
-          <div className="space-y-6 animate-fadeIn">
-            
-            {/* SECTION 1: GENERAL RECORD */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <Clock className="w-4 h-4 text-amber-500" />
-                Section 1: General Record
-              </h3>
+      {/* 4. OTHER CONCURRENT MEDICATIONS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            4. Other Concurrent Medications
+          </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ADR Record Number (Auto)</label>
-                  <input type="text" readOnly value={adrNumber} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-mono font-extrabold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reporting Date</label>
-                  <input type="date" value={reportingDate} onChange={(e) => setReportingDate(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reported By (Student)</label>
-                  <input type="text" readOnly value={student?.full_name} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assigned Preceptor</label>
-                  <input type="text" value={assignedPreceptorName} onChange={(e) => setAssignedPreceptorName(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 2: PATIENT OVERVIEW */}
-            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Section 2: Patient Overview
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Initials *</label>
-                  <input type="text" value={patientInitials} onChange={(e) => setPatientInitials(e.target.value)} placeholder="e.g. R.K." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hosp Reg / IP No.</label>
-                  <input type="text" value={hospitalRegNumber} onChange={(e) => setHospitalRegNumber(e.target.value)} placeholder="Reg Number" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Gender / Wt (kg)</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                    <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                      <option value="M">M</option>
-                      <option value="F">F</option>
-                    </select>
-                    <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Wt" className="w-20 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Department / Ward</label>
-                  <div className="flex gap-2">
-                    <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Dept" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                    <input type="text" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="Ward" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Primary Diagnosis</label>
-                  <textarea rows={2} value={primaryDiagnosis} onChange={(e) => setPrimaryDiagnosis(e.target.value)} placeholder="Primary clinical diagnosis..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 2: REACTION OVERVIEW */}
-        {currentStep === 2 && (
-          <div className="space-y-4 animate-fadeIn">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <Activity className="w-4 h-4 text-rose-500" />
-              Section 3: Reaction Overview
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Title *</label>
-                <input type="text" required value={reactionTitle} onChange={(e) => setReactionTitle(e.target.value)} placeholder="e.g. Severe Maculopapular Rash / Fixed Drug Eruption" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400" />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Category</label>
-                <select value={reactionCategory} onChange={(e) => setReactionCategory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                  <option value="Dermatological">Dermatological</option>
-                  <option value="Gastrointestinal">Gastrointestinal</option>
-                  <option value="Cardiovascular">Cardiovascular</option>
-                  <option value="Neurological">Neurological</option>
-                  <option value="Renal">Renal</option>
-                  <option value="Hepatic">Hepatic</option>
-                  <option value="Immunological / Allergy">Immunological / Allergy</option>
-                  <option value="Hematological">Hematological</option>
-                  <option value="Others">Others</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-3">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Description *</label>
-                <textarea rows={3} required value={reactionDescription} onChange={(e) => setReactionDescription(e.target.value)} placeholder="Detailed clinical description of the adverse reaction..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Started</label>
-                <input type="datetime-local" value={reactionStartedAt} onChange={(e) => setReactionStartedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Ended</label>
-                <input type="datetime-local" value={reactionEndedAt} onChange={(e) => setReactionEndedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Duration</label>
-                <input type="text" value={reactionDuration} onChange={(e) => setReactionDuration(e.target.value)} placeholder="e.g. 48 Hours" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Management Provided</label>
-                <textarea rows={2} value={clinicalManagementProvided} onChange={(e) => setClinicalManagementProvided(e.target.value)} placeholder="Antihistamines, IV fluids, corticosteroid therapy..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Patient Condition</label>
-                <select value={currentPatientCondition} onChange={(e) => setCurrentPatientCondition(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                  <option value="Recovering">Recovering</option>
-                  <option value="Fully Recovered">Fully Recovered</option>
-                  <option value="Not Recovered">Not Recovered</option>
-                  <option value="Critical">Critical</option>
-                  <option value="Fatal">Fatal</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: SUSPECTED & OTHER MEDICATIONS */}
-        {currentStep === 3 && (
-          <div className="space-y-6 animate-fadeIn">
-            
-            {/* SECTION 4: SUSPECTED MEDICATION */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Pill className="w-4 h-4 text-amber-500" />
-                  Section 4: Suspected Medication(s)
-                </h3>
-
-                <button
-                  type="button"
-                  onClick={handleAddSuspectedMed}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Suspected Medicine</span>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {suspectedMeds.map((med, index) => (
-                  <div key={index} className="p-4 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-extrabold text-amber-800 dark:text-amber-300 text-xs">
-                        Suspected Medicine #{index + 1}
-                      </span>
-                      {suspectedMeds.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSuspectedMed(index)}
-                          className="p-1 rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Brand Name *</label>
-                        <input type="text" required value={med.medicine_name} onChange={(e) => handleUpdateSuspectedMed(index, 'medicine_name', e.target.value)} placeholder="Medicine name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Generic Name</label>
-                        <input type="text" value={med.generic_name} onChange={(e) => handleUpdateSuspectedMed(index, 'generic_name', e.target.value)} placeholder="Generic name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dose / Route / Freq</label>
-                        <div className="flex gap-1">
-                          <input type="text" value={med.dose} onChange={(e) => handleUpdateSuspectedMed(index, 'dose', e.target.value)} placeholder="Dose" className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                          <input type="text" value={med.route} onChange={(e) => handleUpdateSuspectedMed(index, 'route', e.target.value)} placeholder="Route" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                          <input type="text" value={med.frequency} onChange={(e) => handleUpdateSuspectedMed(index, 'frequency', e.target.value)} placeholder="Freq" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Indication</label>
-                        <input type="text" value={med.clinical_indication} onChange={(e) => handleUpdateSuspectedMed(index, 'clinical_indication', e.target.value)} placeholder="Indication" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
-                        <input type="date" value={med.start_date} onChange={(e) => handleUpdateSuspectedMed(index, 'start_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Stop Date</label>
-                        <input type="date" value={med.stop_date} onChange={(e) => handleUpdateSuspectedMed(index, 'stop_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Manufacturer (Opt)</label>
-                        <input type="text" value={med.manufacturer} onChange={(e) => handleUpdateSuspectedMed(index, 'manufacturer', e.target.value)} placeholder="Pharma company" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Batch / Lot (Opt)</label>
-                        <input type="text" value={med.batch_number} onChange={(e) => handleUpdateSuspectedMed(index, 'batch_number', e.target.value)} placeholder="Batch No" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SECTION 5: OTHER CONCURRENT MEDICATIONS */}
-            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Section 5: Other Concurrent Medications
-                </h3>
-
-                <button
-                  type="button"
-                  onClick={handleAddConcomitantMed}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Concurrent Medicine</span>
-                </button>
-              </div>
-
-              {concomitantMeds.length > 0 ? (
-                <div className="space-y-3">
-                  {concomitantMeds.map((cMed, cIdx) => (
-                    <div key={cIdx} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
-                      <input type="text" value={cMed.medicine_name} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'medicine_name', e.target.value)} placeholder="Medicine Name" className="w-40 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold" />
-                      <input type="text" value={cMed.dose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'dose', e.target.value)} placeholder="Dose" className="w-24 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
-                      <input type="text" value={cMed.frequency} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'frequency', e.target.value)} placeholder="Freq" className="w-20 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
-                      <input type="text" value={cMed.purpose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'purpose', e.target.value)} placeholder="Purpose / Indication" className="flex-1 min-w-[150px] h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
-                      <button type="button" onClick={() => handleRemoveConcomitantMed(cIdx)} className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-400 italic text-center py-2">No concurrent medications added. Click button above if patient is taking other drugs.</p>
-              )}
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 4: BACKGROUND & ASSESSMENT */}
-        {currentStep === 4 && (
-          <div className="space-y-6 animate-fadeIn">
-            
-            {/* SECTION 6: PATIENT BACKGROUND */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Section 6: Patient Background
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Drug Allergy History</label>
-                  <input type="text" value={drugAllergyHistory} onChange={(e) => setDrugAllergyHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold text-rose-600 dark:text-rose-400" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Previous ADR History</label>
-                  <input type="text" value={previousAdrHistory} onChange={(e) => setPreviousAdrHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pregnancy / Lactation Status</label>
-                  <input type="text" value={pregnancyLactationStatus} onChange={(e) => setPregnancyLactationStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Renal Status</label>
-                  <input type="text" value={renalStatus} onChange={(e) => setRenalStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hepatic Status</label>
-                  <input type="text" value={hepaticStatus} onChange={(e) => setHepaticStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Lifestyle Factors</label>
-                  <input type="text" value={lifestyleFactors} onChange={(e) => setLifestyleFactors(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 7: REACTION ASSESSMENT */}
-            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                Section 7: Reaction Assessment & Causality
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Severity *</label>
-                  <select value={reactionSeverity} onChange={(e) => setReactionSeverity(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                    <option value="Mild">Mild</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Severe">Severe</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Seriousness *</label>
-                  <select value={reactionSeriousness} onChange={(e) => setReactionSeriousness(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                    <option value="Non-serious">Non-serious</option>
-                    <option value="Death">Death</option>
-                    <option value="Life-threatening">Life-threatening</option>
-                    <option value="Hospitalization-Initial/Prolonged">Hospitalization-Initial/Prolonged</option>
-                    <option value="Disability">Disability</option>
-                    <option value="Congenital Anomaly">Congenital Anomaly</option>
-                    <option value="Other Medically Important">Other Medically Important</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Initial Causality Opinion *</label>
-                  <select value={initialCausalityOpinion} onChange={(e) => setInitialCausalityOpinion(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
-                    <option value="Certain">Certain</option>
-                    <option value="Probable/Likely">Probable / Likely</option>
-                    <option value="Possible">Possible</option>
-                    <option value="Unlikely">Unlikely</option>
-                    <option value="Unclassified">Unclassified</option>
-                    <option value="Unassessable">Unassessable</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Action Taken on Suspected Drug</label>
-                  <select value={actionTakenOnSuspectedDrug} onChange={(e) => setActionTakenOnSuspectedDrug(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                    <option value="Withdrawn">Drug Withdrawn</option>
-                    <option value="Dose Reduced">Dose Reduced</option>
-                    <option value="Dose Increased">Dose Increased</option>
-                    <option value="Dose Unchanged">Dose Unchanged</option>
-                    <option value="Not Applicable">Not Applicable</option>
-                    <option value="Unknown">Unknown</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dechallenge Information</label>
-                  <input type="text" value={dechallengeInformation} onChange={(e) => setDechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Rechallenge Information</label>
-                  <input type="text" value={rechallengeInformation} onChange={(e) => setRechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* STEP 5: ATTACHMENTS & REVIEW */}
-        {currentStep === 5 && (
-          <div className="space-y-6 animate-fadeIn">
-            
-            {/* SECTION 8: SUPPORTING DOCUMENTS */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Section 8: Supporting Documents (Upload Max 5 Files)
-              </h3>
-
-              <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 text-center space-y-2">
-                <Upload className="w-8 h-8 text-slate-400 mx-auto" />
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Upload Lab Reports, Prescriptions, Investigation Reports, or Clinical Images
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="adr-file-upload"
-                />
-                <label
-                  htmlFor="adr-file-upload"
-                  className="inline-block px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-xs"
-                >
-                  Choose Files to Upload
-                </label>
-              </div>
-
-              {attachments.length > 0 && (
-                <div className="space-y-2">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Attached Documents ({attachments.length}/5):</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {attachments.map((att, index) => (
-                      <div key={index} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">📎 {att.file_name}</span>
-                        <button type="button" onClick={() => handleRemoveAttachment(index)} className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* SECTION 9: REVIEW INFORMATION */}
-            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Section 9: Review & Student Remarks
-              </h3>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Student Remarks</label>
-                  <textarea rows={2} value={studentRemarks} onChange={(e) => setStudentRemarks(e.target.value)} placeholder="Student notes for preceptor..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Preceptor Review / Comments (Read-Only)</label>
-                  <textarea rows={2} readOnly value={preceptorReview || 'Pending faculty evaluation.'} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono italic" />
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* WIZARD NAVIGATION BAR */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
           <button
             type="button"
-            onClick={() => setCurrentStep(prev => Math.max(prev - 1, 1))}
-            disabled={currentStep === 1}
-            className="h-[44px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-30"
+            onClick={handleAddConcomitantMed}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Previous Step</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Concurrent Medicine</span>
           </button>
-
-          <div className="flex items-center gap-2">
-            {currentStep < 5 ? (
-              <button
-                type="button"
-                onClick={() => setCurrentStep(prev => Math.min(prev + 1, 5))}
-                className="h-[44px] px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all"
-              >
-                <span>Next Step</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSaveADR('Submitted')}
-                disabled={saving}
-                className="h-[44px] px-7 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Submitting ADR...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    <span>Submit to Preceptor</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
         </div>
 
+        {concomitantMeds.length > 0 ? (
+          <div className="space-y-3 text-xs">
+            {concomitantMeds.map((cMed, cIdx) => (
+              <div key={cIdx} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
+                <input type="text" value={cMed.medicine_name} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'medicine_name', e.target.value)} placeholder="Medicine Name" className="w-40 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold" />
+                <input type="text" value={cMed.dose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'dose', e.target.value)} placeholder="Dose" className="w-24 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
+                <input type="text" value={cMed.frequency} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'frequency', e.target.value)} placeholder="Freq" className="w-20 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
+                <input type="text" value={cMed.purpose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'purpose', e.target.value)} placeholder="Purpose / Indication" className="flex-1 min-w-[150px] h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
+                <button type="button" onClick={() => handleRemoveConcomitantMed(cIdx)} className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-400 italic text-center py-2 text-xs">No concurrent medications added. Click button above if patient is taking other drugs.</p>
+        )}
+      </div>
+
+      {/* 5. PATIENT CLINICAL BACKGROUND */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          5. Patient Clinical Background
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Drug Allergy History</label>
+            <input type="text" value={drugAllergyHistory} onChange={(e) => setDrugAllergyHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold text-rose-600 dark:text-rose-400" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Previous ADR History</label>
+            <input type="text" value={previousAdrHistory} onChange={(e) => setPreviousAdrHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pregnancy / Lactation Status</label>
+            <input type="text" value={pregnancyLactationStatus} onChange={(e) => setPregnancyLactationStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Renal Status</label>
+            <input type="text" value={renalStatus} onChange={(e) => setRenalStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hepatic Status</label>
+            <input type="text" value={hepaticStatus} onChange={(e) => setHepaticStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Lifestyle Factors</label>
+            <input type="text" value={lifestyleFactors} onChange={(e) => setLifestyleFactors(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          </div>
+        </div>
+      </div>
+
+      {/* 6. REACTION ASSESSMENT & CAUSALITY */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          6. Reaction Assessment & Causality
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Severity *</label>
+            <select value={reactionSeverity} onChange={(e) => setReactionSeverity(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+              <option value="Mild">Mild</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Severe">Severe</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Seriousness *</label>
+            <select value={reactionSeriousness} onChange={(e) => setReactionSeriousness(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+              <option value="Non-serious">Non-serious</option>
+              <option value="Death">Death</option>
+              <option value="Life-threatening">Life-threatening</option>
+              <option value="Hospitalization-Initial/Prolonged">Hospitalization-Initial/Prolonged</option>
+              <option value="Disability">Disability</option>
+              <option value="Congenital Anomaly">Congenital Anomaly</option>
+              <option value="Other Medically Important">Other Medically Important</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Initial Causality Opinion *</label>
+            <select value={initialCausalityOpinion} onChange={(e) => setInitialCausalityOpinion(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
+              <option value="Certain">Certain</option>
+              <option value="Probable/Likely">Probable / Likely</option>
+              <option value="Possible">Possible</option>
+              <option value="Unlikely">Unlikely</option>
+              <option value="Unclassified">Unclassified</option>
+              <option value="Unassessable">Unassessable</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Action Taken on Suspected Drug</label>
+            <select value={actionTakenOnSuspectedDrug} onChange={(e) => setActionTakenOnSuspectedDrug(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+              <option value="Withdrawn">Drug Withdrawn</option>
+              <option value="Dose Reduced">Dose Reduced</option>
+              <option value="Dose Increased">Dose Increased</option>
+              <option value="Dose Unchanged">Dose Unchanged</option>
+              <option value="Not Applicable">Not Applicable</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dechallenge Information</label>
+            <input type="text" value={dechallengeInformation} onChange={(e) => setDechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Rechallenge Information</label>
+            <input type="text" value={rechallengeInformation} onChange={(e) => setRechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          </div>
+        </div>
+      </div>
+
+      {/* 7. SUPPORTING DOCUMENTS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          7. Supporting Documents (Upload Max 5 Files)
+        </h3>
+
+        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 text-center space-y-2 text-xs">
+          <Upload className="w-8 h-8 text-slate-400 mx-auto" />
+          <p className="font-semibold text-slate-700 dark:text-slate-300">
+            Upload Lab Reports, Prescriptions, Investigation Reports, or Clinical Images
+          </p>
+          <input
+            type="file"
+            multiple
+            onChange={handleFileUpload}
+            className="hidden"
+            id="adr-file-upload"
+          />
+          <label
+            htmlFor="adr-file-upload"
+            className="inline-block px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold cursor-pointer shadow-xs"
+          >
+            Choose Files to Upload
+          </label>
+        </div>
+
+        {attachments.length > 0 && (
+          <div className="space-y-2 text-xs">
+            <span className="font-bold text-slate-700 dark:text-slate-300">Attached Documents ({attachments.length}/5):</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {attachments.map((att, index) => (
+                <div key={index} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">📎 {att.file_name}</span>
+                  <button type="button" onClick={() => handleRemoveAttachment(index)} className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 8. REVIEW INFORMATION & REMARKS */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          8. Review Information & Remarks
+        </h3>
+
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Student Remarks</label>
+            <textarea rows={2} value={studentRemarks} onChange={(e) => setStudentRemarks(e.target.value)} placeholder="Student notes for preceptor..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Preceptor Review / Comments (Read-Only)</label>
+            <textarea rows={2} readOnly value={preceptorReview || 'Pending faculty evaluation.'} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono italic" />
+          </div>
+        </div>
+      </div>
+
+      {/* BOTTOM ACTION BUTTONS */}
+      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={onBack}
+          className="h-[48px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors"
+        >
+          Cancel & Back
+        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="h-[48px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <Eye className="w-4 h-4 text-indigo-500" />
+            <span>Preview Form PDF</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveADR('Draft')}
+            disabled={saving}
+            className="h-[48px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>Save Draft</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveADR('Submitted')}
+            disabled={saving}
+            className="h-[48px] px-8 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Submitting Form...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                <span>Submit Form</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* ADR SUMMARY PREVIEW MODAL */}

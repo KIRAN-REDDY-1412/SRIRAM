@@ -7,8 +7,8 @@ import { logoutSuperAdmin } from '../../services/authService';
 
 import { 
   Building2, CheckCircle2, Clock, XCircle, Edit3, 
-  ExternalLink, ShieldAlert, Search, AlertTriangle,
-  Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square
+  ExternalLink, Search, AlertTriangle,
+  Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square, Loader2
 } from 'lucide-react';
 
 export const SuperAdminDashboard = ({ onExitToLanding }) => {
@@ -30,6 +30,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'active' | 'inactive' | 'expired' | 'edit_profile'
   const [editingCollege, setEditingCollege] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [approvingId, setApprovingId] = useState(null);
 
   // Bulk Selection State (Select to Delete)
   const [selectedIds, setSelectedIds] = useState([]);
@@ -94,12 +95,19 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
     setSelectedIds([]);
   };
 
-  // Handlers
-  const handleApproveAndEdit = (requestId) => {
-    const approvedClg = approveCollege(requestId);
-    if (approvedClg) {
-      setEditingCollege(approvedClg);
-      setActiveTab('edit_profile');
+  // ASYNC APPROVE & AUTO-FETCH INTO EDIT PROFILE VIEW
+  const handleApproveAndEdit = async (requestId) => {
+    setApprovingId(requestId);
+    try {
+      const approvedClg = await approveCollege(requestId);
+      setApprovingId(null);
+      if (approvedClg) {
+        setEditingCollege(approvedClg);
+        setActiveTab('edit_profile');
+      }
+    } catch (err) {
+      setApprovingId(null);
+      console.error('Failed to approve and edit college:', err);
     }
   };
 
@@ -108,15 +116,15 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
     setActiveTab('edit_profile');
   };
 
-  const handleSaveProfile = (collegeId, formData) => {
-    updateCollegeProfile(collegeId, formData);
+  const handleSaveProfile = async (collegeId, formData) => {
+    await updateCollegeProfile(collegeId, formData);
     setActiveTab('active');
     setEditingCollege(null);
   };
 
-  const handleConfirmSingleDelete = () => {
+  const handleConfirmSingleDelete = async () => {
     if (collegeToDelete) {
-      deleteCollege(collegeToDelete.id);
+      await deleteCollege(collegeToDelete.id);
       setSelectedIds(prev => prev.filter(id => id !== collegeToDelete.id));
       setCollegeToDelete(null);
       if (editingCollege && editingCollege.id === collegeToDelete.id) {
@@ -126,9 +134,9 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
     }
   };
 
-  const handleConfirmBulkDelete = () => {
+  const handleConfirmBulkDelete = async () => {
     if (selectedIds.length > 0) {
-      deleteMultipleColleges(selectedIds);
+      await deleteMultipleColleges(selectedIds);
       setSelectedIds([]);
       setShowBulkDeleteConfirm(false);
     }
@@ -402,7 +410,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                     Edit College Profile & Subscription
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Complete college details and assign Subscription Plan for <strong className="text-emerald-600 dark:text-emerald-400">{editingCollege.name || editingCollege.collegeName}</strong>
+                    Details auto-fetched from registration request for <strong className="text-emerald-600 dark:text-emerald-400">{editingCollege.name || editingCollege.collegeName}</strong>. You can edit any details below.
                   </p>
                 </div>
 
@@ -502,6 +510,8 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                         {filteredRequests.map((req) => {
                           const isSelected = selectedIds.includes(req.id);
+                          const isProcessingThis = approvingId === req.id;
+
                           return (
                             <tr 
                               key={req.id} 
@@ -554,15 +564,26 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                                     <>
                                       <button
                                         onClick={() => handleApproveAndEdit(req.id)}
-                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 transition-all shadow-xs"
+                                        disabled={isProcessingThis}
+                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-60"
                                       >
-                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                        <span>Approve & Assign Plan</span>
+                                        {isProcessingThis ? (
+                                          <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span>Approving...</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <span>Approve & Edit Profile</span>
+                                          </>
+                                        )}
                                       </button>
 
                                       <button
                                         onClick={() => rejectCollege(req.id)}
-                                        className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+                                        disabled={isProcessingThis}
+                                        className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-1 transition-colors disabled:opacity-60"
                                       >
                                         <XCircle className="w-3.5 h-3.5" />
                                         <span>Reject</span>
@@ -660,7 +681,6 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                           {/* TOP CARD HEADER WITH SELECT CHECKBOX */}
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex items-center gap-3">
-                              {/* CHECKBOX TO SELECT TO DELETE */}
                               <input
                                 type="checkbox"
                                 checked={isSelected}
@@ -686,7 +706,6 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                                 Active
                               </span>
 
-                              {/* SINGLE DELETE BUTTON */}
                               <button
                                 onClick={() => setCollegeToDelete({ id: clg.id, name: clg.name })}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
@@ -805,14 +824,14 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                     No expired colleges.
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                    Colleges with expired subscription dates will appear here automatically.
+                    Colleges with expired subscription plans will be listed here.
                   </p>
                 </div>
               ) : (
                 filteredExpired.map((c) => {
                   const isSelected = selectedIds.includes(c.id);
                   return (
-                    <div key={c.id} className="p-4 bg-rose-50/40 dark:bg-rose-950/20 rounded-2xl border border-rose-200 dark:border-rose-900 flex items-center justify-between">
+                    <div key={c.id} className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
@@ -820,16 +839,16 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                           onChange={() => toggleSelectItem(c.id)}
                           className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 cursor-pointer"
                         />
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.logoBg || 'from-amber-600 to-red-700'} flex items-center justify-center text-white font-bold text-xs`}>
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.logoBg || 'from-rose-600 to-slate-800'} flex items-center justify-center text-white font-bold text-xs`}>
                           {c.initials}
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-slate-900 dark:text-white">{c.name}</h4>
-                          <span className="text-xs text-slate-500">Expired on {c.expiredDate} • {c.city}, {c.state}</span>
+                          <span className="text-xs text-slate-500">{c.city}, {c.state}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400">
                           Expired
                         </span>
                         <button
@@ -848,78 +867,67 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           )}
 
         </main>
+
       </div>
 
-      {/* CONFIRMATION MODAL FOR DELETING A SINGLE COLLEGE */}
+      {/* SINGLE DELETE CONFIRMATION DIALOG */}
       {collegeToDelete && (
         <ModalWrapper
-          isOpen={Boolean(collegeToDelete)}
+          isOpen={true}
           onClose={() => setCollegeToDelete(null)}
-          title="Delete College"
+          title="Delete Confirmation"
           subtitle={`Are you sure you want to delete ${collegeToDelete.name}?`}
           maxWidth="max-w-md"
         >
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-              <div>
-                <strong className="block font-bold mb-1">Permanent Action</strong>
-                This action will permanently remove <span className="font-bold underline">{collegeToDelete.name}</span>, its portal access, and subscription data from the system.
-              </div>
-            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              This action will permanently delete this college record and subscription from the database.
+            </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                type="button"
                 onClick={() => setCollegeToDelete(null)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={handleConfirmSingleDelete}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
               >
-                Confirm Delete
+                Delete College
               </button>
             </div>
           </div>
         </ModalWrapper>
       )}
 
-      {/* CONFIRMATION MODAL FOR BULK DELETING MULTIPLE COLLEGES */}
+      {/* BULK DELETE CONFIRMATION DIALOG */}
       {showBulkDeleteConfirm && (
         <ModalWrapper
           isOpen={showBulkDeleteConfirm}
           onClose={() => setShowBulkDeleteConfirm(false)}
-          title={`Delete ${selectedIds.length} Selected Colleges`}
-          subtitle="Confirm bulk deletion of selected college records"
+          title="Bulk Delete Confirmation"
+          subtitle={`Delete ${selectedIds.length} Selected Colleges?`}
           maxWidth="max-w-md"
         >
           <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-              <div>
-                <strong className="block font-bold mb-1">Permanent Bulk Deletion</strong>
-                Are you sure you want to delete all <span className="font-extrabold underline">{selectedIds.length} selected colleges</span>? Their portal access and subscription details will be permanently removed.
-              </div>
-            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
+              This action will permanently remove all {selectedIds.length} selected colleges and their subscription records from the system.
+            </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                type="button"
                 onClick={() => setShowBulkDeleteConfirm(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={handleConfirmBulkDelete}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
               >
-                Delete {selectedIds.length} Colleges
+                Delete Selected ({selectedIds.length})
               </button>
             </div>
           </div>

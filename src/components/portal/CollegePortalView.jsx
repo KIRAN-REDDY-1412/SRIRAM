@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe } from 'lucide-react';
+import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export const CollegePortalView = ({ college, onBackToLanding }) => {
@@ -14,36 +14,36 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
   const baseUrl = college.portalUrl || `https://${(college.code || 'clg').toLowerCase()}.pharmdverse.com`;
   const locationText = [college.city, college.district, college.state].filter(Boolean).join(', ');
 
-  const portals = [
+  const logins = [
     {
       id: 'admin',
-      name: 'College Admin Portal',
+      name: 'College Admin Login',
       subtitle: 'Institutional Administration & Governance',
-      description: 'Central management portal for Principal, HODs, Academic Coordinators, and Institutional Admin to manage faculty, students, and hospital affiliations.',
+      description: 'Central management login for Principal, HODs, Academic Coordinators, and Institutional Admin to manage faculty, students, and hospital affiliations.',
       icon: Building2,
-      url: `${baseUrl}/admin`,
+      url: `${baseUrl}/admin/login`,
       badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
       btnBg: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20',
       iconColor: 'text-indigo-600 dark:text-indigo-400'
     },
     {
       id: 'preceptor',
-      name: 'Preceptor Portal',
+      name: 'Preceptor Login',
       subtitle: 'Clinical Evaluators & Hospital Doctors',
-      description: 'Dedicated evaluation workspace for Hospital Doctors, Ward Preceptors, and Clinical Faculty to review student patient cases, logbooks, and ward rounds.',
+      description: 'Dedicated evaluation login workspace for Hospital Doctors, Ward Preceptors, and Clinical Faculty to review student patient cases, logbooks, and ward rounds.',
       icon: Stethoscope,
-      url: `${baseUrl}/preceptor`,
+      url: `${baseUrl}/preceptor/login`,
       badgeBg: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
       btnBg: 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-cyan-600/20',
       iconColor: 'text-cyan-600 dark:text-cyan-400'
     },
     {
       id: 'student',
-      name: 'Student Portal',
+      name: 'Student Login',
       subtitle: 'PharmD Candidates & Interns (1st - 6th Year)',
-      description: 'Comprehensive digital logbook for PharmD students to document clinical cases, SOAP notes, drug interactions, ADR reports, and ward round activities.',
+      description: 'Comprehensive digital logbook login for PharmD students to document clinical cases, SOAP notes, drug interactions, ADR reports, and ward round activities.',
       icon: UserCheck,
-      url: `${baseUrl}/student`,
+      url: `${baseUrl}/student/login`,
       badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
       btnBg: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400'
@@ -93,7 +93,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
       {/* 2. MAIN DEDICATED COLLEGE LANDING CONTENT */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
         
-        {/* COLLEGE BRANDING HERO BANNER (COLLEGE NAME DISPLAYED ONLY ONCE!) */}
+        {/* COLLEGE BRANDING HERO BANNER */}
         <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-2xl border border-slate-700/60">
           <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
           
@@ -116,7 +116,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  {college.status || 'Active'} Portal
+                  {college.status || 'Active'} Login Portal
                 </span>
 
                 <span className="text-xs text-slate-300 font-mono">
@@ -153,58 +153,59 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
           </div>
         </div>
 
-        {/* 3 PORTAL GATEWAYS SECTION */}
+        {/* 3 LOGIN GATEWAYS SECTION */}
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Select Dedicated Portal Gateway
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <LogIn className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              <span>Select Dedicated Login Gateway</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-              Choose your role below to launch the dedicated portal for {college.name}.
+              Choose your role below to log in to {college.name}.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {portals.map((p) => {
-              const IconComponent = p.icon;
+            {logins.map((item) => {
+              const IconComponent = item.icon;
               return (
                 <div
-                  key={p.id}
+                  key={item.id}
                   className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 shadow-xs">
-                        <IconComponent className={`w-6 h-6 ${p.iconColor}`} />
+                        <IconComponent className={`w-6 h-6 ${item.iconColor}`} />
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${p.badgeBg}`}>
-                        Portal
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${item.badgeBg}`}>
+                        Login
                       </span>
                     </div>
 
                     <div>
                       <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                        {p.name}
+                        {item.name}
                       </h3>
                       <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
-                        {p.subtitle}
+                        {item.subtitle}
                       </span>
                     </div>
 
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
-                      {p.description}
+                      {item.description}
                     </p>
                   </div>
 
                   <div className="pt-5 mt-5 border-t border-slate-100 dark:border-slate-800">
                     <a
-                      href={p.url}
+                      href={item.url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 ${p.btnBg}`}
+                      className={`w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md transform hover:-translate-y-0.5 ${item.btnBg}`}
                     >
-                      <span>Open {p.name}</span>
+                      <span>{item.name}</span>
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
@@ -225,7 +226,7 @@ export const CollegePortalView = ({ college, onBackToLanding }) => {
                 Single Sign-On (SSO) & SSL Encryption Enabled
               </strong>
               <span className="text-slate-500 dark:text-slate-400">
-                All portal gateways are secured with 256-bit encryption for {college.code}.
+                All login gateways are secured with 256-bit encryption for {college.code}.
               </span>
             </div>
           </div>

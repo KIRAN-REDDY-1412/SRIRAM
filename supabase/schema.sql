@@ -53,6 +53,9 @@ CREATE TABLE IF NOT EXISTS public.colleges (
     principal_name VARCHAR(150) NULL,
     principal_mobile VARCHAR(20) NULL,
     principal_email VARCHAR(255) NULL,
+    is_autonomous BOOLEAN DEFAULT false,
+    hospital_name VARCHAR(255) NULL,
+    hospital_logo_url TEXT NULL,
     subscription_id UUID NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Expired')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
@@ -305,7 +308,7 @@ CREATE TABLE IF NOT EXISTS public.drug_information_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- TABLE 12: adr_reports (SINGLE CONSOLIDATED TABLE FOR ALL ADR DATA)
+-- TABLE 12: adr_reports
 CREATE TABLE IF NOT EXISTS public.adr_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -358,7 +361,52 @@ CREATE TABLE IF NOT EXISTS public.adr_reports (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- TABLE 13: document_branding_settings
+CREATE TABLE IF NOT EXISTS public.document_branding_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    college_id UUID NOT NULL UNIQUE REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    show_college_logo BOOLEAN NOT NULL DEFAULT true,
+    show_college_name BOOLEAN NOT NULL DEFAULT true,
+    show_autonomous BOOLEAN NOT NULL DEFAULT true,
+    show_hospital_logo BOOLEAN NOT NULL DEFAULT true,
+    show_hospital_name BOOLEAN NOT NULL DEFAULT true,
+    watermark_enabled BOOLEAN NOT NULL DEFAULT true,
+    watermark_text_line1 VARCHAR(150) NOT NULL DEFAULT 'PHARMDVERSE',
+    watermark_text_line2 VARCHAR(150) NOT NULL DEFAULT 'Clinical Documentation System',
+    watermark_opacity INTEGER NOT NULL DEFAULT 10,
+    watermark_position VARCHAR(50) NOT NULL DEFAULT 'Center',
+    footer_left_text VARCHAR(150) NOT NULL DEFAULT 'PharmDVerse',
+    footer_center_text VARCHAR(255) NOT NULL DEFAULT 'Confidential Clinical Documentation',
+    show_page_number BOOLEAN NOT NULL DEFAULT true,
+    show_generated_datetime BOOLEAN NOT NULL DEFAULT true,
+    paper_size VARCHAR(20) NOT NULL DEFAULT 'A4',
+    orientation VARCHAR(20) NOT NULL DEFAULT 'Portrait',
+    margin_top VARCHAR(20) NOT NULL DEFAULT '15mm',
+    margin_bottom VARCHAR(20) NOT NULL DEFAULT '15mm',
+    margin_left VARCHAR(20) NOT NULL DEFAULT '15mm',
+    margin_right VARCHAR(20) NOT NULL DEFAULT '15mm',
+    font_family VARCHAR(100) NOT NULL DEFAULT 'Times New Roman',
+    title_font_size VARCHAR(20) NOT NULL DEFAULT '18pt',
+    heading_font_size VARCHAR(20) NOT NULL DEFAULT '14pt',
+    body_font_size VARCHAR(20) NOT NULL DEFAULT '12pt',
+    primary_color VARCHAR(30) NOT NULL DEFAULT '#0f172a',
+    secondary_color VARCHAR(30) NOT NULL DEFAULT '#0284c7',
+    table_header_color VARCHAR(30) NOT NULL DEFAULT '#f1f5f9',
+    border_color VARCHAR(30) NOT NULL DEFAULT '#0f172a',
+    text_color VARCHAR(30) NOT NULL DEFAULT '#0f172a',
+    zebra_striping BOOLEAN NOT NULL DEFAULT false,
+    repeat_table_header BOOLEAN NOT NULL DEFAULT true,
+    show_student_signature BOOLEAN NOT NULL DEFAULT true,
+    show_preceptor_signature BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
 -- RLS POLICIES FOR SUPABASE
 ALTER TABLE public.adr_reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow All ADR Reports" ON public.adr_reports;
 CREATE POLICY "Allow All ADR Reports" ON public.adr_reports FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE public.document_branding_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow All Document Branding" ON public.document_branding_settings;
+CREATE POLICY "Allow All Document Branding" ON public.document_branding_settings FOR ALL USING (true) WITH CHECK (true);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { CollegeAdminDashboardView } from './CollegeAdminDashboardView';
@@ -9,11 +9,12 @@ import { AddStudentView } from './AddStudentView';
 import { StudentListView } from './StudentListView';
 import { AssignStudentsView } from './AssignStudentsView';
 import { AssignmentListView } from './AssignmentListView';
+import { DocumentBrandingView } from './DocumentBrandingView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 
 export const CollegeAdminLayout = ({ college, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'document-branding' | 'profile'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
@@ -116,6 +117,19 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             >
               <ClipboardList className="w-4 h-4 shrink-0" />
               <span>Assignment Management</span>
+            </button>
+
+            {/* Document Branding */}
+            <button
+              onClick={() => handleNavigate('document-branding')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'document-branding'
+                  ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FileText className="w-4 h-4 shrink-0" />
+              <span>📄 Document Branding</span>
             </button>
 
             {/* My Profile */}
@@ -251,6 +265,10 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
               college={college}
               onAddNew={() => handleNavigate('assign-students')}
             />
+          )}
+
+          {activeTab === 'document-branding' && (
+            <DocumentBrandingView college={college} />
           )}
 
           {activeTab === 'profile' && (

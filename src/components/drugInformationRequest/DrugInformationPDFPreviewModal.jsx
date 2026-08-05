@@ -1,11 +1,11 @@
 import React from 'react';
 import { X, Printer, FileSearch } from 'lucide-react';
+import { PharmDVerseDocumentHeader } from '../branding/PharmDVerseDocumentHeader';
 
 export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, student, dirData }) => {
   if (!isOpen) return null;
 
-  const collegeName = student?.colleges?.college_name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const formCode = `ARMN-LSSH/26-27/ ${clinicalCase?.case_id || '001'} /DIR-`;
+  const college = student?.colleges;
 
   const ALL_PROFESSIONAL_STATUS = [
     'Physician', 'Surgeon', 'Resident', 'Interns', 'Pharmacist', 'Nurse', 'Others'
@@ -44,27 +44,18 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
           </div>
         </div>
 
-        {/* PDF DOCUMENT WRAPPER (MATCHES EXACT UPLOADED 2-PAGE FORM) */}
+        {/* PDF DOCUMENT WRAPPER */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100 dark:bg-slate-950 font-serif text-slate-900 space-y-8">
           
           {/* ================= PAGE 1 ================= */}
           <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
             
-            {/* INSTITUTIONAL HEADER */}
-            <div className="border-2 border-slate-900 p-4 text-center space-y-1">
-              <h1 className="text-base sm:text-lg font-black uppercase tracking-wide border-b-2 border-slate-900 pb-1">
-                {collegeName}
-              </h1>
-              <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-                LALITHA SUPERSPECIALITIES HOSPITAL
-              </h2>
-            </div>
-
-            <div className="flex justify-between items-center text-[11px] font-mono font-bold">
-              <span>Form Ref: {formCode}</span>
-              <span className="text-center font-serif text-sm font-extrabold underline tracking-widest block">DRUG INFORMATION REQUEST & DOCUMENTATION FORM</span>
-              <span>Case: {clinicalCase?.case_id}</span>
-            </div>
+            {/* COMMON BRANDING HEADER */}
+            <PharmDVerseDocumentHeader
+              college={college}
+              documentTitle="Drug Information Request Documentation"
+              caseId={clinicalCase?.case_id}
+            />
 
             {/* DATE & TIME & ENQUIRER DETAILS */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20">
@@ -161,11 +152,11 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
           {/* ================= PAGE 2 ================= */}
           <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
             
-            <div className="flex justify-between items-center text-[11px] font-mono font-bold border-b border-slate-900 pb-2">
-              <span>Form Ref: {formCode}</span>
-              <span className="font-serif text-xs font-bold uppercase">Drug Information Request & Documentation Form (Continued)</span>
-              <span>Case: {clinicalCase?.case_id}</span>
-            </div>
+            <PharmDVerseDocumentHeader
+              college={college}
+              documentTitle="Drug Information Request Documentation (Continued)"
+              caseId={clinicalCase?.case_id}
+            />
 
             {/* RESPONSE PROVIDED (INFORMATION PROVIDED) */}
             <div>

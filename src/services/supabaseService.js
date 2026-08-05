@@ -102,6 +102,96 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// DOCUMENT BRANDING SERVICES
+// ====================================================================
+
+export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
+  try {
+    const { data, error } = await supabase
+      .from('document_branding_settings')
+      .select('*')
+      .eq('college_id', collegeId)
+      .maybeSingle();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, settings: data || null };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, settingsPayload) => {
+  try {
+    const { data: existing } = await supabase
+      .from('document_branding_settings')
+      .select('id')
+      .eq('college_id', collegeId)
+      .maybeSingle();
+
+    const payload = {
+      college_id: collegeId,
+      show_college_logo: settingsPayload.show_college_logo ?? true,
+      show_college_name: settingsPayload.show_college_name ?? true,
+      show_autonomous: settingsPayload.show_autonomous ?? true,
+      show_hospital_logo: settingsPayload.show_hospital_logo ?? true,
+      show_hospital_name: settingsPayload.show_hospital_name ?? true,
+      watermark_enabled: settingsPayload.watermark_enabled ?? true,
+      watermark_text_line1: settingsPayload.watermark_text_line1 || 'PHARMDVERSE',
+      watermark_text_line2: settingsPayload.watermark_text_line2 || 'Clinical Documentation System',
+      watermark_opacity: parseInt(settingsPayload.watermark_opacity, 10) || 10,
+      watermark_position: settingsPayload.watermark_position || 'Center',
+      footer_left_text: settingsPayload.footer_left_text || 'PharmDVerse',
+      footer_center_text: settingsPayload.footer_center_text || 'Confidential Clinical Documentation',
+      show_page_number: settingsPayload.show_page_number ?? true,
+      show_generated_datetime: settingsPayload.show_generated_datetime ?? true,
+      paper_size: settingsPayload.paper_size || 'A4',
+      orientation: settingsPayload.orientation || 'Portrait',
+      margin_top: settingsPayload.margin_top || '15mm',
+      margin_bottom: settingsPayload.margin_bottom || '15mm',
+      margin_left: settingsPayload.margin_left || '15mm',
+      margin_right: settingsPayload.margin_right || '15mm',
+      font_family: settingsPayload.font_family || 'Times New Roman',
+      title_font_size: settingsPayload.title_font_size || '18pt',
+      heading_font_size: settingsPayload.heading_font_size || '14pt',
+      body_font_size: settingsPayload.body_font_size || '12pt',
+      primary_color: settingsPayload.primary_color || '#0f172a',
+      secondary_color: settingsPayload.secondary_color || '#0284c7',
+      table_header_color: settingsPayload.table_header_color || '#f1f5f9',
+      border_color: settingsPayload.border_color || '#0f172a',
+      text_color: settingsPayload.text_color || '#0f172a',
+      zebra_striping: settingsPayload.zebra_striping ?? false,
+      repeat_table_header: settingsPayload.repeat_table_header ?? true,
+      show_student_signature: settingsPayload.show_student_signature ?? true,
+      show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true
+    };
+
+    let savedData = null;
+    if (existing && existing.id) {
+      const { data, error } = await supabase
+        .from('document_branding_settings')
+        .update(payload)
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    } else {
+      const { data, error } = await supabase
+        .from('document_branding_settings')
+        .insert([payload])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    }
+
+    return { success: true, settings: savedData };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // ADR DOCUMENTATION SERVICES (SINGLE CONSOLIDATED TABLE)
 // ====================================================================
 
@@ -688,7 +778,7 @@ export const fetchAssignmentsFromSupabase = async (collegeId, preceptorId = null
     if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    return { success: false, data: [], error: err.message };
+    return { success: false, data: [], error: error.message };
   }
 };
 
@@ -954,7 +1044,7 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
     if (error) return { success: false, data: [], error: error.message };
     return { success: true, data: data || [] };
   } catch (err) {
-    return { success: false, data: [], error: err.message };
+    return { success: false, data: [], error: error.message };
   }
 };
 
@@ -981,6 +1071,8 @@ export const approveCollegeInSupabase = async (request) => {
       principal_name: request.contactName || request.contact_person,
       principal_mobile: request.mobileNumber || request.mobile_number,
       principal_email: request.email,
+      hospital_name: request.hospitalName || 'Lalitha Superspecialities Hospital',
+      is_autonomous: Boolean(request.isAutonomous),
       status: 'Active'
     };
 
@@ -1038,6 +1130,9 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       principal_name: profileData.principalName || null,
       principal_mobile: profileData.principalMobile || null,
       principal_email: profileData.principalEmail || null,
+      hospital_name: profileData.hospitalName || null,
+      hospital_logo_url: profileData.hospitalLogoUrl || null,
+      is_autonomous: Boolean(profileData.isAutonomous),
       status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive'
     };
 

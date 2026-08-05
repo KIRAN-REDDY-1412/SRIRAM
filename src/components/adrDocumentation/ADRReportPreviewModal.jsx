@@ -1,12 +1,11 @@
 import React from 'react';
-import { X, Printer, ShieldAlert, FileText, Download } from 'lucide-react';
+import { X, Printer, ShieldAlert } from 'lucide-react';
+import { PharmDVerseDocumentHeader } from '../branding/PharmDVerseDocumentHeader';
 
 export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, report, suspectedMeds, concomitantMeds, attachments }) => {
   if (!isOpen) return null;
 
-  const collegeName = student?.colleges?.college_name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const collegeLogoUrl = student?.colleges?.college_logo_url;
-  const formRef = `PDV/ADR/2026-27/${clinicalCase?.case_id || '001'}`;
+  const college = student?.colleges;
 
   const handlePrint = () => {
     window.print();
@@ -20,7 +19,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
         <div className="h-16 px-6 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Clinical Summary (A4 PDF Preview)</h3>
+            <h3 className="text-sm font-extrabold tracking-tight">PharmDVerse ADR Documentation (A4 PDF Preview)</h3>
           </div>
 
           <div className="flex items-center gap-3">
@@ -46,38 +45,17 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
           
           <div className="bg-white p-6 sm:p-10 max-w-3xl mx-auto border-2 border-slate-900 shadow-xl space-y-6 text-xs text-slate-900 leading-normal">
             
-            {/* INSTITUTIONAL HEADER & BRANDING */}
-            <div className="border-2 border-slate-900 p-4 text-center relative space-y-1">
-              {collegeLogoUrl && (
-                <img
-                  src={collegeLogoUrl}
-                  alt={collegeName}
-                  className="w-12 h-12 object-contain absolute left-4 top-4 border border-slate-300 rounded-md"
-                />
-              )}
-              <h1 className="text-base sm:text-lg font-black uppercase tracking-wide border-b-2 border-slate-900 pb-1">
-                {collegeName}
-              </h1>
-              <div className="flex justify-between items-center text-[10px] font-mono font-bold text-slate-700 pt-1">
-                <span>PharmDVerse Clinical Services</span>
-                <span>Pharmacovigilance Division</span>
-                <span>Academic Year: 2026–2027</span>
-              </div>
-            </div>
-
-            {/* DOCUMENT TITLE & REF */}
-            <div className="flex justify-between items-center text-[11px] font-mono font-bold border-b border-slate-900 pb-2">
-              <span>Form Ref: {formRef}</span>
-              <span className="font-serif text-sm font-extrabold uppercase underline tracking-wider text-slate-900">
-                ADVERSE DRUG EVENT CLINICAL REPORT
-              </span>
-              <span>Case: {clinicalCase?.case_id}</span>
-            </div>
+            {/* COMMON BRANDING HEADER */}
+            <PharmDVerseDocumentHeader
+              college={college}
+              documentTitle="ADR Documentation"
+              caseId={clinicalCase?.case_id}
+            />
 
             {/* SECTION 1: GENERAL RECORD */}
             <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
-                Section 1: General Record Information
+                1. General Record Information
               </strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
                 <div>ADR Record No: <span className="font-mono underline text-amber-700">{report?.adr_number || 'ADR-2026-000001'}</span></div>
@@ -91,7 +69,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             {/* SECTION 2: PATIENT OVERVIEW */}
             <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-slate-900">
-                Section 2: Patient Overview
+                2. Patient Overview
               </strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-bold">
                 <div>Initials: <span className="underline">{report?.patient_initials || '—'}</span></div>
@@ -107,7 +85,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             {/* SECTION 3: REACTION DETAILS */}
             <div className="border border-slate-900 p-3 bg-slate-50/30 space-y-2">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-rose-900">
-                Section 3: Adverse Reaction Overview
+                3. Adverse Reaction Overview
               </strong>
               <div className="grid grid-cols-2 gap-2 font-bold">
                 <div className="col-span-2">Reaction Title: <span className="underline text-rose-800 text-sm font-extrabold">{report?.reaction_title || 'N/A'}</span></div>
@@ -133,7 +111,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             {/* SECTION 4: SUSPECTED MEDICATION TABLE */}
             <div className="space-y-2">
               <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1 text-amber-900">
-                Section 4: Suspected Medication(s)
+                4. Suspected Medication(s)
               </strong>
               <table className="w-full text-left text-xs border-2 border-slate-900 border-collapse">
                 <thead className="bg-slate-200 font-bold uppercase text-[10px] border-b border-slate-900">
@@ -167,7 +145,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             {concomitantMeds && concomitantMeds.length > 0 && (
               <div className="space-y-2">
                 <strong className="block font-bold text-xs uppercase border-b border-slate-900 pb-1">
-                  Section 5: Other Concurrent Medications
+                  5. Other Concurrent Medications
                 </strong>
                 <table className="w-full text-left text-xs border border-slate-900 border-collapse">
                   <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
@@ -196,7 +174,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
             <div className="grid grid-cols-2 gap-3 border border-slate-900 p-3 bg-slate-50/30">
               <div className="space-y-1 font-bold">
                 <strong className="block border-b border-slate-900 pb-1 uppercase text-slate-900">
-                  Section 6: Background
+                  6. Clinical Background
                 </strong>
                 <div>Allergies: <span className="underline text-rose-700">{report?.drug_allergy_history || 'None'}</span></div>
                 <div>Previous ADR: <span className="underline">{report?.previous_adr_history || 'None'}</span></div>
@@ -206,7 +184,7 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
 
               <div className="space-y-1 font-bold border-l border-slate-900 pl-3">
                 <strong className="block border-b border-slate-900 pb-1 uppercase text-indigo-900">
-                  Section 7: Assessment
+                  7. Reaction Assessment
                 </strong>
                 <div>Severity: <span className="underline text-indigo-800">{report?.reaction_severity || 'Moderate'}</span></div>
                 <div>Seriousness: <span className="underline">{report?.reaction_seriousness || 'Non-serious'}</span></div>
@@ -238,8 +216,8 @@ export const ADRReportPreviewModal = ({ isOpen, onClose, clinicalCase, student, 
 
             {/* FOOTER */}
             <div className="flex justify-between items-center pt-4 border-t border-slate-900 text-[10px] font-mono text-slate-500">
-              <span>PharmDVerse Cloud Logbook</span>
-              <span>Confidential Clinical Record</span>
+              <span>PharmDVerse</span>
+              <span>Confidential Clinical Documentation</span>
               <span>Page 1 of 1</span>
             </div>
 

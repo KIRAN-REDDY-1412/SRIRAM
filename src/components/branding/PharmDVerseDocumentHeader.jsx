@@ -17,44 +17,44 @@ export const PharmDVerseDocumentHeader = ({ college, branding, documentTitle, ca
     <div className="space-y-2 mb-6 text-slate-900 font-serif">
       
       {/* HEADER ROW 1 */}
-      <div className="border-2 border-slate-900 p-4 text-center flex items-center justify-between min-h-[90px] relative">
+      <div className="border-2 border-slate-900 p-3 sm:p-4 text-center flex items-center justify-between min-h-[90px] relative gap-2">
         
         {/* LEFT: COLLEGE LOGO */}
-        <div className="w-16 h-16 flex items-center justify-start shrink-0">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-start shrink-0">
           {showCollegeLogo && collegeLogoUrl ? (
-            <img src={collegeLogoUrl} alt={collegeName} className="max-w-16 max-h-16 object-contain border border-slate-300 rounded-sm" />
+            <img src={collegeLogoUrl} alt={collegeName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
           ) : showCollegeLogo ? (
-            <div className="w-14 h-14 border border-slate-900 font-sans text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">COLLEGE LOGO</div>
+            <div className="w-12 h-12 sm:w-14 sm:h-14 border border-slate-900 font-sans text-[8px] sm:text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">COLLEGE LOGO</div>
           ) : null}
         </div>
 
-        {/* CENTER: COLLEGE NAME, AUTONOMOUS, HOSPITAL NAME */}
-        <div className="flex-1 text-center px-4 space-y-0.5">
+        {/* CENTER: COLLEGE NAME (SINGLE LINE), AUTONOMOUS, HOSPITAL NAME */}
+        <div className="flex-1 text-center px-1 sm:px-3 space-y-0.5 min-w-0">
           {showCollegeName && (
-            <h1 className="text-base sm:text-lg font-black uppercase tracking-wide leading-tight">
+            <h1 className="text-[11px] sm:text-sm md:text-base font-black uppercase tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
               {collegeName}
             </h1>
           )}
 
           {showAutonomous && isAutonomous && (
-            <div className="text-xs font-bold italic text-indigo-900 tracking-wide">
+            <div className="text-[10px] sm:text-xs font-bold italic text-indigo-900 tracking-wide whitespace-nowrap">
               (Autonomous)
             </div>
           )}
 
           {showHospitalName && (
-            <h2 className="text-xs sm:text-sm font-extrabold uppercase text-slate-800 tracking-wider">
+            <h2 className="text-[10px] sm:text-xs md:text-sm font-extrabold uppercase text-slate-800 tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">
               {hospitalName}
             </h2>
           )}
         </div>
 
         {/* RIGHT: HOSPITAL LOGO */}
-        <div className="w-16 h-16 flex items-center justify-end shrink-0">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-end shrink-0">
           {showHospitalLogo && hospitalLogoUrl ? (
-            <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-16 max-h-16 object-contain border border-slate-300 rounded-sm" />
+            <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
           ) : showHospitalLogo ? (
-            <div className="w-14 h-14 border border-slate-900 font-sans text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">HOSPITAL LOGO</div>
+            <div className="w-12 h-12 sm:w-14 sm:h-14 border border-slate-900 font-sans text-[8px] sm:text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">HOSPITAL LOGO</div>
           ) : null}
         </div>
 
@@ -62,7 +62,7 @@ export const PharmDVerseDocumentHeader = ({ college, branding, documentTitle, ca
 
       {/* HEADER ROW 2 */}
       <div className="flex justify-between items-center text-xs font-extrabold font-mono border-b-2 border-slate-900 pb-2 px-1">
-        <span className="font-serif text-sm font-black uppercase tracking-wider text-slate-900">
+        <span className="font-serif text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
           {documentTitle}
         </span>
         <span className="text-slate-900">

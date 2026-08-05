@@ -39,7 +39,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
 
     setPhotoUploadError('');
 
-    // Client-side 100 KB max file size check
     if (file.size > 100 * 1024) {
       setPhotoUploadError('File size exceeds 100 KB limit. Please select a smaller photo.');
       return;
@@ -152,7 +151,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
       {saveSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5 shadow-xs">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>✅ Preceptor added successfully! Redirecting to Preceptor List...</span>
+          <span>Preceptor added successfully! Redirecting to Preceptor List...</span>
         </div>
       )}
 
@@ -182,7 +181,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.fullName}
                     onChange={handleChange}
-                    placeholder="e.g. Dr. Rajesh Sharma"
+                    placeholder="Enter full name"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                   />
                 </div>
@@ -213,7 +212,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.mobileNumber}
                     onChange={handleChange}
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="Enter mobile number"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-mono"
                   />
                 </div>
@@ -228,7 +227,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="e.g. rajesh.sharma@hospital.org"
+                    placeholder="Enter email address"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                   />
                 </div>
@@ -253,7 +252,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.qualification}
                     onChange={handleChange}
-                    placeholder="e.g. Pharm.D / M.Pharm / MD"
+                    placeholder="Enter qualification"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                   />
                 </div>
@@ -268,7 +267,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.designation}
                     onChange={handleChange}
-                    placeholder="e.g. Chief Preceptor / Asst Prof"
+                    placeholder="Enter designation"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                   />
                 </div>
@@ -283,7 +282,7 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                     required
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="e.g. Pharmacy Practice / Cardiology"
+                    placeholder="Enter department"
                     className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
                   />
                 </div>
@@ -295,14 +294,13 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
           {/* RIGHT 4 COLS: PROFILE PHOTO UPLOAD CARD & STATUS */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* PROFILE PHOTO CARD (TOP RIGHT REQUIREMENT) */}
+            {/* PROFILE PHOTO CARD */}
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 text-center">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
                 <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Profile Photo Card
               </h3>
 
-              {/* Avatar Preview */}
               <div className="relative w-28 h-28 mx-auto">
                 {formData.profilePhotoUrl ? (
                   <img
@@ -318,7 +316,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                 )}
               </div>
 
-              {/* Photo Restrictions Notice */}
               <div className="text-[10px] text-slate-400 space-y-0.5">
                 <p className="font-semibold text-slate-600 dark:text-slate-300">Max File Size: 100 KB</p>
                 <p>Allowed Formats: JPG, JPEG, PNG</p>
@@ -330,7 +327,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                 </p>
               )}
 
-              {/* Action Buttons */}
               <div className="space-y-2 pt-1">
                 <label className="w-full h-[40px] px-3 rounded-xl bg-slate-900 hover:bg-emerald-600 dark:bg-slate-800 dark:hover:bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
                   {uploadingPhoto ? (
@@ -394,8 +390,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
-            {/* Username Read-Only */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Username (Read Only • Auto-populated)
@@ -410,7 +404,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Password * (Min 8 chars)
@@ -435,7 +428,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Confirm Password *
@@ -459,7 +451,6 @@ export const AddPreceptorView = ({ college, onCancel, onSuccess }) => {
                 </button>
               </div>
             </div>
-
           </div>
         </div>
 

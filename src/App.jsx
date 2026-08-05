@@ -14,6 +14,8 @@ import { getActiveAdminSession } from './services/authService';
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
 import { CollegePortalView } from './components/portal/CollegePortalView';
 import { CollegeAdminLayout } from './components/collegeAdmin/CollegeAdminLayout';
+import { PreceptorLayout } from './components/preceptor/PreceptorLayout';
+import { StudentLayout } from './components/student/StudentLayout';
 
 // Modals
 import { PricingModal } from './components/modals/PricingModal';
@@ -23,21 +25,29 @@ import { AllCollegesModal } from './components/modals/AllCollegesModal';
 import { DeveloperAccessModal } from './components/modals/DeveloperAccessModal';
 import { SuperAdminModal } from './components/modals/SuperAdminModal';
 import { CollegeAdminLoginModal } from './components/modals/CollegeAdminLoginModal';
+import { PreceptorLoginModal } from './components/modals/PreceptorLoginModal';
+import { StudentLoginModal } from './components/modals/StudentLoginModal';
 import { InfoModal } from './components/modals/InfoModal';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin' | 'college_portal' | 'college_admin'
+  const [viewMode, setViewMode] = useState('landing'); // 'landing' | 'admin' | 'college_portal' | 'college_admin' | 'preceptor_portal' | 'student_portal'
+  
   const [pricingOpen, setPricingOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [allCollegesOpen, setAllCollegesOpen] = useState(false);
   const [devAccessOpen, setDevAccessOpen] = useState(false);
+  
   const [superAdminLoginOpen, setSuperAdminLoginOpen] = useState(false);
   const [collegeAdminLoginOpen, setCollegeAdminLoginOpen] = useState(false);
+  const [preceptorLoginOpen, setPreceptorLoginOpen] = useState(false);
+  const [studentLoginOpen, setStudentLoginOpen] = useState(false);
   const [infoContentType, setInfoContentType] = useState(null);
   
   const [activePortalCollege, setActivePortalCollege] = useState(null);
   const [loggedCollegeAdmin, setLoggedCollegeAdmin] = useState(null);
+  const [loggedPreceptor, setLoggedPreceptor] = useState(null);
+  const [loggedStudent, setLoggedStudent] = useState(null);
 
   // Check active admin session on initial load
   useEffect(() => {
@@ -67,12 +77,26 @@ export default function App() {
     setViewMode('landing');
     setActivePortalCollege(null);
     setLoggedCollegeAdmin(null);
+    setLoggedPreceptor(null);
+    setLoggedStudent(null);
   };
 
   const handleCollegeAdminLoginSuccess = (college) => {
     setLoggedCollegeAdmin(college);
     setViewMode('college_admin');
     setCollegeAdminLoginOpen(false);
+  };
+
+  const handlePreceptorLoginSuccess = (preceptor) => {
+    setLoggedPreceptor(preceptor);
+    setViewMode('preceptor_portal');
+    setPreceptorLoginOpen(false);
+  };
+
+  const handleStudentLoginSuccess = (student) => {
+    setLoggedStudent(student);
+    setViewMode('student_portal');
+    setStudentLoginOpen(false);
   };
 
   return (
@@ -92,9 +116,25 @@ export default function App() {
             onLogout={handleBackToLanding}
           />
 
+        ) : viewMode === 'preceptor_portal' && loggedPreceptor ? (
+          
+          /* 3. FULL PAGE PRECEPTOR PORTAL VIEW */
+          <PreceptorLayout
+            preceptor={loggedPreceptor}
+            onLogout={handleBackToLanding}
+          />
+
+        ) : viewMode === 'student_portal' && loggedStudent ? (
+          
+          /* 4. FULL PAGE STUDENT PORTAL VIEW */
+          <StudentLayout
+            student={loggedStudent}
+            onLogout={handleBackToLanding}
+          />
+
         ) : viewMode === 'college_portal' && activePortalCollege ? (
           
-          /* 3. FULL PAGE DEDICATED COLLEGE PORTAL LANDING PAGE */
+          /* 5. FULL PAGE DEDICATED COLLEGE PORTAL LANDING PAGE */
           <CollegePortalView
             college={activePortalCollege}
             onBackToLanding={handleBackToLanding}
@@ -102,10 +142,18 @@ export default function App() {
               setActivePortalCollege(col);
               setCollegeAdminLoginOpen(true);
             }}
+            onOpenPreceptorLogin={(col) => {
+              setActivePortalCollege(col);
+              setPreceptorLoginOpen(true);
+            }}
+            onOpenStudentLogin={(col) => {
+              setActivePortalCollege(col);
+              setStudentLoginOpen(true);
+            }}
           />
 
         ) : (
-          /* 4. PUBLIC SAAS LANDING PAGE VIEW */
+          /* 6. PUBLIC SAAS LANDING PAGE VIEW */
           <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-500 selection:text-white transition-colors duration-300 flex flex-col justify-between">
             
             {/* Sticky Glass Header */}
@@ -177,14 +225,6 @@ export default function App() {
               onLoginSuccess={() => setViewMode('admin')}
             />
 
-            {/* College Admin Login Modal */}
-            <CollegeAdminLoginModal
-              isOpen={collegeAdminLoginOpen}
-              onClose={() => setCollegeAdminLoginOpen(false)}
-              initialCollege={activePortalCollege}
-              onLoginSuccess={handleCollegeAdminLoginSuccess}
-            />
-
             {/* Informational Modals */}
             <InfoModal
               isOpen={Boolean(infoContentType)}
@@ -195,14 +235,30 @@ export default function App() {
           </div>
         )}
 
-        {/* Global College Admin Login Modal when on College Portal page */}
+        {/* Global Portal Login Modals when on College Portal page */}
         {viewMode === 'college_portal' && (
-          <CollegeAdminLoginModal
-            isOpen={collegeAdminLoginOpen}
-            onClose={() => setCollegeAdminLoginOpen(false)}
-            initialCollege={activePortalCollege}
-            onLoginSuccess={handleCollegeAdminLoginSuccess}
-          />
+          <>
+            <CollegeAdminLoginModal
+              isOpen={collegeAdminLoginOpen}
+              onClose={() => setCollegeAdminLoginOpen(false)}
+              initialCollege={activePortalCollege}
+              onLoginSuccess={handleCollegeAdminLoginSuccess}
+            />
+
+            <PreceptorLoginModal
+              isOpen={preceptorLoginOpen}
+              onClose={() => setPreceptorLoginOpen(false)}
+              initialCollege={activePortalCollege}
+              onLoginSuccess={handlePreceptorLoginSuccess}
+            />
+
+            <StudentLoginModal
+              isOpen={studentLoginOpen}
+              onClose={() => setStudentLoginOpen(false)}
+              initialCollege={activePortalCollege}
+              onLoginSuccess={handleStudentLoginSuccess}
+            />
+          </>
         )}
 
       </CollegeProvider>

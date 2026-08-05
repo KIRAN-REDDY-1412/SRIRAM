@@ -8,7 +8,7 @@ import { logoutSuperAdmin } from '../../services/authService';
 import { 
   Building2, CheckCircle2, Clock, XCircle, Edit3, 
   ExternalLink, Search, AlertTriangle,
-  Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square, Loader2
+  Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square, Loader2, MessageSquare
 } from 'lucide-react';
 
 export const SuperAdminDashboard = ({ onExitToLanding }) => {
@@ -32,7 +32,12 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [approvingId, setApprovingId] = useState(null);
 
-  // Bulk Selection State (Select to Delete)
+  // Rejection Remarks Modal State
+  const [rejectingRequest, setRejectingRequest] = useState(null);
+  const [rejectionRemarks, setRejectionRemarks] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  // Bulk Selection State (Select to Delete for Colleges)
   const [selectedIds, setSelectedIds] = useState([]);
   const [collegeToDelete, setCollegeToDelete] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
@@ -62,7 +67,6 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
 
   // Helper for current tab items
   const getCurrentTabItems = () => {
-    if (activeTab === 'requests') return filteredRequests;
     if (activeTab === 'active') return filteredActive;
     if (activeTab === 'inactive') return filteredInactive;
     if (activeTab === 'expired') return filteredExpired;
@@ -108,6 +112,21 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
     } catch (err) {
       setApprovingId(null);
       console.error('Failed to approve and edit college:', err);
+    }
+  };
+
+  // REJECT WITH COMMENTS DIALOG
+  const handleConfirmRejection = async () => {
+    if (!rejectingRequest) return;
+    setIsRejecting(true);
+    try {
+      await rejectCollege(rejectingRequest.id, rejectionRemarks);
+      setIsRejecting(false);
+      setRejectingRequest(null);
+      setRejectionRemarks('');
+    } catch (err) {
+      setIsRejecting(false);
+      console.error('Failed to reject college request:', err);
     }
   };
 
@@ -370,8 +389,8 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
         {/* Dashboard Main View Container */}
         <main className="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
           
-          {/* FLOATING BULK DELETE BAR (SELECT TO DELETE) */}
-          {selectedIds.length > 0 && activeTab !== 'edit_profile' && (
+          {/* FLOATING BULK DELETE BAR (FOR ACTIVE COLLEGES ONLY) */}
+          {selectedIds.length > 0 && activeTab !== 'requests' && activeTab !== 'edit_profile' && (
             <div className="p-4 rounded-2xl bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shadow-xl flex items-center justify-between animate-fadeIn sticky top-20 z-20">
               <div className="flex items-center gap-3">
                 <span className="w-7 h-7 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-xs flex items-center justify-center">
@@ -443,29 +462,17 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
             </div>
           )}
 
-          {/* TAB 1: REGISTRATION REQUESTS */}
+          {/* TAB 1: REGISTRATION REQUESTS (ONLY APPROVE AND REJECT WITH COMMENTS - NO EDIT/DELETE) */}
           {activeTab === 'requests' && (
             <div className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {currentTabItems.length > 0 && (
-                    <button
-                      onClick={toggleSelectAll}
-                      className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-semibold"
-                      title="Select All Requests"
-                    >
-                      {allCurrentSelected ? <CheckSquare className="w-4 h-4 text-emerald-500" /> : <Square className="w-4 h-4" />}
-                      <span className="hidden sm:inline">Select All</span>
-                    </button>
-                  )}
-                  <div>
-                    <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                      College Registration Applications
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Review and approve pending pharmacy college onboarding applications.
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    College Registration Applications
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Review and approve pending pharmacy college onboarding applications.
+                  </p>
                 </div>
 
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
@@ -489,14 +496,6 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                         <tr>
-                          <th className="py-3.5 px-4 w-10 text-center">
-                            <input
-                              type="checkbox"
-                              checked={allCurrentSelected}
-                              onChange={toggleSelectAll}
-                              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 cursor-pointer"
-                            />
-                          </th>
                           <th className="py-3.5 px-5">College Name</th>
                           <th className="py-3.5 px-5">Contact Person</th>
                           <th className="py-3.5 px-5">Mobile Number</th>
@@ -509,26 +508,13 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                         {filteredRequests.map((req) => {
-                          const isSelected = selectedIds.includes(req.id);
                           const isProcessingThis = approvingId === req.id;
 
                           return (
                             <tr 
                               key={req.id} 
-                              className={`transition-colors ${
-                                isSelected 
-                                  ? 'bg-emerald-50/60 dark:bg-emerald-950/20' 
-                                  : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
-                              }`}
+                              className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
                             >
-                              <td className="py-4 px-4 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => toggleSelectItem(req.id)}
-                                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 cursor-pointer"
-                                />
-                              </td>
                               <td className="py-4 px-5 font-bold text-slate-900 dark:text-white">
                                 {req.collegeName}
                               </td>
@@ -557,15 +543,20 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                                 }`}>
                                   {req.status}
                                 </span>
+                                {req.remarks && (
+                                  <p className="text-[10px] text-rose-600 dark:text-rose-400 italic mt-1 max-w-xs truncate" title={req.remarks}>
+                                    Note: {req.remarks}
+                                  </p>
+                                )}
                               </td>
                               <td className="py-4 px-5 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  {req.status === 'Pending' && (
+                                  {req.status === 'Pending' ? (
                                     <>
                                       <button
                                         onClick={() => handleApproveAndEdit(req.id)}
                                         disabled={isProcessingThis}
-                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-60"
+                                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-60"
                                       >
                                         {isProcessingThis ? (
                                           <>
@@ -575,43 +566,28 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                                         ) : (
                                           <>
                                             <CheckCircle2 className="w-3.5 h-3.5" />
-                                            <span>Approve & Edit Profile</span>
+                                            <span>Approve</span>
                                           </>
                                         )}
                                       </button>
 
                                       <button
-                                        onClick={() => rejectCollege(req.id)}
+                                        onClick={() => {
+                                          setRejectingRequest(req);
+                                          setRejectionRemarks('');
+                                        }}
                                         disabled={isProcessingThis}
-                                        className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-1 transition-colors disabled:opacity-60"
+                                        className="px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-60"
                                       >
                                         <XCircle className="w-3.5 h-3.5" />
                                         <span>Reject</span>
                                       </button>
                                     </>
+                                  ) : (
+                                    <span className="text-[11px] font-semibold text-slate-400 italic">
+                                      Processed
+                                    </span>
                                   )}
-
-                                  {req.status === 'Approved' && (
-                                    <button
-                                      onClick={() => {
-                                        const activeClg = activeColleges.find(c => c.requestId === req.id || c.name === req.collegeName);
-                                        if (activeClg) handleStartEditProfile(activeClg);
-                                      }}
-                                      className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1 transition-colors shadow-xs"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                      <span>Edit Profile</span>
-                                    </button>
-                                  )}
-
-                                  {/* Delete Action Button */}
-                                  <button
-                                    onClick={() => setCollegeToDelete({ id: req.id, name: req.collegeName })}
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
-                                    title="Delete Request"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -870,7 +846,68 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
 
       </div>
 
-      {/* SINGLE DELETE CONFIRMATION DIALOG */}
+      {/* REJECTION REMARKS DIALOG */}
+      {rejectingRequest && (
+        <ModalWrapper
+          isOpen={true}
+          onClose={() => {
+            setRejectingRequest(null);
+            setRejectionRemarks('');
+          }}
+          title="Reject Registration Application"
+          subtitle={`Enter rejection remarks for ${rejectingRequest.collegeName}`}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Rejection Remarks / Comments (Optional)
+              </label>
+              <div className="relative">
+                <MessageSquare className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <textarea
+                  rows={3}
+                  value={rejectionRemarks}
+                  onChange={(e) => setRejectionRemarks(e.target.value)}
+                  placeholder="Enter reason for rejection (e.g. PCI document unverified, invalid contact number)..."
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-rose-500/50 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isRejecting}
+                onClick={() => {
+                  setRejectingRequest(null);
+                  setRejectionRemarks('');
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isRejecting}
+                onClick={handleConfirmRejection}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {isRejecting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Rejecting...</span>
+                  </>
+                ) : (
+                  <span>Confirm Rejection</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </ModalWrapper>
+      )}
+
+      {/* SINGLE DELETE CONFIRMATION DIALOG (ACTIVE COLLEGES) */}
       {collegeToDelete && (
         <ModalWrapper
           isOpen={true}

@@ -158,18 +158,19 @@ export const approveCollegeInSupabase = async (request) => {
 };
 
 /**
- * Reject registration request
+ * Reject registration request with optional remarks/comments
  * Table: registration_requests
  */
-export const rejectCollegeInSupabase = async (requestId) => {
-  console.log('[Supabase Operation] Rejecting Request ID:', requestId);
+export const rejectCollegeInSupabase = async (requestId, remarks = '') => {
+  console.log('[Supabase Operation] Rejecting Request ID:', requestId, 'with remarks:', remarks);
 
   try {
     const { data, error } = await supabase
       .from('registration_requests')
       .update({
         status: 'Rejected',
-        rejected_at: new Date().toISOString()
+        rejected_at: new Date().toISOString(),
+        remarks: remarks || null
       })
       .eq('id', requestId)
       .select();
@@ -195,7 +196,7 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
   console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
 
   try {
-    // 1. Update colleges table with all location and academic fields
+    // 1. Update colleges table
     const collegeUpdatePayload = {
       college_code: profileData.collegeCode,
       college_name: profileData.collegeName,

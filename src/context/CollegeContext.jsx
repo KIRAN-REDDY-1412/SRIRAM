@@ -81,6 +81,7 @@ export const CollegeProvider = ({ children }) => {
         mobileNumber: r.mobile_number,
         email: r.email,
         status: r.status || 'Pending',
+        remarks: r.remarks || '',
         submittedDate: r.submitted_at ? r.submitted_at.split('T')[0] : (r.created_at ? r.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
         address: `${r.city}, ${r.state}`,
         district: r.city,
@@ -136,10 +137,10 @@ export const CollegeProvider = ({ children }) => {
     return null;
   };
 
-  // Reject College Request -> Direct Supabase Update
-  const rejectCollege = async (requestId) => {
-    console.log('[CollegeContext] Rejecting request directly in Supabase:', requestId);
-    const result = await rejectCollegeInSupabase(requestId);
+  // Reject College Request with Remarks -> Direct Supabase Update
+  const rejectCollege = async (requestId, remarks = '') => {
+    console.log('[CollegeContext] Rejecting request directly in Supabase:', requestId, 'remarks:', remarks);
+    const result = await rejectCollegeInSupabase(requestId, remarks);
     if (result.success) {
       await loadSupabaseData();
     }

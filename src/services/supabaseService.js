@@ -102,12 +102,74 @@ export const uploadCollegeLogoToSupabaseStorage = async (file) => {
 };
 
 // ====================================================================
+// PHARMACIST INTERVENTION SERVICES
+// ====================================================================
+
+export const fetchPharmacistInterventionByCaseIdFromSupabase = async (clinicalCaseId) => {
+  console.log('[Supabase Operation] Fetching Pharmacist Intervention for Case ID:', clinicalCaseId);
+
+  try {
+    const { data: intervention, error } = await supabase
+      .from('pharmacist_interventions')
+      .select('*')
+      .eq('clinical_case_id', clinicalCaseId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('❌ [Supabase Error] Failed to fetch intervention:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, intervention: intervention || null };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Unexpected error fetching intervention:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const saveOrUpdatePharmacistInterventionInSupabase = async (payload) => {
+  console.log('[Supabase Operation] Saving/Updating Pharmacist Intervention for Case ID:', payload.clinical_case_id);
+
+  try {
+    const { data: existing } = await supabase
+      .from('pharmacist_interventions')
+      .select('id')
+      .eq('clinical_case_id', payload.clinical_case_id)
+      .maybeSingle();
+
+    let savedData = null;
+
+    if (existing && existing.id) {
+      const { data, error } = await supabase
+        .from('pharmacist_interventions')
+        .update(payload)
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    } else {
+      const { data, error } = await supabase
+        .from('pharmacist_interventions')
+        .insert([payload])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      savedData = data[0];
+    }
+
+    return { success: true, intervention: savedData };
+  } catch (err) {
+    console.error('❌ [Supabase Error] Saving pharmacist intervention failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+// ====================================================================
 // PATIENT COUNSELLING SERVICES
 // ====================================================================
 
 export const fetchPatientCounsellingByCaseIdFromSupabase = async (clinicalCaseId) => {
-  console.log('[Supabase Operation] Fetching Patient Counselling for Case ID:', clinicalCaseId);
-
   try {
     const { data: counselling, error } = await supabase
       .from('patient_counselling')
@@ -115,21 +177,14 @@ export const fetchPatientCounsellingByCaseIdFromSupabase = async (clinicalCaseId
       .eq('clinical_case_id', clinicalCaseId)
       .maybeSingle();
 
-    if (error) {
-      console.error('❌ [Supabase Error] Failed to fetch patient counselling:', error);
-      return { success: false, error: error.message };
-    }
-
+    if (error) return { success: false, error: error.message };
     return { success: true, counselling: counselling || null };
   } catch (err) {
-    console.error('❌ [Supabase Error] Unexpected error fetching patient counselling:', err);
     return { success: false, error: err.message };
   }
 };
 
 export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
-  console.log('[Supabase Operation] Saving/Updating Patient Counselling for Case ID:', payload.clinical_case_id);
-
   try {
     const { data: existing } = await supabase
       .from('patient_counselling')
@@ -160,7 +215,6 @@ export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
 
     return { success: true, counselling: savedData };
   } catch (err) {
-    console.error('❌ [Supabase Error] Saving patient counselling failed:', err);
     return { success: false, error: err.message };
   }
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake } from 'lucide-react';
+import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 
-export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling }) => {
+export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -289,6 +289,16 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                           <span>Counselling</span>
                         </button>
 
+                        {/* Open Pharmacist Intervention */}
+                        <button
+                          onClick={() => onOpenPharmacistIntervention(c)}
+                          className="px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition-colors"
+                          title="Open Pharmacist Intervention Form"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>Intervention</span>
+                        </button>
+
                         {/* Open Details Modal */}
                         <button
                           onClick={() => {
@@ -408,16 +418,16 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
               </div>
             </div>
 
-            <div className="flex justify-between gap-2 pt-2">
+            <div className="grid grid-cols-3 gap-1.5 pt-2">
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
                   onOpenPatientProfile(selectedCase);
                 }}
-                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5"
+                className="px-2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
               >
                 <Stethoscope className="w-3.5 h-3.5" />
-                <span>Patient Profile</span>
+                <span>Profile</span>
               </button>
 
               <button
@@ -425,10 +435,21 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                   setIsViewModalOpen(false);
                   onOpenPatientCounselling(selectedCase);
                 }}
-                className="px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5"
+                className="px-2 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
               >
                 <HeartHandshake className="w-3.5 h-3.5" />
-                <span>Counselling Form</span>
+                <span>Counselling</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsViewModalOpen(false);
+                  onOpenPharmacistIntervention(selectedCase);
+                }}
+                className="px-2 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Intervention</span>
               </button>
             </div>
           </div>

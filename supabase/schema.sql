@@ -260,7 +260,52 @@ CREATE TABLE IF NOT EXISTS public.pharmacist_interventions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
+-- TABLE 11: drug_information_requests
+CREATE TABLE IF NOT EXISTS public.drug_information_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    clinical_case_id UUID NOT NULL UNIQUE REFERENCES public.clinical_cases(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    college_id UUID NOT NULL REFERENCES public.colleges(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    request_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    request_time VARCHAR(20) NULL,
+    enquirer_name VARCHAR(150) NOT NULL,
+    designation VARCHAR(100) NULL,
+    phone_no VARCHAR(30) NULL,
+    unit_ward VARCHAR(100) NULL,
+    professional_status VARCHAR(50) NULL,
+    professional_status_other TEXT NULL,
+    mode_of_request VARCHAR(50) NOT NULL DEFAULT 'Direct',
+    answer_needed VARCHAR(50) NOT NULL DEFAULT 'Immediately',
+    details_of_enquiry TEXT NOT NULL,
+    question_category VARCHAR(100) NULL,
+    purpose_of_enquiry VARCHAR(100) NOT NULL DEFAULT 'Better patient care',
+    purpose_other TEXT NULL,
+    age VARCHAR(20) NULL,
+    sex VARCHAR(20) NULL,
+    weight_kg VARCHAR(20) NULL,
+    allergies TEXT NULL,
+    current_medical_problem TEXT NULL,
+    is_pregnant_lactating BOOLEAN NOT NULL DEFAULT false,
+    pregnancy_lactation_details TEXT NULL,
+    other_investigations TEXT NULL,
+    drug_therapy TEXT NULL,
+    answer_given_timeframe VARCHAR(50) NULL,
+    reason_for_delay TEXT NULL,
+    mode_of_reply VARCHAR(50) NOT NULL DEFAULT 'Written',
+    information_provided TEXT NULL,
+    ref_textbooks TEXT NULL,
+    ref_journals TEXT NULL,
+    ref_micromedex TEXT NULL,
+    ref_clinirex TEXT NULL,
+    ref_idis TEXT NULL,
+    ref_website TEXT NULL,
+    ref_others TEXT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
 -- RLS POLICIES FOR SUPABASE
-ALTER TABLE public.pharmacist_interventions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow All Operations Pharmacist Interventions" ON public.pharmacist_interventions;
-CREATE POLICY "Allow All Operations Pharmacist Interventions" ON public.pharmacist_interventions FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE public.drug_information_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow All Operations Drug Information Requests" ON public.drug_information_requests;
+CREATE POLICY "Allow All Operations Drug Information Requests" ON public.drug_information_requests FOR ALL USING (true) WITH CHECK (true);

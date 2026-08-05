@@ -316,53 +316,42 @@ export const fetchActiveCollegesFromSupabase = async () => {
 };
 
 /**
- * Delete single college record permanently from ALL Supabase tables (subscriptions, colleges, registration_requests)
+ * Delete single college record permanently from ALL Supabase tables (registration_requests, colleges, subscriptions)
  */
 export const deleteCollegeFromSupabase = async (targetId) => {
-  console.log('🗑️ [Supabase Operation] Permanently Deleting ID from Supabase:', targetId);
+  console.log('🗑️ [Supabase Operation] Deleting ID from Supabase:', targetId);
 
   try {
-    // 1. First find any linked college row to get both college.id and registration_request_id
-    const { data: clgData } = await supabase
+    let requestId = targetId;
+    let collegeId = targetId;
+
+    // 1. Query colleges table to find any linked registration_request_id
+    const { data: colMatch } = await supabase
       .from('colleges')
       .select('id, registration_request_id')
-      .or(`id.eq.${targetId},registration_request_id.eq.${targetId}`);
+      .eq('id', targetId)
+      .maybeSingle();
 
-    let collegeIds = [targetId];
-    let requestIds = [targetId];
-
-    if (clgData && clgData.length > 0) {
-      clgData.forEach(c => {
-        if (c.id) collegeIds.push(c.id);
-        if (c.registration_request_id) requestIds.push(c.registration_request_id);
-      });
+    if (colMatch) {
+      collegeId = colMatch.id;
+      if (colMatch.registration_request_id) requestId = colMatch.registration_request_id;
     }
 
-    // 2. Delete from subscriptions table
-    const { error: subErr } = await supabase
-      .from('subscriptions')
-      .delete()
-      .in('college_id', collegeIds);
-
-    if (subErr) console.warn('Supabase subscriptions delete notice:', subErr.message);
-
-    // 3. Delete from colleges table
-    const { error: colErr } = await supabase
-      .from('colleges')
-      .delete()
-      .in('id', collegeIds);
-
-    if (colErr) console.warn('Supabase colleges delete notice:', colErr.message);
-
-    // 4. Delete from registration_requests table
+    // 2. Delete from registration_requests (with ON DELETE CASCADE enabled in Supabase, this automatically purges linked colleges and subscriptions)
     const { error: reqErr } = await supabase
       .from('registration_requests')
       .delete()
-      .in('id', requestIds);
+      .eq('id', requestId);
 
-    if (reqErr) console.warn('Supabase registration_requests delete notice:', reqErr.message);
+    if (reqErr) {
+      console.warn('Notice deleting from registration_requests:', reqErr.message);
+    }
 
-    console.log('✅ [Supabase Success] PERMANENTLY DELETED FROM SUPABASE:', targetId);
+    // 3. Fallback delete directly from colleges & subscriptions if targetId was a college ID
+    await supabase.from('subscriptions').delete().eq('college_id', collegeId);
+    await supabase.from('colleges').delete().eq('id', collegeId);
+
+    console.log('✅ [Supabase Success] PERMANENTLY DELETED FROM ALL SUPABASE TABLES:', targetId);
     return { success: true };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during delete:', err);
@@ -374,35 +363,33 @@ export const deleteCollegeFromSupabase = async (targetId) => {
  * Bulk Delete multiple colleges permanently from ALL Supabase tables
  */
 export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
-  console.log('🗑️ [Supabase Operation] Permanently Bulk Deleting IDs from Supabase:', targetIds);
+  console.log('🗑️ [Supabase Operation] Bulk Deleting IDs from Supabase:', targetIds);
 
   try {
-    // 1. Find all linked college and request IDs
-    const { data: clgData } = await supabase
+    // 1. Query colleges to collect linked registration_request_ids
+    const { data: colMatches } = await supabase
       .from('colleges')
       .select('id, registration_request_id')
       .in('id', targetIds);
 
-    let collegeIds = [...targetIds];
-    let requestIds = [...targetIds];
+    let allRequestIds = [...targetIds];
+    let allCollegeIds = [...targetIds];
 
-    if (clgData && clgData.length > 0) {
-      clgData.forEach(c => {
-        if (c.id) collegeIds.push(c.id);
-        if (c.registration_request_id) requestIds.push(c.registration_request_id);
+    if (colMatches && colMatches.length > 0) {
+      colMatches.forEach(c => {
+        if (c.id) allCollegeIds.push(c.id);
+        if (c.registration_request_id) allRequestIds.push(c.registration_request_id);
       });
     }
 
-    // 2. Bulk delete from subscriptions
-    await supabase.from('subscriptions').delete().in('college_id', collegeIds);
+    // 2. Delete from registration_requests (cascades to colleges and subscriptions)
+    await supabase.from('registration_requests').delete().in('id', allRequestIds);
 
-    // 3. Bulk delete from colleges
-    await supabase.from('colleges').delete().in('id', collegeIds);
+    // 3. Fallback delete from subscriptions and colleges
+    await supabase.from('subscriptions').delete().in('college_id', allCollegeIds);
+    await supabase.from('colleges').delete().in('id', allCollegeIds);
 
-    // 4. Bulk delete from registration_requests
-    await supabase.from('registration_requests').delete().in('id', requestIds);
-
-    console.log('✅ [Supabase Success] PERMANENTLY BULK DELETED FROM SUPABASE:', targetIds);
+    console.log('✅ [Supabase Success] PERMANENTLY BULK DELETED FROM ALL SUPABASE TABLES:', targetIds);
     return { success: true };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during bulk delete:', err);

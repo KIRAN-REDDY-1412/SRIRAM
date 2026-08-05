@@ -49,7 +49,7 @@ CREATE TRIGGER set_updated_at_registration_requests
 -- ====================================================================
 CREATE TABLE IF NOT EXISTS public.colleges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    registration_request_id UUID NULL REFERENCES public.registration_requests(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    registration_request_id UUID NULL REFERENCES public.registration_requests(id) ON DELETE CASCADE ON UPDATE CASCADE,
     college_code VARCHAR(50) NOT NULL UNIQUE,
     college_name VARCHAR(255) NOT NULL,
     college_logo TEXT NULL,
@@ -103,7 +103,7 @@ CREATE TRIGGER set_updated_at_subscriptions
 ALTER TABLE public.colleges 
     DROP CONSTRAINT IF EXISTS fk_colleges_subscription,
     ADD CONSTRAINT fk_colleges_subscription 
-    FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE SET NULL ON UPDATE CASCADE;
+    FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- ====================================================================
 -- TABLE 4: super_admin

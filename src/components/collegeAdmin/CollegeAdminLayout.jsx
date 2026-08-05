@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, User, UserCheck, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { CollegeAdminDashboardView } from './CollegeAdminDashboardView';
@@ -11,11 +11,7 @@ import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 
 export const CollegeAdminLayout = ({ college, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-preceptor' | 'preceptors-list' | 'add-student' | 'students-list' | 'profile'
-  
-  // Accordion Sidebar Submenus
-  const [preceptorSubOpen, setPreceptorSubOpen] = useState(true);
-  const [studentSubOpen, setStudentSubOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'profile'
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const handleNavigate = (tab) => {
@@ -65,8 +61,8 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
             </button>
           </div>
 
-          {/* SIDEBAR NAVIGATION ITEMS */}
-          <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto text-xs font-semibold">
+          {/* CLEAN SIDEBAR NAVIGATION ITEMS (NO DROPDOWNS) */}
+          <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto text-xs font-semibold">
             
             {/* Dashboard */}
             <button
@@ -81,104 +77,44 @@ export const CollegeAdminLayout = ({ college, onLogout }) => {
               <span>Dashboard</span>
             </button>
 
-            {/* PRECEPTOR MANAGEMENT SUBMENU */}
-            <div className="pt-2">
-              <button
-                onClick={() => setPreceptorSubOpen(!preceptorSubOpen)}
-                className="w-full h-10 px-3.5 rounded-xl flex items-center justify-between text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-[11px] font-bold uppercase tracking-wider transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-indigo-500 shrink-0" />
-                  <span>Preceptor Management</span>
-                </div>
-                {preceptorSubOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              </button>
+            {/* Preceptor Management */}
+            <button
+              onClick={() => handleNavigate('preceptors-list')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'preceptors-list' || activeTab === 'add-preceptor'
+                  ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <User className="w-4 h-4 shrink-0" />
+              <span>Preceptor Management</span>
+            </button>
 
-              {preceptorSubOpen && (
-                <div className="mt-1 pl-4 space-y-1 border-l-2 border-indigo-100 dark:border-indigo-950/80 ml-4">
-                  <button
-                    onClick={() => handleNavigate('add-preceptor')}
-                    className={`w-full h-9 px-3 rounded-lg flex items-center gap-2 transition-all ${
-                      activeTab === 'add-preceptor'
-                        ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-900'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                    <span>Add Preceptor</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigate('preceptors-list')}
-                    className={`w-full h-9 px-3 rounded-lg flex items-center gap-2 transition-all ${
-                      activeTab === 'preceptors-list'
-                        ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-900'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                    <span>Preceptor List</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* STUDENT MANAGEMENT SUBMENU */}
-            <div className="pt-2">
-              <button
-                onClick={() => setStudentSubOpen(!studentSubOpen)}
-                className="w-full h-10 px-3.5 rounded-xl flex items-center justify-between text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-[11px] font-bold uppercase tracking-wider transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Student Management</span>
-                </div>
-                {studentSubOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              </button>
-
-              {studentSubOpen && (
-                <div className="mt-1 pl-4 space-y-1 border-l-2 border-emerald-100 dark:border-emerald-950/80 ml-4">
-                  <button
-                    onClick={() => handleNavigate('add-student')}
-                    className={`w-full h-9 px-3 rounded-lg flex items-center gap-2 transition-all ${
-                      activeTab === 'add-student'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-900'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>Add Student</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleNavigate('students-list')}
-                    className={`w-full h-9 px-3 rounded-lg flex items-center gap-2 transition-all ${
-                      activeTab === 'students-list'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-900'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span>Student List</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Student Management */}
+            <button
+              onClick={() => handleNavigate('students-list')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'students-list' || activeTab === 'add-student'
+                  ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 shrink-0" />
+              <span>Student Management</span>
+            </button>
 
             {/* My Profile */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
-              <button
-                onClick={() => handleNavigate('profile')}
-                className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                  activeTab === 'profile'
-                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <UserCheck className="w-4 h-4 shrink-0" />
-                <span>My Profile</span>
-              </button>
-            </div>
+            <button
+              onClick={() => handleNavigate('profile')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'profile'
+                  ? 'bg-teal-600 text-white font-bold shadow-md shadow-teal-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <UserCheck className="w-4 h-4 shrink-0" />
+              <span>My Profile</span>
+            </button>
 
           </nav>
 

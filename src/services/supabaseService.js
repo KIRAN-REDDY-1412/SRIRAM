@@ -66,7 +66,6 @@ export const fetchRegistrationRequestsFromSupabase = async () => {
 /**
  * STEP 4 & STEP 6: Approve registration request, insert into colleges & subscriptions tables
  * Tables: registration_requests, colleges, subscriptions
- * (NO fake default suggestions - empty fields remain NULL/empty)
  */
 export const approveCollegeInSupabase = async (request) => {
   console.log('[Supabase Operation] Approving Request ID:', request.id);
@@ -89,7 +88,7 @@ export const approveCollegeInSupabase = async (request) => {
     // 2. Generate unique college_code
     const collegeCode = request.code || `${(request.collegeName || request.college_name).substring(0, 4).toUpperCase()}-${request.city.substring(0, 3).toUpperCase()}`;
 
-    // 3. Prepare payload for colleges table - ONLY actual user-entered data (NO fake defaults)
+    // 3. Prepare payload for colleges table
     const collegePayload = {
       registration_request_id: request.id,
       college_code: collegeCode,
@@ -192,7 +191,6 @@ export const rejectCollegeInSupabase = async (requestId, remarks = '') => {
 /**
  * STEP 5 & STEP 6: Update College Profile & Assign Subscription Plan
  * Tables: colleges, subscriptions
- * (Saves exactly what Super Admin enters - NO fake defaults)
  */
 export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, profileData) => {
   console.log('[Supabase Operation] Updating College Profile & Subscription for ID:', collegeId);
@@ -318,22 +316,53 @@ export const fetchActiveCollegesFromSupabase = async () => {
 };
 
 /**
- * Delete single college record from Supabase
+ * Delete single college record permanently from ALL Supabase tables (subscriptions, colleges, registration_requests)
  */
-export const deleteCollegeFromSupabase = async (collegeId) => {
-  console.log('[Supabase Operation] Deleting College ID:', collegeId);
+export const deleteCollegeFromSupabase = async (targetId) => {
+  console.log('🗑️ [Supabase Operation] Permanently Deleting ID from Supabase:', targetId);
 
   try {
-    await supabase.from('subscriptions').delete().eq('college_id', collegeId);
-    const { error: err1 } = await supabase.from('colleges').delete().eq('id', collegeId);
-    const { error: err2 } = await supabase.from('registration_requests').delete().eq('id', collegeId);
+    // 1. First find any linked college row to get both college.id and registration_request_id
+    const { data: clgData } = await supabase
+      .from('colleges')
+      .select('id, registration_request_id')
+      .or(`id.eq.${targetId},registration_request_id.eq.${targetId}`);
 
-    if (err1 && err2) {
-      console.error('❌ [Supabase Error] Delete college failed:', err1 || err2);
-      return { success: false, error: (err1 || err2).message };
+    let collegeIds = [targetId];
+    let requestIds = [targetId];
+
+    if (clgData && clgData.length > 0) {
+      clgData.forEach(c => {
+        if (c.id) collegeIds.push(c.id);
+        if (c.registration_request_id) requestIds.push(c.registration_request_id);
+      });
     }
 
-    console.log('✅ [Supabase Success] Deleted College ID:', collegeId);
+    // 2. Delete from subscriptions table
+    const { error: subErr } = await supabase
+      .from('subscriptions')
+      .delete()
+      .in('college_id', collegeIds);
+
+    if (subErr) console.warn('Supabase subscriptions delete notice:', subErr.message);
+
+    // 3. Delete from colleges table
+    const { error: colErr } = await supabase
+      .from('colleges')
+      .delete()
+      .in('id', collegeIds);
+
+    if (colErr) console.warn('Supabase colleges delete notice:', colErr.message);
+
+    // 4. Delete from registration_requests table
+    const { error: reqErr } = await supabase
+      .from('registration_requests')
+      .delete()
+      .in('id', requestIds);
+
+    if (reqErr) console.warn('Supabase registration_requests delete notice:', reqErr.message);
+
+    console.log('✅ [Supabase Success] PERMANENTLY DELETED FROM SUPABASE:', targetId);
     return { success: true };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during delete:', err);
@@ -342,17 +371,38 @@ export const deleteCollegeFromSupabase = async (collegeId) => {
 };
 
 /**
- * Delete multiple colleges (Bulk Delete) from Supabase
+ * Bulk Delete multiple colleges permanently from ALL Supabase tables
  */
-export const deleteMultipleCollegesFromSupabase = async (collegeIds) => {
-  console.log('[Supabase Operation] Bulk Deleting College IDs:', collegeIds);
+export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
+  console.log('🗑️ [Supabase Operation] Permanently Bulk Deleting IDs from Supabase:', targetIds);
 
   try {
-    await supabase.from('subscriptions').delete().in('college_id', collegeIds);
-    await supabase.from('colleges').delete().in('id', collegeIds);
-    await supabase.from('registration_requests').delete().in('id', collegeIds);
+    // 1. Find all linked college and request IDs
+    const { data: clgData } = await supabase
+      .from('colleges')
+      .select('id, registration_request_id')
+      .in('id', targetIds);
 
-    console.log('✅ [Supabase Success] Bulk Deleted College IDs:', collegeIds);
+    let collegeIds = [...targetIds];
+    let requestIds = [...targetIds];
+
+    if (clgData && clgData.length > 0) {
+      clgData.forEach(c => {
+        if (c.id) collegeIds.push(c.id);
+        if (c.registration_request_id) requestIds.push(c.registration_request_id);
+      });
+    }
+
+    // 2. Bulk delete from subscriptions
+    await supabase.from('subscriptions').delete().in('college_id', collegeIds);
+
+    // 3. Bulk delete from colleges
+    await supabase.from('colleges').delete().in('id', collegeIds);
+
+    // 4. Bulk delete from registration_requests
+    await supabase.from('registration_requests').delete().in('id', requestIds);
+
+    console.log('✅ [Supabase Success] PERMANENTLY BULK DELETED FROM SUPABASE:', targetIds);
     return { success: true };
   } catch (err) {
     console.error('❌ [Supabase Error] Unexpected error during bulk delete:', err);

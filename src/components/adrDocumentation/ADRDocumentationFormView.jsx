@@ -1,21 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock } from 'lucide-react';
+import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock, Download, RefreshCw, Calendar, FileDown } from 'lucide-react';
 import { fetchADRReportByCaseIdFromSupabase, generateUniqueAdrNumberInSupabase, saveOrUpdateADRReportInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { ADRReportPreviewModal } from './ADRReportPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 
+const REACTION_CATEGORIES = [
+  'Dermatological',
+  'Gastrointestinal',
+  'Neurological',
+  'Cardiovascular',
+  'Respiratory',
+  'Hematological',
+  'Hepatic',
+  'Renal',
+  'Endocrine',
+  'Musculoskeletal',
+  'Psychiatric',
+  'Ophthalmic',
+  'General/Systemic',
+  'Other'
+];
+
+const PATIENT_CONDITIONS = [
+  'Recovering',
+  'Recovered',
+  'Not Recovered',
+  'Recovering with Sequelae',
+  'Fatal',
+  'Unknown'
+];
+
+const SEVERITY_OPTIONS = ['Mild', 'Moderate', 'Severe'];
+
+const SERIOUSNESS_OPTIONS = [
+  'Hospitalization',
+  'Life-threatening',
+  'Disability',
+  'Congenital Anomaly',
+  'Death',
+  'Other'
+];
+
+const CAUSALITY_OPTIONS = [
+  'Certain',
+  'Probable',
+  'Possible',
+  'Unlikely',
+  'Conditional',
+  'Unassessable'
+];
+
+const ACTION_TAKEN_OPTIONS = ['Drug Withdrawn', 'Dose Reduced', 'Continued', 'Unknown'];
+const DECHALLENGE_OPTIONS = ['Positive', 'Negative', 'Not Done', 'Unknown'];
+const RECHALLENGE_OPTIONS = ['Positive', 'Negative', 'Not Done', 'Unknown'];
+
 export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
 
-  // Inline Notification Hook
+  // Inline Notification Hooks
   const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
+  const { notification: suspectedImportNotify, showNotification: showSuspectedImportNotify, clearNotification: clearSuspectedImportNotify } = useInlineNotification();
+  const { notification: concomitantImportNotify, showNotification: showConcomitantImportNotify, clearNotification: clearConcomitantImportNotify } = useInlineNotification();
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   // 1. GENERAL RECORD & PATIENT INFORMATION
   const [adrNumber, setAdrNumber] = useState('');
-  const [reportingDate, setReportingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reportingDate, setReportingDate] = useState(todayStr);
   const [assignedPreceptorName, setAssignedPreceptorName] = useState('Faculty Preceptor');
   const [approvalStatus, setApprovalStatus] = useState('Draft');
 
@@ -30,7 +83,8 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
   // 2. REACTION OVERVIEW
   const [reactionTitle, setReactionTitle] = useState('');
-  const [reactionCategory, setReactionCategory] = useState('Dermatological');
+  const [reactionCategorySelect, setReactionCategorySelect] = useState('Dermatological');
+  const [reactionCategoryOther, setReactionCategoryOther] = useState('');
   const [reactionDescription, setReactionDescription] = useState('');
   const [reactionStartedAt, setReactionStartedAt] = useState('');
   const [reactionEndedAt, setReactionEndedAt] = useState('');
@@ -72,12 +126,12 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
   // 6. REACTION ASSESSMENT & CAUSALITY
   const [reactionSeverity, setReactionSeverity] = useState('Moderate');
-  const [reactionSeriousness, setReactionSeriousness] = useState('Hospitalization-Initial/Prolonged');
+  const [reactionSeriousness, setReactionSeriousness] = useState('Hospitalization');
   const [patientOutcome, setPatientOutcome] = useState('Recovered');
-  const [actionTakenOnSuspectedDrug, setActionTakenOnSuspectedDrug] = useState('Withdrawn');
-  const [rechallengeInformation, setRechallengeInformation] = useState('Rechallenge not performed due to safety risk.');
-  const [dechallengeInformation, setDechallengeInformation] = useState('Symptoms abated upon drug withdrawal.');
-  const [initialCausalityOpinion, setInitialCausalityOpinion] = useState('Probable/Likely');
+  const [actionTakenOnSuspectedDrug, setActionTakenOnSuspectedDrug] = useState('Drug Withdrawn');
+  const [rechallengeInformation, setRechallengeInformation] = useState('Not Done');
+  const [dechallengeInformation, setDechallengeInformation] = useState('Positive');
+  const [initialCausalityOpinion, setInitialCausalityOpinion] = useState('Probable');
   const [clinicalRemarks, setClinicalRemarks] = useState('');
 
   // 7. SUPPORTING DOCUMENTS (FILES)
@@ -92,6 +146,44 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [existingReportId, setExistingReportId] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  // Helper: Focus/Blur Placeholder logic
+  const handleFocusPlaceholder = (e) => {
+    e.target.dataset.ph = e.target.placeholder;
+    e.target.placeholder = '';
+  };
+
+  const handleBlurPlaceholder = (e) => {
+    if (e.target.dataset.ph) {
+      e.target.placeholder = e.target.dataset.ph;
+    }
+  };
+
+  // Helper: Auto-calculate Reaction Duration
+  useEffect(() => {
+    if (reactionStartedAt && reactionEndedAt) {
+      const start = new Date(reactionStartedAt);
+      const end = new Date(reactionEndedAt);
+      if (end >= start) {
+        const diffMs = end - start;
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const days = Math.floor(diffHrs / 24);
+        const hrs = diffHrs % 24;
+
+        if (days > 0 && hrs > 0) {
+          setReactionDuration(`${days} Day${days > 1 ? 's' : ''} ${hrs} Hour${hrs > 1 ? 's' : ''}`);
+        } else if (days > 0) {
+          setReactionDuration(`${days} Day${days > 1 ? 's' : ''}`);
+        } else {
+          setReactionDuration(`${hrs} Hour${hrs > 1 ? 's' : ''}`);
+        }
+      } else {
+        setReactionDuration('Invalid duration (Ended before Started)');
+      }
+    } else {
+      setReactionDuration('');
+    }
+  }, [reactionStartedAt, reactionEndedAt]);
+
   useEffect(() => {
     const loadADRData = async () => {
       if (!clinicalCase || !clinicalCase.id) {
@@ -103,7 +195,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       // Pre-fill defaults from clinicalCase
       setDepartment(clinicalCase.department || '');
       setWard(clinicalCase.ward_unit || '');
-      setHospitalRegNumber('');
+      setAssignedPreceptorName(student?.assigned_preceptor_name || clinicalCase.preceptor_name || 'Faculty Preceptor');
 
       try {
         const [res, profileRes] = await Promise.all([
@@ -121,14 +213,17 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
           setPrimaryDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
           setDrugAllergyHistory(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
+          setPregnancyLactationStatus(p.pregnancy_status || p.pregnancy_lactation_status || 'Not Applicable');
+          setRenalStatus(p.renal_status || 'Normal');
+          setHepaticStatus(p.hepatic_status || 'Normal');
         }
 
         if (res.success && res.report) {
           const rep = res.report;
           setExistingReportId(rep.id);
           setAdrNumber(rep.adr_number || '');
-          setReportingDate(rep.reporting_date || new Date().toISOString().split('T')[0]);
-          setAssignedPreceptorName(rep.assigned_preceptor_name || 'Faculty Preceptor');
+          setReportingDate(rep.reporting_date || todayStr);
+          setAssignedPreceptorName(rep.assigned_preceptor_name || student?.assigned_preceptor_name || 'Faculty Preceptor');
           setApprovalStatus(rep.approval_status || 'Draft');
 
           setPatientInitials(rep.patient_initials || '');
@@ -141,7 +236,14 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           setPrimaryDiagnosis(rep.primary_diagnosis || '');
 
           setReactionTitle(rep.reaction_title || '');
-          setReactionCategory(rep.reaction_category || 'Dermatological');
+          if (REACTION_CATEGORIES.includes(rep.reaction_category)) {
+            setReactionCategorySelect(rep.reaction_category);
+            setReactionCategoryOther('');
+          } else if (rep.reaction_category) {
+            setReactionCategorySelect('Other');
+            setReactionCategoryOther(rep.reaction_category);
+          }
+
           setReactionDescription(rep.reaction_description || '');
           setReactionStartedAt(rep.reaction_started_at ? rep.reaction_started_at.split('T')[0] : '');
           setReactionEndedAt(rep.reaction_ended_at ? rep.reaction_ended_at.split('T')[0] : '');
@@ -155,16 +257,16 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           setPregnancyLactationStatus(rep.pregnancy_lactation_status || 'Not Applicable');
           setRenalStatus(rep.renal_status || 'Normal');
           setHepaticStatus(rep.hepatic_status || 'Normal');
-          setLifestyleFactors(rep.lifestyle_factors || '');
+          setLifestyleFactors(rep.lifestyle_factors || 'Non-smoker, Non-alcoholic');
           setAdditionalClinicalNotes(rep.additional_clinical_notes || '');
 
           setReactionSeverity(rep.reaction_severity || 'Moderate');
-          setReactionSeriousness(rep.reaction_seriousness || 'Hospitalization-Initial/Prolonged');
+          setReactionSeriousness(rep.reaction_seriousness || 'Hospitalization');
           setPatientOutcome(rep.patient_outcome || 'Recovered');
-          setActionTakenOnSuspectedDrug(rep.action_taken_on_suspected_drug || 'Withdrawn');
-          setRechallengeInformation(rep.rechallenge_information || '');
-          setDechallengeInformation(rep.dechallenge_information || '');
-          setInitialCausalityOpinion(rep.initial_causality_opinion || 'Probable/Likely');
+          setActionTakenOnSuspectedDrug(rep.action_taken_on_suspected_drug || 'Drug Withdrawn');
+          setRechallengeInformation(rep.rechallenge_information || 'Not Done');
+          setDechallengeInformation(rep.dechallenge_information || 'Positive');
+          setInitialCausalityOpinion(rep.initial_causality_opinion || 'Probable');
           setClinicalRemarks(rep.clinical_remarks || '');
 
           setStudentRemarks(rep.student_remarks || '');
@@ -186,9 +288,9 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
             student_id: student.id,
             college_id: student.college_id,
             adr_number: newAdrNo,
-            reporting_date: new Date().toISOString().split('T')[0],
+            reporting_date: todayStr,
             reported_by_student_name: student?.full_name || '',
-            assigned_preceptor_name: 'Faculty Preceptor',
+            assigned_preceptor_name: student?.assigned_preceptor_name || clinicalCase.preceptor_name || 'Faculty Preceptor',
             patient_initials: profileRes?.profile?.patient_name || profileRes?.profile?.patient_initials || '',
             hospital_reg_number: profileRes?.profile?.ip_no || profileRes?.profile?.ip_op_number || '',
             age: profileRes?.profile?.age ? profileRes.profile.age.toString() : '',
@@ -213,7 +315,110 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     };
 
     loadADRData();
-  }, [clinicalCase]);
+  }, [clinicalCase, student]);
+
+  // IMPORT SUSPECTED MEDICATIONS FROM PATIENT PROFILE
+  const handleImportSuspectedFromProfile = async () => {
+    clearSuspectedImportNotify();
+    try {
+      const res = await fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id);
+      if (!res.success || !res.profile) {
+        showSuspectedImportNotify({ type: 'warning', message: '⚠ No prescribed medications found in Patient Profile.' });
+        return;
+      }
+      const p = res.profile;
+      const rawMeds = p.medications || p.prescribed_medications || p.current_medications || [];
+
+      if (!Array.isArray(rawMeds) || rawMeds.length === 0) {
+        showSuspectedImportNotify({ type: 'warning', message: '⚠ No prescribed medications found in Patient Profile to import.' });
+        return;
+      }
+
+      // Filter out existing meds to avoid duplicate rows
+      const existingNames = new Set(suspectedMeds.map(m => (m.medicine_name || '').toLowerCase().trim()));
+      const newMedsToImport = rawMeds.filter(m => {
+        const name = (m.medicine_name || m.drug_name || m.brand_name || '').toLowerCase().trim();
+        return name && !existingNames.has(name);
+      });
+
+      if (newMedsToImport.length === 0) {
+        showSuspectedImportNotify({ type: 'info', message: 'ℹ Prescribed medications are already imported.' });
+        return;
+      }
+
+      const formattedImported = newMedsToImport.map(m => ({
+        medicine_name: m.medicine_name || m.drug_name || m.brand_name || '',
+        generic_name: m.generic_name || '',
+        strength: m.strength || '500 mg',
+        dosage_form: m.dosage_form || 'Tablet',
+        dose: m.dose || '1 tab',
+        route: m.route || 'Oral',
+        frequency: m.frequency || 'OD',
+        start_date: m.start_date || '',
+        stop_date: m.stop_date || '',
+        clinical_indication: m.indication || m.purpose || '',
+        manufacturer: '',
+        batch_number: '',
+        expiry_date: ''
+      }));
+
+      // Replace first empty row if blank
+      if (suspectedMeds.length === 1 && !suspectedMeds[0].medicine_name.trim()) {
+        setSuspectedMeds(formattedImported);
+      } else {
+        setSuspectedMeds([...suspectedMeds, ...formattedImported]);
+      }
+
+      showSuspectedImportNotify({ type: 'success', message: '✅ Prescribed medications imported successfully from Patient Profile.' });
+    } catch (err) {
+      showSuspectedImportNotify({ type: 'error', message: '❌ Unable to import prescribed medications.' });
+    }
+  };
+
+  // IMPORT CONCOMITANT MEDICATIONS FROM PATIENT PROFILE
+  const handleImportConcomitantFromProfile = async () => {
+    clearConcomitantImportNotify();
+    try {
+      const res = await fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id);
+      if (!res.success || !res.profile) {
+        showConcomitantImportNotify({ type: 'warning', message: '⚠ No concurrent medications found in Patient Profile.' });
+        return;
+      }
+      const p = res.profile;
+      const rawMeds = p.medications || p.prescribed_medications || p.concomitant_medications || p.other_medications || [];
+
+      if (!Array.isArray(rawMeds) || rawMeds.length === 0) {
+        showConcomitantImportNotify({ type: 'warning', message: '⚠ No concurrent medications found in Patient Profile to import.' });
+        return;
+      }
+
+      const existingNames = new Set(concomitantMeds.map(m => (m.medicine_name || '').toLowerCase().trim()));
+      const newMedsToImport = rawMeds.filter(m => {
+        const name = (m.medicine_name || m.drug_name || m.brand_name || '').toLowerCase().trim();
+        return name && !existingNames.has(name);
+      });
+
+      if (newMedsToImport.length === 0) {
+        showConcomitantImportNotify({ type: 'info', message: 'ℹ Concurrent medications are already imported.' });
+        return;
+      }
+
+      const formattedImported = newMedsToImport.map(m => ({
+        medicine_name: m.medicine_name || m.drug_name || m.brand_name || '',
+        dose: m.dose || '1 tab',
+        route: m.route || 'Oral',
+        frequency: m.frequency || 'OD',
+        purpose: m.indication || m.purpose || '',
+        start_date: m.start_date || '',
+        stop_date: m.stop_date || ''
+      }));
+
+      setConcomitantMeds([...concomitantMeds, ...formattedImported]);
+      showConcomitantImportNotify({ type: 'success', message: '✅ Concurrent medications imported successfully from Patient Profile.' });
+    } catch (err) {
+      showConcomitantImportNotify({ type: 'error', message: '❌ Unable to import concurrent medications.' });
+    }
+  };
 
   // DYNAMIC SUSPECTED MEDS HANDLERS
   const handleAddSuspectedMed = () => {
@@ -277,13 +482,14 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
     if (attachments.length + files.length > 5) {
-      alert('Maximum 5 files allowed for ADR supporting documents.');
+      showBottomNotify({ type: 'warning', message: '⚠ Maximum 5 files allowed for ADR supporting documents.' });
       return;
     }
 
     const newAtts = files.map(f => ({
       file_name: f.name,
       file_type: f.type || 'Document',
+      file_size: f.size ? `${(f.size / 1024).toFixed(1)} KB` : 'Unknown',
       file_url: URL.createObjectURL(f)
     }));
 
@@ -296,17 +502,41 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
   // SAVE & SUBMIT HANDLER
   const handleSaveADR = async (newStatus = 'Draft') => {
-    setFormError('');
-    setSaveSuccess('');
+    clearBottomNotify();
 
-    if (!reactionTitle.trim() || !reactionDescription.trim()) {
-      setFormError('Please provide Reaction Title and Reaction Description.');
-      return;
-    }
+    const finalReactionCategory = reactionCategorySelect === 'Other' ? reactionCategoryOther.trim() : reactionCategorySelect;
 
-    if (suspectedMeds.length === 0 || !suspectedMeds[0].medicine_name.trim()) {
-      setFormError('Please add at least one Suspected Medication with medicine name.');
-      return;
+    // Mandatory Validation ONLY on Submit
+    if (newStatus === 'Submitted') {
+      if (reportingDate > todayStr) {
+        showBottomNotify({ type: 'error', message: '✖ Reporting Date cannot be a future date.' });
+        return;
+      }
+      if (reactionStartedAt && reactionStartedAt > reportingDate) {
+        showBottomNotify({ type: 'error', message: '✖ Reaction Started Date cannot be after Reporting Date.' });
+        return;
+      }
+      if (reactionStartedAt && reactionEndedAt && reactionEndedAt < reactionStartedAt) {
+        showBottomNotify({ type: 'error', message: '✖ Reaction Ended Date must be after Reaction Started Date.' });
+        return;
+      }
+      if (!reactionTitle.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Reaction Title.' });
+        return;
+      }
+      if (reactionCategorySelect === 'Other' && !reactionCategoryOther.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please specify Reaction Category.' });
+        return;
+      }
+      if (!reactionDescription.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Adverse Reaction Description.' });
+        return;
+      }
+      const validSuspected = suspectedMeds.filter(m => m.medicine_name.trim().length > 0);
+      if (validSuspected.length === 0) {
+        showBottomNotify({ type: 'error', message: '✖ At least one Suspected Medicine with medicine name is required before submission.' });
+        return;
+      }
     }
 
     setSaving(true);
@@ -328,12 +558,12 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       ward,
       primary_diagnosis: primaryDiagnosis,
       reaction_title: reactionTitle.trim(),
-      reaction_category: reactionCategory,
+      reaction_category: finalReactionCategory,
       reaction_description: reactionDescription.trim(),
       reaction_started_at: reactionStartedAt ? new Date(reactionStartedAt).toISOString() : null,
       reaction_ended_at: reactionEndedAt ? new Date(reactionEndedAt).toISOString() : null,
       reaction_duration: reactionDuration,
-      clinical_management_provided: clinicalManagementProvided,
+      clinical_management_provided: clinicalManagementProvided.trim(),
       current_patient_condition: currentPatientCondition,
       drug_allergy_history: drugAllergyHistory,
       previous_adr_history: previousAdrHistory,
@@ -341,8 +571,8 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       pregnancy_lactation_status: pregnancyLactationStatus,
       renal_status: renalStatus,
       hepatic_status: hepaticStatus,
-      lifestyle_factors: lifestyleFactors,
-      additional_clinical_notes: additionalClinicalNotes,
+      lifestyle_factors: lifestyleFactors.trim(),
+      additional_clinical_notes: additionalClinicalNotes.trim(),
       reaction_severity: reactionSeverity,
       reaction_seriousness: reactionSeriousness,
       patient_outcome: patientOutcome,
@@ -350,8 +580,8 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       rechallenge_information: rechallengeInformation,
       dechallenge_information: dechallengeInformation,
       initial_causality_opinion: initialCausalityOpinion,
-      clinical_remarks: clinicalRemarks,
-      student_remarks: studentRemarks,
+      clinical_remarks: clinicalRemarks.trim(),
+      student_remarks: studentRemarks.trim(),
       preceptor_review: preceptorReview,
       faculty_comments: facultyComments,
       approval_status: newStatus
@@ -370,7 +600,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     } else {
       showBottomNotify({
         type: 'error',
-        message: res.error || '✖ Failed to save ADR Documentation.'
+        message: res.error || '✖ Failed to save Adverse Drug Reaction documentation.'
       });
     }
   };
@@ -379,7 +609,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-2" />
-        <p className="text-xs font-semibold text-slate-500">Loading Adverse Drug Reaction Documentation Form...</p>
+        <p className="text-xs font-semibold text-slate-500">Loading ADR Documentation Form...</p>
       </div>
     );
   }
@@ -395,10 +625,12 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     );
   }
 
+  const isReadOnly = approvalStatus === 'Submitted' || approvalStatus === 'Approved';
+
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
       
-      {/* TOP HEADER & ACTIONS */}
+      {/* TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <button
@@ -412,54 +644,26 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-500" />
-              <span>Adverse Drug Reaction Documentation Form</span>
+              <span>Adverse Drug Reaction (ADR) Documentation</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Case ID: <strong className="font-mono text-amber-600 dark:text-amber-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
+              Case ID: <strong className="font-mono text-amber-600 dark:text-amber-400">{clinicalCase.case_id}</strong> • Record No: <strong className="font-mono text-slate-800 dark:text-slate-200">{adrNumber}</strong> • Status: <strong className="uppercase font-bold text-emerald-600 dark:text-emerald-400">{approvalStatus}</strong>
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveADR('Draft')}
-            disabled={saving}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{existingReportId ? 'Update Draft' : 'Save Draft'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveADR('Submitted')}
-            disabled={saving}
-            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            <span>Submit Form</span>
-          </button>
-        </div>
       </div>
-
-
 
       {/* 1. GENERAL RECORD & PATIENT INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Clock className="w-4 h-4 text-amber-500" />
-          1. General Record & Patient Information
-        </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-500" />
+            1. General Record & Patient Information
+          </h3>
+          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3 animate-spin" /> Auto Synced from Patient Profile
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div>
@@ -468,53 +672,56 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reporting Date *</label>
-            <input type="date" value={reportingDate} onChange={(e) => setReportingDate(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-amber-500" /> Reporting Date *
+            </label>
+            <input
+              type="date"
+              disabled={isReadOnly}
+              max={todayStr}
+              value={reportingDate}
+              onChange={(e) => setReportingDate(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reported By (Student)</label>
-            <input type="text" readOnly value={student?.full_name} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold" />
+            <input type="text" readOnly value={student?.full_name || ''} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assigned Preceptor</label>
-            <input type="text" value={assignedPreceptorName} onChange={(e) => setAssignedPreceptorName(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+            <input type="text" readOnly value={assignedPreceptorName} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Initials *</label>
-            <input type="text" value={patientInitials} onChange={(e) => setPatientInitials(e.target.value)} placeholder="e.g. R.K." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Initials</label>
+            <input type="text" readOnly value={patientInitials} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hosp Reg / IP No.</label>
-            <input type="text" value={hospitalRegNumber} onChange={(e) => setHospitalRegNumber(e.target.value)} placeholder="Reg Number" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hospital Reg / IP No</label>
+            <input type="text" readOnly value={hospitalRegNumber} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Gender / Wt (kg)</label>
-            <div className="flex gap-2">
-              <input type="text" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-              <select value={gender} onChange={(e) => setGender(e.target.value)} className="h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                <option value="M">M</option>
-                <option value="F">F</option>
-              </select>
-              <input type="text" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Wt" className="w-20 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Gender / Weight</label>
+            <div className="flex gap-1.5">
+              <input type="text" readOnly value={age ? `${age}y` : ''} className="w-1/3 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-center" />
+              <input type="text" readOnly value={gender} className="w-1/3 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-center" />
+              <input type="text" readOnly value={weight ? `${weight}kg` : ''} className="w-1/3 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-center" />
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Department / Ward</label>
-            <div className="flex gap-2">
-              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Dept" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-              <input type="text" value={ward} onChange={(e) => setWard(e.target.value)} placeholder="Ward" className="w-full h-[44px] px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-            </div>
+            <input type="text" readOnly value={`${department || ''} / ${ward || ''}`} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div className="sm:col-span-4">
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Primary Diagnosis</label>
-            <textarea rows={2} value={primaryDiagnosis} onChange={(e) => setPrimaryDiagnosis(e.target.value)} placeholder="Primary clinical diagnosis..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
+            <textarea rows={2} readOnly value={primaryDiagnosis} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white" />
           </div>
         </div>
       </div>
@@ -522,100 +729,182 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       {/* 2. ADVERSE REACTION DETAILS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Activity className="w-4 h-4 text-rose-500" />
+          <Activity className="w-4 h-4 text-amber-500" />
           2. Adverse Reaction Details
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Title *</label>
-            <input type="text" required value={reactionTitle} onChange={(e) => setReactionTitle(e.target.value)} placeholder="e.g. Severe Maculopapular Rash / Fixed Drug Eruption" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400" />
+        <div className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Title *</label>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={reactionTitle}
+                onChange={(e) => setReactionTitle(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter adverse reaction title"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Category *</label>
+              <select
+                disabled={isReadOnly}
+                value={reactionCategorySelect}
+                onChange={(e) => setReactionCategorySelect(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              >
+                {REACTION_CATEGORIES.map((cat, i) => (
+                  <option key={i} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {reactionCategorySelect === 'Other' && (
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Specify Reaction Category *</label>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={reactionCategoryOther}
+                onChange={(e) => setReactionCategoryOther(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter Reaction Category"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
+          )}
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Category</label>
-            <select value={reactionCategory} onChange={(e) => setReactionCategory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Dermatological">Dermatological</option>
-              <option value="Gastrointestinal">Gastrointestinal</option>
-              <option value="Cardiovascular">Cardiovascular</option>
-              <option value="Neurological">Neurological</option>
-              <option value="Renal">Renal</option>
-              <option value="Hepatic">Hepatic</option>
-              <option value="Immunological / Allergy">Immunological / Allergy</option>
-              <option value="Hematological">Hematological</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-3">
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Description *</label>
-            <textarea rows={3} required value={reactionDescription} onChange={(e) => setReactionDescription(e.target.value)} placeholder="Detailed clinical description of the adverse reaction..." className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium" />
+            <textarea
+              rows={4}
+              disabled={isReadOnly}
+              value={reactionDescription}
+              onChange={(e) => setReactionDescription(e.target.value)}
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
+              placeholder="Enter adverse reaction description"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40 leading-relaxed"
+            />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Started</label>
-            <input type="datetime-local" value={reactionStartedAt} onChange={(e) => setReactionStartedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date Reaction Started</label>
+              <input
+                type="date"
+                disabled={isReadOnly}
+                max={todayStr}
+                value={reactionStartedAt}
+                onChange={(e) => setReactionStartedAt(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date Reaction Ended</label>
+              <input
+                type="date"
+                disabled={isReadOnly}
+                max={todayStr}
+                value={reactionEndedAt}
+                onChange={(e) => setReactionEndedAt(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Duration (Auto)</label>
+              <input
+                type="text"
+                readOnly
+                value={reactionDuration}
+                placeholder="Duration auto-calculated"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 font-bold"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date & Time Reaction Ended</label>
-            <input type="datetime-local" value={reactionEndedAt} onChange={(e) => setReactionEndedAt(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Management Provided</label>
+              <textarea
+                rows={3}
+                disabled={isReadOnly}
+                value={clinicalManagementProvided}
+                onChange={(e) => setClinicalManagementProvided(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter clinical management provided"
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+            </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Duration</label>
-            <input type="text" value={reactionDuration} onChange={(e) => setReactionDuration(e.target.value)} placeholder="e.g. 48 Hours" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Management Provided</label>
-            <textarea rows={2} value={clinicalManagementProvided} onChange={(e) => setClinicalManagementProvided(e.target.value)} placeholder="Antihistamines, IV fluids, corticosteroid therapy..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Patient Condition</label>
-            <select value={currentPatientCondition} onChange={(e) => setCurrentPatientCondition(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Recovering">Recovering</option>
-              <option value="Fully Recovered">Fully Recovered</option>
-              <option value="Not Recovered">Not Recovered</option>
-              <option value="Critical">Critical</option>
-              <option value="Fatal">Fatal</option>
-            </select>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Patient Condition *</label>
+              <select
+                disabled={isReadOnly}
+                value={currentPatientCondition}
+                onChange={(e) => setCurrentPatientCondition(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              >
+                {PATIENT_CONDITIONS.map((cond, i) => (
+                  <option key={i} value={cond}>{cond}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* 3. SUSPECTED MEDICATION(S) */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800 relative">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <Pill className="w-4 h-4 text-amber-500" />
-            3. Suspected Medication(s)
+            3. Suspected Medication(s) *
           </h3>
 
-          <button
-            type="button"
-            onClick={handleAddSuspectedMed}
-            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Suspected Medicine</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 relative">
+            <InlineActionNotification notification={suspectedImportNotify} onClose={clearSuspectedImportNotify} position="bottom-right" />
+
+            {!isReadOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleImportSuspectedFromProfile}
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-colors"
+                >
+                  <FileDown className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Import from Patient Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAddSuspectedMed}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Suspected Medicine</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4 text-xs">
-          {suspectedMeds.map((med, index) => (
-            <div key={index} className="p-4 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono font-extrabold text-amber-800 dark:text-amber-300 text-xs">
-                  Suspected Medicine #{index + 1}
-                </span>
-                {suspectedMeds.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSuspectedMed(index)}
-                    className="p-1 rounded-lg text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950"
-                  >
+          {suspectedMeds.map((med, idx) => (
+            <div key={idx} className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/60 space-y-3">
+              <div className="flex items-center justify-between font-bold border-b border-slate-200/60 dark:border-slate-800 pb-2">
+                <span>Suspected Medicine #{idx + 1}</span>
+                {!isReadOnly && suspectedMeds.length > 1 && (
+                  <button type="button" onClick={() => handleRemoveSuspectedMed(idx)} className="text-rose-500 hover:bg-rose-50 p-1 rounded-lg">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -623,47 +912,109 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Brand Name *</label>
-                  <input type="text" required value={med.medicine_name} onChange={(e) => handleUpdateSuspectedMed(index, 'medicine_name', e.target.value)} placeholder="Medicine name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Brand Name *</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.medicine_name}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'medicine_name', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter brand name"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Generic Name</label>
-                  <input type="text" value={med.generic_name} onChange={(e) => handleUpdateSuspectedMed(index, 'generic_name', e.target.value)} placeholder="Generic name" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Generic Name</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.generic_name}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'generic_name', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter generic name"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dose / Route / Freq</label>
-                  <div className="flex gap-1">
-                    <input type="text" value={med.dose} onChange={(e) => handleUpdateSuspectedMed(index, 'dose', e.target.value)} placeholder="Dose" className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                    <input type="text" value={med.route} onChange={(e) => handleUpdateSuspectedMed(index, 'route', e.target.value)} placeholder="Route" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                    <input type="text" value={med.frequency} onChange={(e) => handleUpdateSuspectedMed(index, 'frequency', e.target.value)} placeholder="Freq" className="w-16 h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-                  </div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dose / Route / Freq</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.dose}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'dose', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="e.g. 500mg Oral BD"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono font-semibold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinical Indication</label>
-                  <input type="text" value={med.clinical_indication} onChange={(e) => handleUpdateSuspectedMed(index, 'clinical_indication', e.target.value)} placeholder="Indication" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Indication</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.clinical_indication}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'clinical_indication', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter indication"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
-                  <input type="date" value={med.start_date} onChange={(e) => handleUpdateSuspectedMed(index, 'start_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    disabled={isReadOnly}
+                    value={med.start_date}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'start_date', e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono font-bold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Stop Date</label>
-                  <input type="date" value={med.stop_date} onChange={(e) => handleUpdateSuspectedMed(index, 'stop_date', e.target.value)} className="w-full h-9 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Stop Date</label>
+                  <input
+                    type="date"
+                    disabled={isReadOnly}
+                    value={med.stop_date}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'stop_date', e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono font-bold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Manufacturer (Opt)</label>
-                  <input type="text" value={med.manufacturer} onChange={(e) => handleUpdateSuspectedMed(index, 'manufacturer', e.target.value)} placeholder="Pharma company" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Manufacturer (Optional)</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.manufacturer}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'manufacturer', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter manufacturer"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold"
+                  />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Batch / Lot (Opt)</label>
-                  <input type="text" value={med.batch_number} onChange={(e) => handleUpdateSuspectedMed(index, 'batch_number', e.target.value)} placeholder="Batch No" className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Batch No (Optional)</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.batch_number}
+                    onChange={(e) => handleUpdateSuspectedMed(idx, 'batch_number', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter batch number"
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono font-semibold"
+                  />
                 </div>
               </div>
             </div>
@@ -673,77 +1024,156 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
       {/* 4. OTHER CONCURRENT MEDICATIONS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800 relative">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Pill className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             4. Other Concurrent Medications
           </h3>
 
-          <button
-            type="button"
-            onClick={handleAddConcomitantMed}
-            className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center gap-1 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Concurrent Medicine</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 relative">
+            <InlineActionNotification notification={concomitantImportNotify} onClose={clearConcomitantImportNotify} position="bottom-right" />
+
+            {!isReadOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleImportConcomitantFromProfile}
+                  className="px-3 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-colors"
+                >
+                  <FileDown className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>Import Concurrent Medications</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAddConcomitantMed}
+                  className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Concurrent Medicine</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {concomitantMeds.length > 0 ? (
-          <div className="space-y-3 text-xs">
-            {concomitantMeds.map((cMed, cIdx) => (
-              <div key={cIdx} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3">
-                <input type="text" value={cMed.medicine_name} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'medicine_name', e.target.value)} placeholder="Medicine Name" className="w-40 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold" />
-                <input type="text" value={cMed.dose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'dose', e.target.value)} placeholder="Dose" className="w-24 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
-                <input type="text" value={cMed.frequency} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'frequency', e.target.value)} placeholder="Freq" className="w-20 h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono" />
-                <input type="text" value={cMed.purpose} onChange={(e) => handleUpdateConcomitantMed(cIdx, 'purpose', e.target.value)} placeholder="Purpose / Indication" className="flex-1 min-w-[150px] h-9 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" />
-                <button type="button" onClick={() => handleRemoveConcomitantMed(cIdx)} className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+        <div className="space-y-3 text-xs">
+          {concomitantMeds.length === 0 ? (
+            <p className="text-slate-400 italic text-center py-2">No concurrent medications added.</p>
+          ) : (
+            concomitantMeds.map((med, idx) => (
+              <div key={idx} className="p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/60 grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Medicine Name</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.medicine_name}
+                    onChange={(e) => handleUpdateConcomitantMed(idx, 'medicine_name', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter medicine name"
+                    className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dose / Freq</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.dose}
+                    onChange={(e) => handleUpdateConcomitantMed(idx, 'dose', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="e.g. 1 tab BD"
+                    className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Purpose / Indication</label>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={med.purpose}
+                    onChange={(e) => handleUpdateConcomitantMed(idx, 'purpose', e.target.value)}
+                    onFocus={handleFocusPlaceholder}
+                    onBlur={handleBlurPlaceholder}
+                    placeholder="Enter purpose"
+                    className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Date</label>
+                    <input
+                      type="date"
+                      disabled={isReadOnly}
+                      value={med.start_date}
+                      onChange={(e) => handleUpdateConcomitantMed(idx, 'start_date', e.target.value)}
+                      className="w-full h-9 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-mono font-bold"
+                    />
+                  </div>
+
+                  {!isReadOnly && (
+                    <button type="button" onClick={() => handleRemoveConcomitantMed(idx)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg self-end mb-0.5">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-slate-400 italic text-center py-2 text-xs">No concurrent medications added. Click button above if patient is taking other drugs.</p>
-        )}
+            ))
+          )}
+        </div>
       </div>
 
       {/* 5. PATIENT CLINICAL BACKGROUND */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          5. Patient Clinical Background
-        </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <HeartPulse className="w-4 h-4 text-amber-500" />
+            5. Patient Clinical Background
+          </h3>
+          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3 animate-spin" /> Auto Synced from Patient Profile
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Drug Allergy History</label>
-            <input type="text" value={drugAllergyHistory} onChange={(e) => setDrugAllergyHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold text-rose-600 dark:text-rose-400" />
+            <input type="text" readOnly value={drugAllergyHistory} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-rose-600 dark:text-rose-400 font-bold" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Previous ADR History</label>
-            <input type="text" value={previousAdrHistory} onChange={(e) => setPreviousAdrHistory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+            <input type="text" readOnly value={previousAdrHistory} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Pregnancy / Lactation Status</label>
-            <input type="text" value={pregnancyLactationStatus} onChange={(e) => setPregnancyLactationStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+            <input type="text" readOnly value={pregnancyLactationStatus} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Renal Status</label>
-            <input type="text" value={renalStatus} onChange={(e) => setRenalStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Renal Status / Hepatic Status</label>
+            <input type="text" readOnly value={`${renalStatus} / ${hepaticStatus}`} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold" />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Hepatic Status</label>
-            <input type="text" value={hepaticStatus} onChange={(e) => setHepaticStatus(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Lifestyle Factors</label>
-            <input type="text" value={lifestyleFactors} onChange={(e) => setLifestyleFactors(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Lifestyle Factors (Editable)</label>
+            <input
+              type="text"
+              disabled={isReadOnly}
+              value={lifestyleFactors}
+              onChange={(e) => setLifestyleFactors(e.target.value)}
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
+              placeholder="Enter lifestyle factors"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            />
           </div>
         </div>
       </div>
@@ -751,65 +1181,93 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       {/* 6. REACTION ASSESSMENT & CAUSALITY */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          6. Reaction Assessment & Causality
+          <ShieldCheck className="w-4 h-4 text-amber-500" />
+          6. Reaction Assessment & Causality *
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Severity *</label>
-            <select value={reactionSeverity} onChange={(e) => setReactionSeverity(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Mild">Mild</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Severe">Severe</option>
+            <select
+              disabled={isReadOnly}
+              value={reactionSeverity}
+              onChange={(e) => setReactionSeverity(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {SEVERITY_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
             </select>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reaction Seriousness *</label>
-            <select value={reactionSeriousness} onChange={(e) => setReactionSeriousness(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Non-serious">Non-serious</option>
-              <option value="Death">Death</option>
-              <option value="Life-threatening">Life-threatening</option>
-              <option value="Hospitalization-Initial/Prolonged">Hospitalization-Initial/Prolonged</option>
-              <option value="Disability">Disability</option>
-              <option value="Congenital Anomaly">Congenital Anomaly</option>
-              <option value="Other Medically Important">Other Medically Important</option>
+            <select
+              disabled={isReadOnly}
+              value={reactionSeriousness}
+              onChange={(e) => setReactionSeriousness(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {SERIOUSNESS_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
             </select>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Initial Causality Opinion *</label>
-            <select value={initialCausalityOpinion} onChange={(e) => setInitialCausalityOpinion(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
-              <option value="Certain">Certain</option>
-              <option value="Probable/Likely">Probable / Likely</option>
-              <option value="Possible">Possible</option>
-              <option value="Unlikely">Unlikely</option>
-              <option value="Unclassified">Unclassified</option>
-              <option value="Unassessable">Unassessable</option>
+            <select
+              disabled={isReadOnly}
+              value={initialCausalityOpinion}
+              onChange={(e) => setInitialCausalityOpinion(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {CAUSALITY_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
             </select>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Action Taken on Suspected Drug</label>
-            <select value={actionTakenOnSuspectedDrug} onChange={(e) => setActionTakenOnSuspectedDrug(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Withdrawn">Drug Withdrawn</option>
-              <option value="Dose Reduced">Dose Reduced</option>
-              <option value="Dose Increased">Dose Increased</option>
-              <option value="Dose Unchanged">Dose Unchanged</option>
-              <option value="Not Applicable">Not Applicable</option>
-              <option value="Unknown">Unknown</option>
+            <select
+              disabled={isReadOnly}
+              value={actionTakenOnSuspectedDrug}
+              onChange={(e) => setActionTakenOnSuspectedDrug(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {ACTION_TAKEN_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
             </select>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Dechallenge Information</label>
-            <input type="text" value={dechallengeInformation} onChange={(e) => setDechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <select
+              disabled={isReadOnly}
+              value={dechallengeInformation}
+              onChange={(e) => setDechallengeInformation(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {DECHALLENGE_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Rechallenge Information</label>
-            <input type="text" value={rechallengeInformation} onChange={(e) => setRechallengeInformation(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <select
+              disabled={isReadOnly}
+              value={rechallengeInformation}
+              onChange={(e) => setRechallengeInformation(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            >
+              {RECHALLENGE_OPTIONS.map((opt, i) => (
+                <option key={i} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -817,43 +1275,52 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       {/* 7. SUPPORTING DOCUMENTS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          7. Supporting Documents (Upload Max 5 Files)
+          <Upload className="w-4 h-4 text-amber-500" />
+          7. Supporting Documents (Max 5 Files)
         </h3>
 
-        <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 text-center space-y-2 text-xs">
-          <Upload className="w-8 h-8 text-slate-400 mx-auto" />
-          <p className="font-semibold text-slate-700 dark:text-slate-300">
-            Upload Lab Reports, Prescriptions, Investigation Reports, or Clinical Images
-          </p>
-          <input
-            type="file"
-            multiple
-            onChange={handleFileUpload}
-            className="hidden"
-            id="adr-file-upload"
-          />
-          <label
-            htmlFor="adr-file-upload"
-            className="inline-block px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-bold cursor-pointer shadow-xs"
-          >
-            Choose Files to Upload
-          </label>
-        </div>
+        {!isReadOnly && attachments.length < 5 && (
+          <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors">
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              multiple
+              onChange={handleFileUpload}
+              className="hidden"
+              id="adr-file-upload"
+            />
+            <label htmlFor="adr-file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+              <Upload className="w-6 h-6 text-amber-500" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Click to upload PDF, JPG, JPEG, PNG</span>
+              <span className="text-[10px] text-slate-400">Maximum 5 files</span>
+            </label>
+          </div>
+        )}
 
         {attachments.length > 0 && (
           <div className="space-y-2 text-xs">
-            <span className="font-bold text-slate-700 dark:text-slate-300">Attached Documents ({attachments.length}/5):</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {attachments.map((att, index) => (
-                <div key={index} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">📎 {att.file_name}</span>
-                  <button type="button" onClick={() => handleRemoveAttachment(index)} className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+            {attachments.map((att, i) => (
+              <div key={i} className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-amber-500" />
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{att.file_name}</span>
+                  {att.file_size && <span className="text-[10px] text-slate-400">({att.file_size})</span>}
                 </div>
-              ))}
-            </div>
+
+                <div className="flex items-center gap-2">
+                  {att.file_url && (
+                    <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="p-1 text-cyan-600 hover:bg-cyan-50 rounded-lg">
+                      <Eye className="w-4 h-4" />
+                    </a>
+                  )}
+                  {!isReadOnly && (
+                    <button type="button" onClick={() => handleRemoveAttachment(i)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -861,59 +1328,66 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       {/* 8. REVIEW INFORMATION & REMARKS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          8. Review Information & Remarks
+          <FileText className="w-4 h-4 text-amber-500" />
+          8. Student Remarks & Review Information
         </h3>
 
-        <div className="space-y-3 text-xs">
+        <div className="space-y-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Student Remarks</label>
-            <textarea rows={2} value={studentRemarks} onChange={(e) => setStudentRemarks(e.target.value)} placeholder="Student notes for preceptor..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <textarea
+              rows={3}
+              disabled={isReadOnly}
+              value={studentRemarks}
+              onChange={(e) => setStudentRemarks(e.target.value)}
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
+              placeholder="Enter student remarks"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Preceptor Review / Comments (Read-Only)</label>
-            <textarea rows={2} readOnly value={preceptorReview || 'Pending faculty evaluation.'} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono italic" />
-          </div>
+          {(preceptorReview || facultyComments) && (
+            <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 space-y-2">
+              <span className="text-[10px] uppercase font-extrabold text-amber-700 dark:text-amber-400 block">Faculty Preceptor Review</span>
+              {preceptorReview && <p className="font-bold text-slate-900 dark:text-white">{preceptorReview}</p>}
+              {facultyComments && <p className="italic text-slate-600 dark:text-slate-300">{facultyComments}</p>}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* BOTTOM ACTION BUTTONS */}
-      <div className="relative flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+      {/* ACTION BUTTONS AT BOTTOM WITH INLINE NOTIFICATION */}
+      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
-        <button
-          type="button"
-          onClick={onBack}
-          className="h-[48px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors"
-        >
-          Cancel & Back
-        </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[48px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
-
+        {!isReadOnly && (
           <button
             type="button"
             onClick={() => handleSaveADR('Draft')}
             disabled={saving}
-            className="h-[48px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>Save Draft</span>
+            <span>{existingReportId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
+        )}
 
+        <button
+          type="button"
+          onClick={() => setIsPreviewOpen(true)}
+          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+        >
+          <Eye className="w-4 h-4 text-indigo-500" />
+          <span>Preview Form PDF</span>
+        </button>
+
+        {!isReadOnly && (
           <button
             type="button"
             onClick={() => handleSaveADR('Submitted')}
             disabled={saving}
-            className="h-[48px] px-8 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -927,10 +1401,10 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
               </>
             )}
           </button>
-        </div>
+        )}
       </div>
 
-      {/* ADR SUMMARY PREVIEW MODAL */}
+      {/* PDF PREVIEW MODAL */}
       {isPreviewOpen && (
         <ADRReportPreviewModal
           isOpen={isPreviewOpen}
@@ -940,9 +1414,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           report={{
             adr_number: adrNumber,
             reporting_date: reportingDate,
-            reported_by_student_name: student.full_name,
             assigned_preceptor_name: assignedPreceptorName,
-            approval_status: approvalStatus,
             patient_initials: patientInitials,
             hospital_reg_number: hospitalRegNumber,
             age,
@@ -952,7 +1424,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
             ward,
             primary_diagnosis: primaryDiagnosis,
             reaction_title: reactionTitle,
-            reaction_category: reactionCategory,
+            reaction_category: reactionCategorySelect === 'Other' ? reactionCategoryOther : reactionCategorySelect,
             reaction_description: reactionDescription,
             reaction_started_at: reactionStartedAt,
             reaction_ended_at: reactionEndedAt,
@@ -961,14 +1433,24 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
             current_patient_condition: currentPatientCondition,
             drug_allergy_history: drugAllergyHistory,
             previous_adr_history: previousAdrHistory,
+            relevant_medical_conditions: relevantMedicalConditions,
             pregnancy_lactation_status: pregnancyLactationStatus,
             renal_status: renalStatus,
             hepatic_status: hepaticStatus,
+            lifestyle_factors: lifestyleFactors,
+            additional_clinical_notes: additionalClinicalNotes,
             reaction_severity: reactionSeverity,
             reaction_seriousness: reactionSeriousness,
             patient_outcome: patientOutcome,
             action_taken_on_suspected_drug: actionTakenOnSuspectedDrug,
-            initial_causality_opinion: initialCausalityOpinion
+            rechallenge_information: rechallengeInformation,
+            dechallenge_information: dechallengeInformation,
+            initial_causality_opinion: initialCausalityOpinion,
+            clinical_remarks: clinicalRemarks,
+            student_remarks: studentRemarks,
+            preceptor_review: preceptorReview,
+            faculty_comments: facultyComments,
+            approval_status: approvalStatus
           }}
           suspectedMeds={suspectedMeds}
           concomitantMeds={concomitantMeds}

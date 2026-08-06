@@ -1,7 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2 } from 'lucide-react';
+import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer } from 'lucide-react';
 import { fetchCaseModuleStatusesFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
+
+const loadScript = (src) => {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+};
+
+const getPdfLibraries = async () => {
+  let html2canvasFn = window.html2canvas;
+  let jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
+
+  if (!html2canvasFn) {
+    try {
+      const h2cMod = await import(/* @vite-ignore */ 'html2canvas');
+      html2canvasFn = h2cMod.default || h2cMod;
+    } catch (e) {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      html2canvasFn = window.html2canvas;
+    }
+  }
+
+  if (!jsPDFFn) {
+    try {
+      const jspdfMod = await import(/* @vite-ignore */ 'jspdf');
+      jsPDFFn = jspdfMod.default || jspdfMod;
+    } catch (e) {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
+    }
+  }
+
+  return { html2canvas: html2canvasFn, jsPDF: jsPDFFn };
+};
 
 export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, student, preceptor, college }) => {
   const [loading, setLoading] = useState(true);
@@ -36,11 +77,11 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
     setDownloading(true);
     try {
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default || html2canvasModule;
+      const { html2canvas, jsPDF } = await getPdfLibraries();
 
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule;
+      if (!html2canvas || !jsPDF) {
+        throw new Error('PDF libraries could not be initialized.');
+      }
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -72,9 +113,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
-      alert('Failed to generate Official PDF document.');
+      // Fallback to window.print
+      window.print();
     }
     setDownloading(false);
+  };
+
+  const handlePrintWindow = () => {
+    window.print();
   };
 
   if (!isOpen) return null;

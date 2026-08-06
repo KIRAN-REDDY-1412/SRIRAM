@@ -3,6 +3,18 @@ import { X, Printer, HeartHandshake } from 'lucide-react';
 import { fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
+const ALL_CHECKLIST_POINTS = [
+  'Name and purpose of medication',
+  'Dosage regimen',
+  'Advice on missed dose',
+  'Potential side effects',
+  'Significant interactions (Drug-Drug, Drug-food, drug-Disease)',
+  'Precautions to be taken',
+  'Storage recommendations',
+  'Benefits of completing case',
+  'Life style modifications'
+];
+
 export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCase, student, counsellingData }) => {
   const [branding, setBranding] = useState(null);
   const [college, setCollege] = useState(student?.colleges);
@@ -28,19 +40,7 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
 
   if (!isOpen) return null;
 
-  const ALL_CHECKLIST_POINTS = [
-    'Disease State Explanation',
-    'Drug Name & Purpose',
-    'Dosing Schedule & Timing',
-    'Route & Technique of Admin',
-    'Storage Conditions',
-    'Dietary Guidelines & Restrictions',
-    'Potential Side Effects',
-    'Missed Dose Instructions',
-    'Lifestyle Modifications'
-  ];
-
-  const pointsCovered = counsellingData?.counselling_points_covered || [];
+  const pointsCovered = counsellingData?.points_covered || counsellingData?.counselling_points_covered || [];
 
   const handlePrint = () => {
     window.print();
@@ -92,13 +92,15 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
               <strong className="block uppercase border-b border-slate-900 pb-1 text-indigo-900">1. Session Overview</strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>Patient Name: <span className="underline">{counsellingData?.patient_name || '—'}</span></div>
-                <div>Age / Sex: <span className="underline">{counsellingData?.age} yrs / {counsellingData?.sex}</span></div>
+                <div>Patient Initials: <span className="underline">{counsellingData?.patient_name || '—'}</span></div>
+                <div>Age / Sex: <span className="underline">{counsellingData?.age ? `${counsellingData.age} yrs` : '—'} / {counsellingData?.sex || '—'}</span></div>
                 <div>Date: <span className="font-mono underline">{counsellingData?.counselling_date || '—'}</span></div>
                 <div>Time: <span className="font-mono underline">{counsellingData?.counselling_time || '—'}</span></div>
                 <div>IP/OP No: <span className="font-mono underline">{counsellingData?.ip_op_number || '—'}</span></div>
-                <div>Ward / Bed: <span className="underline">{counsellingData?.ward_bed || '—'}</span></div>
-                <div className="col-span-2">Department: <span className="underline">{counsellingData?.department || '—'}</span></div>
+                <div>Type: <span className="underline">{counsellingData?.patient_type || '—'}</span></div>
+                <div>Ward / Unit: <span className="underline">{counsellingData?.unit_ward || counsellingData?.ward_bed || '—'}</span></div>
+                <div>Department: <span className="underline">{counsellingData?.department || clinicalCase?.department || '—'}</span></div>
+                <div className="col-span-2 sm:col-span-4">Known Allergies: <span className="underline font-bold text-rose-800">{counsellingData?.allergies || 'None'}</span></div>
               </div>
             </div>
 
@@ -108,11 +110,11 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
               <div className="grid grid-cols-1 gap-2">
                 <div>
                   <span className="font-bold block text-slate-900">Disease Condition Counselled:</span>
-                  <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">{counsellingData?.disease_condition || 'N/A'}</p>
+                  <p className="p-2 border border-slate-900 bg-white font-serif font-bold text-slate-900">{counsellingData?.disease_counselled || counsellingData?.disease_condition || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="font-bold block text-slate-900">Medications Counselled:</span>
-                  <p className="p-2 border border-slate-900 bg-white font-serif text-slate-800">{counsellingData?.medications_counselled || 'N/A'}</p>
+                  <p className="p-2 border border-slate-900 bg-white font-serif text-slate-800 font-mono font-semibold">{counsellingData?.medications_counselled || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -120,7 +122,7 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
             {/* 3. COUNSELLING CHECKLIST (9 POINTS) */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-serif">
               <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">3. Counselling Points Covered Checklist</strong>
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                 {ALL_CHECKLIST_POINTS.map((point, index) => {
                   const isChecked = pointsCovered.includes(point);
                   return (
@@ -146,29 +148,55 @@ export const PatientCounsellingPDFPreviewModal = ({ isOpen, onClose, clinicalCas
           >
             {/* 4. BARRIERS TO COMPLIANCE & RESOLUTION */}
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
-              <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-rose-900">4. Barriers & Resolution</strong>
+              <strong className="block uppercase font-bold border-b border-slate-900 pb-1 text-slate-900">4. Barriers & Resolution</strong>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <span className="font-bold block text-slate-900">Barriers Identified:</span>
-                  <p className="p-2 border border-slate-900 bg-white italic">{counsellingData?.barriers_identified || 'None reported.'}</p>
+                  <span className="font-bold block text-slate-900">Major Barriers Involved:</span>
+                  <p className="p-2 border border-slate-900 bg-white font-bold">{counsellingData?.major_barriers_involved ? 'Yes' : 'No'}</p>
                 </div>
                 <div>
-                  <span className="font-bold block text-slate-900">Resolutions / Strategies Provided:</span>
-                  <p className="p-2 border border-slate-900 bg-white font-serif">{counsellingData?.resolutions_provided || 'N/A'}</p>
+                  <span className="font-bold block text-slate-900">Barrier Overcome Rightly:</span>
+                  <p className="p-2 border border-slate-900 bg-white font-bold">{counsellingData?.barrier_overcome ? 'Yes' : 'No / N/A'}</p>
                 </div>
+                {counsellingData?.major_barriers_involved && (
+                  <div className="col-span-2">
+                    <span className="font-bold block text-slate-900">Details of Barrier:</span>
+                    <p className="p-2 border border-slate-900 bg-white italic">{counsellingData?.barrier_details || counsellingData?.barriers_identified || 'None specified.'}</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* 5. DURATION & RECIPIENT */}
-            <div className="grid grid-cols-2 gap-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
-              <div>Session Duration: <span className="font-mono underline">{counsellingData?.duration_minutes || '15'} mins</span></div>
-              <div>Counselled To: <span className="underline">{counsellingData?.provided_to || 'Patient'}</span></div>
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
+              <strong className="block uppercase border-b border-slate-900 pb-1">5. Duration & Recipient</strong>
+              <div className="grid grid-cols-2 gap-2">
+                <div>Session Duration: <span className="font-mono underline">{counsellingData?.time_taken || counsellingData?.duration_minutes || '10 to 20 min.'}</span></div>
+                <div>Counselled To: <span className="underline">{counsellingData?.counselling_provided_to || counsellingData?.provided_to || 'Patient'}</span></div>
+                {counsellingData?.counselling_provided_to === 'Patient representative' && (
+                  <div className="col-span-2 font-normal text-slate-800">
+                    <span className="font-bold">Representative Reason:</span> {counsellingData?.representative_reasons?.join(', ')} {counsellingData?.representative_other_reason ? `(${counsellingData.representative_other_reason})` : ''}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 6. MATERIALS & AIDS PROVIDED */}
-            <div className="space-y-1 border border-slate-900 p-3 bg-slate-50/20 text-xs">
+            <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs">
               <strong className="block uppercase font-bold border-b border-slate-900 pb-1">6. Leaflets & Visual Aids Provided</strong>
-              <p className="p-2 border border-slate-900 bg-white font-serif">{counsellingData?.educational_materials_used || 'Patient PIL / Leaflet provided.'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <span className="font-bold block text-slate-900">Aids Used:</span>
+                  <p className="p-2 border border-slate-900 bg-white font-serif">{counsellingData?.counselling_aids_used || 'None'}</p>
+                </div>
+                <div>
+                  <span className="font-bold block text-slate-900">Material Provided:</span>
+                  <p className="p-2 border border-slate-900 bg-white font-serif">{counsellingData?.counselling_material_provided || counsellingData?.educational_materials_used || 'None'}</p>
+                </div>
+              </div>
+              <div className="pt-1 font-bold">
+                Patient Understanding Ascertained: <span className="underline">{counsellingData?.understanding_ascertained ? 'Yes' : 'No'}</span>
+              </div>
             </div>
           </PharmDVerseBrandedDocumentContainer>
 

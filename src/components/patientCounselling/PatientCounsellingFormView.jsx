@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase } from '../../services/supabaseService';
+import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { PatientCounsellingPDFPreviewModal } from './PatientCounsellingPDFPreviewModal';
 
 const ALL_POINTS_COVERED = [
@@ -15,6 +15,34 @@ const ALL_POINTS_COVERED = [
   'Life style modifications'
 ];
 
+// Helper to convert 24-hour time string ("14:30") to 12-hour AM/PM string ("02:30 PM")
+const formatTo12Hour = (time24Str) => {
+  if (!time24Str) return '10:30 AM';
+  if (time24Str.includes('AM') || time24Str.includes('PM')) return time24Str;
+  const [h, m] = time24Str.split(':');
+  let hour = parseInt(h, 10);
+  if (isNaN(hour)) return time24Str;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  const hourStr = hour < 10 ? `0${hour}` : hour;
+  return `${hourStr}:${m || '00'} ${ampm}`;
+};
+
+// Helper to convert 12-hour AM/PM string ("10:30 AM") to 24-hour string ("10:30") for <input type="time">
+const parseTo24Hour = (time12Str) => {
+  if (!time12Str) return '10:30';
+  if (!time12Str.includes('AM') && !time12Str.includes('PM')) return time12Str;
+  const [time, period] = time12Str.trim().split(/\s+/);
+  if (!time) return '10:30';
+  let [h, m] = time.split(':');
+  let hour = parseInt(h, 10);
+  if (isNaN(hour)) return '10:30';
+  if (period === 'PM' && hour < 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+  const hourStr = hour < 10 ? `0${hour}` : hour;
+  return `${hourStr}:${m || '00'}`;
+};
+
 export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,13 +51,14 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
 
   // 1. Session & Patient Details
   const [counsellingDate, setCounsellingDate] = useState(new Date().toISOString().split('T')[0]);
-  const [counsellingTime, setCounsellingTime] = useState('10:30 AM');
+  const [counsellingTimeRaw, setCounsellingTimeRaw] = useState('10:30');
   const [patientType, setPatientType] = useState('In patient');
   const [ipOpNumber, setIpOpNumber] = useState('');
   const [unitWard, setUnitWard] = useState('');
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('M');
   const [allergies, setAllergies] = useState('None');
+  const [patientName, setPatientName] = useState('');
   const [specificBackgroundCollected, setSpecificBackgroundCollected] = useState(true);
 
   // 2. Disease & Medications
@@ -56,8 +85,8 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
   const [representativeOtherReason, setRepresentativeOtherReason] = useState('');
 
   // 6. Aids & Materials
-  const [counsellingAidsUsed, setCounsellingAidsUsed] = useState('Patient Leaflets & Visual Charts');
-  const [counsellingMaterialProvided, setCounsellingMaterialProvided] = useState('Written Medication Schedule & Pill Box Guide');
+  const [counsellingAidsUsed, setCounsellingAidsUsed] = useState('');
+  const [counsellingMaterialProvided, setCounsellingMaterialProvided] = useState('');
 
   // 7. Outcome
   const [understandingAscertained, setUnderstandingAscertained] = useState(true);
@@ -70,7 +99,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const loadCounsellingData = async () => {
+    const loadCounsellingAndProfileData = async () => {
       if (!clinicalCase) return;
       setLoading(true);
 
@@ -78,35 +107,55 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
       setUnitWard(clinicalCase.ward_unit || '');
       setPatientType(clinicalCase.ip_op_type === 'OP' ? 'Outpatient' : 'In patient');
 
-      const res = await fetchPatientCounsellingByCaseIdFromSupabase(clinicalCase.id);
-      if (res.success && res.counselling) {
-        const c = res.counselling;
+      // Concurrent fetch of Patient Counselling AND Patient Profile for live auto-sync
+      const [counsellingRes, profileRes] = await Promise.all([
+        fetchPatientCounsellingByCaseIdFromSupabase(clinicalCase.id),
+        fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id)
+      ]);
+
+      // AUTO-FETCH LATEST PATIENT PROFILE INFORMATION
+      if (profileRes.success && profileRes.profile) {
+        const p = profileRes.profile;
+        setPatientName(p.patient_name || p.patient_initials || '');
+        setIpOpNumber(p.ip_no || p.ip_op_number || '');
+        setAge(p.age ? p.age.toString() : '');
+        setSex(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
+        setUnitWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
+        setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
+      }
+
+      if (counsellingRes.success && counsellingRes.counselling) {
+        const c = counsellingRes.counselling;
         setExistingCounsellingId(c.id);
         setCounsellingDate(c.counselling_date || new Date().toISOString().split('T')[0]);
-        setCounsellingTime(c.counselling_time || '10:30 AM');
+        setCounsellingTimeRaw(parseTo24Hour(c.counselling_time || '10:30 AM'));
         setPatientType(c.patient_type || 'In patient');
-        setIpOpNumber(c.ip_op_number || '');
-        setUnitWard(c.unit_ward || clinicalCase.ward_unit || '');
-        setAge(c.age || '');
-        setSex(c.sex || 'M');
-        setAllergies(c.allergies || 'None');
-        setSpecificBackgroundCollected(Boolean(c.specific_background_collected));
+        
+        // Use counselling values if profile wasn't available
+        if (!profileRes.profile) {
+          setIpOpNumber(c.ip_op_number || '');
+          setUnitWard(c.unit_ward || clinicalCase.ward_unit || '');
+          setAge(c.age || '');
+          setSex(c.sex || 'M');
+          setAllergies(c.allergies || 'None');
+        }
 
-        setDiseaseCounselled(c.disease_counselled || '');
+        setSpecificBackgroundCollected(Boolean(c.specific_background_collected));
+        setDiseaseCounselled(c.disease_counselled || c.disease_condition || '');
         setMedicationsCounselled(c.medications_counselled || '');
         if (c.points_covered && Array.isArray(c.points_covered)) setPointsCovered(c.points_covered);
 
         setMajorBarriersInvolved(Boolean(c.major_barriers_involved));
-        setBarrierDetails(c.barrier_details || '');
+        setBarrierDetails(c.barrier_details || c.barriers_identified || '');
         setBarrierOvercome(Boolean(c.barrier_overcome));
 
-        setTimeTaken(c.time_taken || '10 to 20 min.');
-        setCounsellingProvidedTo(c.counselling_provided_to || 'Patient');
+        setTimeTaken(c.time_taken || c.duration_minutes || '10 to 20 min.');
+        setCounsellingProvidedTo(c.counselling_provided_to || c.provided_to || 'Patient');
         if (c.representative_reasons && Array.isArray(c.representative_reasons)) setRepresentativeReasons(c.representative_reasons);
         setRepresentativeOtherReason(c.representative_other_reason || '');
 
         setCounsellingAidsUsed(c.counselling_aids_used || '');
-        setCounsellingMaterialProvided(c.counselling_material_provided || '');
+        setCounsellingMaterialProvided(c.counselling_material_provided || c.educational_materials_used || '');
         setUnderstandingAscertained(Boolean(c.understanding_ascertained));
         setStatus(c.status || 'Draft');
       }
@@ -114,7 +163,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
       setLoading(false);
     };
 
-    loadCounsellingData();
+    loadCounsellingAndProfileData();
   }, [clinicalCase]);
 
   const handleTogglePointCovered = (pt) => {
@@ -137,9 +186,26 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
     setFormError('');
     setSaveSuccess('');
 
-    if (!diseaseCounselled.trim() || !medicationsCounselled.trim()) {
-      setFormError('Please specify Disease Counselled and Medications Counselled.');
-      return;
+    const formattedTime = formatTo12Hour(counsellingTimeRaw);
+
+    // Strict Validation only on Submit
+    if (newStatus === 'Submitted') {
+      if (!diseaseCounselled.trim()) {
+        setFormError('Please enter Disease Counselled.');
+        return;
+      }
+      if (!medicationsCounselled.trim()) {
+        setFormError('Please enter Medications Counselled.');
+        return;
+      }
+      if (majorBarriersInvolved && !barrierDetails.trim()) {
+        setFormError('Please specify details of the barrier involved.');
+        return;
+      }
+      if (counsellingProvidedTo === 'Patient representative' && representativeReasons.length === 0 && !representativeOtherReason.trim()) {
+        setFormError('Please select or enter a reason for patient representative.');
+        return;
+      }
     }
 
     setSaving(true);
@@ -149,7 +215,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
       student_id: student.id,
       college_id: student.college_id,
       counselling_date: counsellingDate,
-      counselling_time: counsellingTime,
+      counselling_time: formattedTime,
       patient_type: patientType,
       ip_op_number: ipOpNumber,
       unit_ward: unitWard,
@@ -158,17 +224,23 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
       allergies,
       specific_background_collected: specificBackgroundCollected,
       disease_counselled: diseaseCounselled.trim(),
+      disease_condition: diseaseCounselled.trim(),
       medications_counselled: medicationsCounselled.trim(),
       points_covered: pointsCovered,
+      counselling_points_covered: pointsCovered,
       major_barriers_involved: majorBarriersInvolved,
-      barrier_details: majorBarriersInvolved ? barrierDetails : null,
+      barrier_details: majorBarriersInvolved ? barrierDetails.trim() : null,
+      barriers_identified: majorBarriersInvolved ? barrierDetails.trim() : null,
       barrier_overcome: majorBarriersInvolved ? barrierOvercome : false,
       time_taken: timeTaken,
+      duration_minutes: timeTaken,
       counselling_provided_to: counsellingProvidedTo,
+      provided_to: counsellingProvidedTo,
       representative_reasons: counsellingProvidedTo === 'Patient representative' ? representativeReasons : [],
-      representative_other_reason: counsellingProvidedTo === 'Patient representative' ? representativeOtherReason : null,
-      counselling_aids_used: counsellingAidsUsed,
-      counselling_material_provided: counsellingMaterialProvided,
+      representative_other_reason: counsellingProvidedTo === 'Patient representative' ? representativeOtherReason.trim() : null,
+      counselling_aids_used: counsellingAidsUsed.trim(),
+      counselling_material_provided: counsellingMaterialProvided.trim(),
+      educational_materials_used: counsellingMaterialProvided.trim(),
       understanding_ascertained: understandingAscertained,
       status: newStatus
     };
@@ -195,10 +267,12 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
     );
   }
 
+  const formattedTimeDisplay = formatTo12Hour(counsellingTimeRaw);
+
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
       
-      {/* TOP HEADER & ACTIONS */}
+      {/* TOP HEADER - CLEAN NO DUPLICATE BUTTONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <button
@@ -219,37 +293,6 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveCounselling('Draft')}
-            disabled={saving}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{existingCounsellingId ? 'Update Draft' : 'Save Draft'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveCounselling('Submitted')}
-            disabled={saving}
-            className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            <span>Submit Form</span>
-          </button>
-        </div>
       </div>
 
       {formError && (
@@ -268,54 +311,107 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
 
       {/* 1. PATIENT INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          1. Patient & Session Information
-        </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            1. Patient & Session Information
+          </h3>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3 animate-spin" /> Auto-Synced from Patient Profile
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          {/* Counselling Date */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Counselling Date *</label>
-            <input type="date" value={counsellingDate} onChange={(e) => setCounsellingDate(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            <input
+              type="date"
+              value={counsellingDate}
+              onChange={(e) => setCounsellingDate(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
           </div>
 
+          {/* Session Time - Clean Native Time Picker */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Session Time</label>
-            <input type="text" value={counsellingTime} onChange={(e) => setCounsellingTime(e.target.value)} placeholder="e.g. 10:30 AM" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Session Time ({formattedTimeDisplay})</label>
+            <input
+              type="time"
+              value={counsellingTimeRaw}
+              onChange={(e) => setCounsellingTimeRaw(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
           </div>
 
+          {/* Type of Patient */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Type of Patient *</label>
-            <select value={patientType} onChange={(e) => setPatientType(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
+            <select
+              value={patientType}
+              onChange={(e) => setPatientType(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+            >
               <option value="In patient">In patient</option>
               <option value="Outpatient">Outpatient</option>
             </select>
           </div>
 
+          {/* IP / OP Number (Auto Synced) */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">IP / OP Number</label>
-            <input type="text" value={ipOpNumber} onChange={(e) => setIpOpNumber(e.target.value)} placeholder="IP/OP Number" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold" />
+            <input
+              type="text"
+              readOnly
+              value={ipOpNumber}
+              placeholder="Auto-synced IP/OP Number"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold"
+            />
           </div>
 
+          {/* Unit / Ward (Auto Synced) */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit / Ward</label>
-            <input type="text" value={unitWard} onChange={(e) => setUnitWard(e.target.value)} placeholder="Ward Unit" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <input
+              type="text"
+              readOnly
+              value={unitWard}
+              placeholder="Auto-synced Ward"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold"
+            />
           </div>
 
+          {/* Age / Sex (Auto Synced) */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Sex</label>
             <div className="flex gap-2">
-              <input type="text" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-              <select value={sex} onChange={(e) => setSex(e.target.value)} className="h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                <option value="M">M</option>
-                <option value="F">F</option>
-              </select>
+              <input
+                type="text"
+                readOnly
+                value={age}
+                placeholder="Age"
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono"
+              />
+              <input
+                type="text"
+                readOnly
+                value={sex}
+                placeholder="Sex"
+                className="w-16 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-center"
+              />
             </div>
           </div>
 
+          {/* Known Allergies (Auto Synced) */}
           <div className="sm:col-span-2">
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Known Allergies</label>
-            <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Known drug/food allergies" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400" />
+            <input
+              type="text"
+              readOnly
+              value={allergies}
+              placeholder="Auto-synced allergies"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-rose-600 dark:text-rose-400"
+            />
           </div>
 
           <div className="sm:col-span-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -349,7 +445,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
               required
               value={diseaseCounselled}
               onChange={(e) => setDiseaseCounselled(e.target.value)}
-              placeholder="e.g. Type 2 Diabetes Mellitus, Essential Hypertension..."
+              placeholder="Enter disease counselled"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
             />
           </div>
@@ -361,7 +457,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
               required
               value={medicationsCounselled}
               onChange={(e) => setMedicationsCounselled(e.target.value)}
-              placeholder="e.g. Tab. Metformin 500mg, Tab. Telmisartan 40mg..."
+              placeholder="Enter medications counselled"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold"
             />
           </div>
@@ -439,7 +535,13 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
           {majorBarriersInvolved && (
             <div className="sm:col-span-2">
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">If Yes, Specify Details of Barrier:</label>
-              <input type="text" value={barrierDetails} onChange={(e) => setBarrierDetails(e.target.value)} placeholder="Specify barrier (e.g. Language difficulty, hearing impairment)..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+              <input
+                type="text"
+                value={barrierDetails}
+                onChange={(e) => setBarrierDetails(e.target.value)}
+                placeholder="Enter details of barrier"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+              />
             </div>
           )}
         </div>
@@ -519,7 +621,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
                   type="text"
                   value={representativeOtherReason}
                   onChange={(e) => setRepresentativeOtherReason(e.target.value)}
-                  placeholder="Others (please specify)..."
+                  placeholder="Enter other representative reason"
                   className="w-full h-9 px-3 text-xs rounded-xl border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white mt-1"
                 />
               </div>
@@ -538,12 +640,24 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Counselling aids used</label>
-            <input type="text" value={counsellingAidsUsed} onChange={(e) => setCounsellingAidsUsed(e.target.value)} placeholder="e.g. Visual charts, Pill organizers" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+            <input
+              type="text"
+              value={counsellingAidsUsed}
+              onChange={(e) => setCounsellingAidsUsed(e.target.value)}
+              placeholder="Enter counselling aids used"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
+            />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Counselling material provided</label>
-            <input type="text" value={counsellingMaterialProvided} onChange={(e) => setCounsellingMaterialProvided(e.target.value)} placeholder="e.g. Pamphlets, Written schedule" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold" />
+            <input
+              type="text"
+              value={counsellingMaterialProvided}
+              onChange={(e) => setCounsellingMaterialProvided(e.target.value)}
+              placeholder="Enter counselling material provided"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
+            />
           </div>
 
           <div className="sm:col-span-2 p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
@@ -562,55 +676,45 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
         </div>
       </div>
 
-      {/* BOTTOM ACTION BUTTONS */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <button
           type="button"
-          onClick={onBack}
-          className="h-[48px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors"
+          onClick={() => handleSaveCounselling('Draft')}
+          disabled={saving}
+          className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
         >
-          Cancel & Back
+          <Save className="w-4 h-4" />
+          <span>{existingCounsellingId ? 'Update Draft' : 'Save Draft'}</span>
         </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[48px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => setIsPreviewOpen(true)}
+          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+        >
+          <Eye className="w-4 h-4 text-indigo-500" />
+          <span>Preview Form PDF</span>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => handleSaveCounselling('Draft')}
-            disabled={saving}
-            className="h-[48px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Draft</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveCounselling('Submitted')}
-            disabled={saving}
-            className="h-[48px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Submitting Form...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Submit Form</span>
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => handleSaveCounselling('Submitted')}
+          disabled={saving}
+          className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Submitting Form...</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              <span>Submit Form</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* PDF PREVIEW MODAL */}
@@ -620,28 +724,37 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
           onClose={() => setIsPreviewOpen(false)}
           clinicalCase={clinicalCase}
           student={student}
-          counselling={{
+          counsellingData={{
+            patient_name: patientName,
             counselling_date: counsellingDate,
-            counselling_time: counsellingTime,
+            counselling_time: formattedTimeDisplay,
             patient_type: patientType,
             ip_op_number: ipOpNumber,
             unit_ward: unitWard,
+            ward_bed: unitWard,
+            department: clinicalCase?.department || '',
             age,
             sex,
             allergies,
             specific_background_collected: specificBackgroundCollected,
             disease_counselled: diseaseCounselled,
+            disease_condition: diseaseCounselled,
             medications_counselled: medicationsCounselled,
             points_covered: pointsCovered,
+            counselling_points_covered: pointsCovered,
             major_barriers_involved: majorBarriersInvolved,
             barrier_details: barrierDetails,
+            barriers_identified: barrierDetails,
             barrier_overcome: barrierOvercome,
             time_taken: timeTaken,
+            duration_minutes: timeTaken,
             counselling_provided_to: counsellingProvidedTo,
+            provided_to: counsellingProvidedTo,
             representative_reasons: representativeReasons,
             representative_other_reason: representativeOtherReason,
             counselling_aids_used: counsellingAidsUsed,
             counselling_material_provided: counsellingMaterialProvided,
+            educational_materials_used: counsellingMaterialProvided,
             understanding_ascertained: understandingAscertained
           }}
         />

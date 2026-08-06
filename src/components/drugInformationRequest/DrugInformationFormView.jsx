@@ -209,10 +209,10 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     }
   };
 
-  if (loading) {
+  if (loading || !clinicalCase) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
+        <Loader2 className="w-8 h-8 text-cyan-500 animate-spin mx-auto mb-2" />
         <p className="text-xs font-semibold text-slate-500">Loading Drug Information Request Form...</p>
       </div>
     );

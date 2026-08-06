@@ -263,7 +263,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             />
           )}
 
-          {activeTab === 'patient-profile' && selectedCaseForForm && (
+          {activeTab === 'patient-profile' && (
             <PatientProfileFormView
               clinicalCase={selectedCaseForForm}
               student={student}
@@ -271,7 +271,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             />
           )}
 
-          {activeTab === 'patient-counselling' && selectedCaseForForm && (
+          {activeTab === 'patient-counselling' && (
             <PatientCounsellingFormView
               clinicalCase={selectedCaseForForm}
               student={student}
@@ -279,7 +279,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             />
           )}
 
-          {activeTab === 'pharmacist-intervention' && selectedCaseForForm && (
+          {activeTab === 'pharmacist-intervention' && (
             <PharmacistInterventionFormView
               clinicalCase={selectedCaseForForm}
               student={student}
@@ -287,7 +287,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             />
           )}
 
-          {activeTab === 'drug-info-request' && selectedCaseForForm && (
+          {activeTab === 'drug-info-request' && (
             <DrugInformationFormView
               clinicalCase={selectedCaseForForm}
               student={student}
@@ -295,7 +295,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             />
           )}
 
-          {activeTab === 'adr-documentation' && selectedCaseForForm && (
+          {activeTab === 'adr-documentation' && (
             <ADRDocumentationFormView
               clinicalCase={selectedCaseForForm}
               student={student}

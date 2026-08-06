@@ -353,7 +353,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
     }
   };
 
-  if (loading) {
+  if (loading || !clinicalCase) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />

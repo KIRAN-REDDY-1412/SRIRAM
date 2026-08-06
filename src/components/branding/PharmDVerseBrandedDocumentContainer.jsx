@@ -67,7 +67,12 @@ export const PharmDVerseBrandedDocumentContainer = ({
   const textColor = branding?.text_color || '#0f172a';
 
   const zebraStriping = Boolean(branding?.zebra_striping);
-  const repeatTableHeader = branding?.repeat_table_header ?? true;
+  const repeatTableHeader = branding?.repeat_header ?? branding?.repeat_table_header ?? true;
+
+  // Determine if this is the first page of the document
+  const isFirstPage = pageNumber ? pageNumber.toString().trim().startsWith('1') : true;
+  // If repeatTableHeader is OFF (false), only display the College Document Header on Page 1
+  const shouldShowDocumentHeader = Boolean(repeatTableHeader || isFirstPage);
 
   const currentDateTimeStr = new Date().toLocaleDateString('en-US', {
     day: '2-digit',
@@ -165,13 +170,15 @@ export const PharmDVerseBrandedDocumentContainer = ({
       {/* DOCUMENT CONTENT LAYER */}
       <div className="relative z-10 space-y-6">
         
-        {/* COMMON BRANDING HEADER */}
-        <PharmDVerseDocumentHeader
-          college={college}
-          branding={branding}
-          documentTitle={documentTitle}
-          caseId={caseId}
-        />
+        {/* COMMON BRANDING HEADER - DISPLAYED ON ALL PAGES IF REPEAT HEADER IS ON, OR ONLY ON PAGE 1 IF OFF */}
+        {shouldShowDocumentHeader && (
+          <PharmDVerseDocumentHeader
+            college={college}
+            branding={branding}
+            documentTitle={documentTitle}
+            caseId={caseId}
+          />
+        )}
 
         {/* CLINICAL DOCUMENT BODY CHILDREN */}
         {children}

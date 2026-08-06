@@ -1428,3 +1428,152 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
   }
 };
 
+export const approveClinicalCaseByPreceptorFromSupabase = async (clinicalCase, preceptorId, comments = '') => {
+  try {
+    const caseId = clinicalCase.id;
+    const now = new Date().toISOString();
+
+    const updatePayload = {
+      status: 'Approved',
+      overall_case_status: 'Approved',
+      reviewed_by: preceptorId,
+      reviewed_at: now,
+      overall_preceptor_comments: comments,
+      case_locked: true,
+      returned_forms: [],
+      updated_at: now
+    };
+
+    // Try full update on clinical_cases
+    const { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
+    if (caseErr) {
+      // Fallback to basic status update if extra columns are absent
+      await supabase.from('clinical_cases').update({ status: 'Approved', updated_at: now }).eq('id', caseId);
+    }
+
+    // Cascade approval to child tables
+    await Promise.all([
+      supabase.from('patient_profiles').update({ status: 'Approved', approval_status: 'Approved', review_status: 'Approved', preceptor_comments: comments, reviewed_at: now }).eq('clinical_case_id', caseId),
+      supabase.from('patient_counselling').update({ status: 'Approved', approval_status: 'Approved', review_status: 'Approved', preceptor_comments: comments, reviewed_at: now }).eq('clinical_case_id', caseId),
+      supabase.from('pharmacist_interventions').update({ status: 'Approved', approval_status: 'Approved', review_status: 'Approved', preceptor_comments: comments, reviewed_at: now }).eq('clinical_case_id', caseId),
+      supabase.from('drug_information_requests').update({ status: 'Approved', review_status: 'Approved', reviewed_at: now }).eq('clinical_case_id', caseId),
+      supabase.from('adr_reports').update({ approval_status: 'Approved', review_status: 'Approved', reviewed_at: now }).eq('clinical_case_id', caseId)
+    ]);
+
+    // Insert into review history table if available
+    try {
+      await supabase.from('clinical_case_review_history').insert({
+        clinical_case_id: caseId,
+        student_id: clinicalCase.student_id,
+        preceptor_id: preceptorId,
+        action: 'Approved',
+        returned_forms: [],
+        comments: comments || 'Case approved by preceptor.',
+        created_at: now
+      });
+    } catch (e) {
+      // Table creation optional fallback
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, preceptorId, returnedForms = [], comments = '') => {
+  try {
+    if (!comments || !comments.trim()) {
+      return { success: false, error: 'Faculty comments are mandatory when returning a Clinical Case for corrections.' };
+    }
+    if (!returnedForms || returnedForms.length === 0) {
+      return { success: false, error: 'Please select at least one form to return for corrections.' };
+    }
+
+    const caseId = clinicalCase.id;
+    const now = new Date().toISOString();
+
+    const updatePayload = {
+      status: 'Returned',
+      overall_case_status: 'Returned',
+      reviewed_by: preceptorId,
+      reviewed_at: now,
+      overall_preceptor_comments: comments.trim(),
+      returned_forms: returnedForms,
+      case_locked: false,
+      updated_at: now
+    };
+
+    const { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
+    if (caseErr) {
+      await supabase.from('clinical_cases').update({ status: 'Returned', updated_at: now }).eq('id', caseId);
+    }
+
+    // Map module key names
+    const isProfileReturned = returnedForms.includes('patient_profile') || returnedForms.includes('Patient Profile');
+    const isCounsellingReturned = returnedForms.includes('patient_counselling') || returnedForms.includes('Patient Counselling');
+    const isInterventionReturned = returnedForms.includes('pharmacist_intervention') || returnedForms.includes('Pharmacist Intervention');
+    const isDirReturned = returnedForms.includes('drug_information_request') || returnedForms.includes('Drug Information Request');
+    const isAdrReturned = returnedForms.includes('adr_documentation') || returnedForms.includes('ADR Documentation');
+
+    // Update child modules according to return selection
+    await Promise.all([
+      supabase.from('patient_profiles').update({
+        status: isProfileReturned ? 'Returned' : 'Approved',
+        approval_status: isProfileReturned ? 'Returned' : 'Approved',
+        review_status: isProfileReturned ? 'Returned' : 'Approved',
+        preceptor_comments: isProfileReturned ? comments.trim() : null,
+        reviewed_at: now
+      }).eq('clinical_case_id', caseId),
+
+      supabase.from('patient_counselling').update({
+        status: isCounsellingReturned ? 'Returned' : 'Approved',
+        approval_status: isCounsellingReturned ? 'Returned' : 'Approved',
+        review_status: isCounsellingReturned ? 'Returned' : 'Approved',
+        preceptor_comments: isCounsellingReturned ? comments.trim() : null,
+        reviewed_at: now
+      }).eq('clinical_case_id', caseId),
+
+      supabase.from('pharmacist_interventions').update({
+        status: isInterventionReturned ? 'Returned' : 'Approved',
+        approval_status: isInterventionReturned ? 'Returned' : 'Approved',
+        review_status: isInterventionReturned ? 'Returned' : 'Approved',
+        preceptor_comments: isInterventionReturned ? comments.trim() : null,
+        reviewed_at: now
+      }).eq('clinical_case_id', caseId),
+
+      supabase.from('drug_information_requests').update({
+        status: isDirReturned ? 'Returned' : 'Approved',
+        review_status: isDirReturned ? 'Returned' : 'Approved',
+        reviewed_at: now
+      }).eq('clinical_case_id', caseId),
+
+      supabase.from('adr_reports').update({
+        approval_status: isAdrReturned ? 'Returned' : 'Approved',
+        review_status: isAdrReturned ? 'Returned' : 'Approved',
+        reviewed_at: now
+      }).eq('clinical_case_id', caseId)
+    ]);
+
+    // Insert into review history table if available
+    try {
+      await supabase.from('clinical_case_review_history').insert({
+        clinical_case_id: caseId,
+        student_id: clinicalCase.student_id,
+        preceptor_id: preceptorId,
+        action: 'Returned',
+        returned_forms: returnedForms,
+        comments: comments.trim(),
+        created_at: now
+      });
+    } catch (e) {
+      // Table creation optional fallback
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+

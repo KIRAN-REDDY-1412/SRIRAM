@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GraduationCap, Search, Filter, Eye, ChevronLeft, ChevronRight, Loader2, Phone, Mail } from 'lucide-react';
 import { fetchPreceptorAssignedStudentsFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
+import { PreceptorStudentCasesView } from './PreceptorStudentCasesView';
 
 export const PreceptorAssignedStudentsView = ({ preceptor }) => {
   const [assignedRecords, setAssignedRecords] = useState([]);
@@ -13,7 +14,10 @@ export const PreceptorAssignedStudentsView = ({ preceptor }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // View Student Modal
+  // Selected student for viewing cases (Screen 2)
+  const [selectedStudentForCases, setSelectedStudentForCases] = useState(null);
+
+  // View Student Modal (Quick View)
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -32,6 +36,16 @@ export const PreceptorAssignedStudentsView = ({ preceptor }) => {
   useEffect(() => {
     loadAssignedStudents();
   }, [preceptor]);
+
+  if (selectedStudentForCases) {
+    return (
+      <PreceptorStudentCasesView
+        student={selectedStudentForCases}
+        preceptor={preceptor}
+        onBack={() => setSelectedStudentForCases(null)}
+      />
+    );
+  }
 
   // Filtered Students
   const filteredRecords = assignedRecords.filter(r => {
@@ -65,7 +79,7 @@ export const PreceptorAssignedStudentsView = ({ preceptor }) => {
           <span>My Assigned Students</span>
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Pharm.D candidates currently allocated under your preceptorshp.
+          Pharm.D candidates currently allocated under your preceptorshp. Click "View" to open student clinical cases.
         </p>
       </div>
 
@@ -203,14 +217,12 @@ export const PreceptorAssignedStudentsView = ({ preceptor }) => {
 
                       <td className="py-3.5 px-5 text-right">
                         <button
-                          onClick={() => {
-                            setSelectedStudent(s);
-                            setIsModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                          title="View Student Profile"
+                          onClick={() => setSelectedStudentForCases(s)}
+                          className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 ml-auto shadow-xs transition-all"
+                          title="Open Student Clinical Cases"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Cases</span>
                         </button>
                       </td>
                     </tr>

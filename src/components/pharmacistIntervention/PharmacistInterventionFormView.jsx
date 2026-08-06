@@ -353,11 +353,22 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
     }
   };
 
-  if (loading || !clinicalCase) {
+  if (loading) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
         <p className="text-xs font-semibold text-slate-500">Loading Pharmacist Intervention Form...</p>
+      </div>
+    );
+  }
+
+  if (!clinicalCase) {
+    return (
+      <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8">
+        <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No Clinical Case Selected</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">Please select a case from My Clinical Cases list to document Pharmacist Intervention.</p>
+        <button onClick={onBack} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">Back to My Cases</button>
       </div>
     );
   }

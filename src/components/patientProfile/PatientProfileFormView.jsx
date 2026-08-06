@@ -448,7 +448,6 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       alcoholic_duration: alcoholicDuration,
       allergy_food: allergyFood,
       allergy_drugs: allergyDrugs,
-      allergies: allergyDrugs || allergyFood ? `Food: ${allergyFood || 'None'}, Drugs: ${allergyDrugs || 'None'}` : 'None',
       marital_status: maritalStatus,
       cyanosis,
       icterus,

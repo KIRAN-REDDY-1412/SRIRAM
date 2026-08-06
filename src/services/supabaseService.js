@@ -512,10 +512,13 @@ export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) =>
 
 export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
   try {
+    const cleanPayload = { ...payload };
+    delete cleanPayload.allergies; // Remove non-column helper property
+
     const { data: existing } = await supabase
       .from('patient_profiles')
       .select('id')
-      .eq('clinical_case_id', payload.clinical_case_id)
+      .eq('clinical_case_id', cleanPayload.clinical_case_id)
       .maybeSingle();
 
     let savedProfile = null;
@@ -523,7 +526,7 @@ export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
     if (existing && existing.id) {
       const { data, error } = await supabase
         .from('patient_profiles')
-        .update(payload)
+        .update(cleanPayload)
         .eq('id', existing.id)
         .select();
 
@@ -532,7 +535,7 @@ export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
     } else {
       const { data, error } = await supabase
         .from('patient_profiles')
-        .insert([payload])
+        .insert([cleanPayload])
         .select();
 
       if (error) return { success: false, error: error.message };

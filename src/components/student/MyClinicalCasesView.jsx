@@ -281,7 +281,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                   <th className="py-3.5 px-5">Hospital</th>
                   <th className="py-3.5 px-5">Department</th>
                   <th className="py-3.5 px-5">IP/OP</th>
-                  <th className="py-3.5 px-5">Admission / Collection</th>
+                  <th className="py-3.5 px-5">Admission Date</th>
                   <th className="py-3.5 px-5">Status</th>
                   <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
@@ -298,8 +298,8 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                     </td>
 
                     <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      <span className="font-semibold block">{c.department}</span>
-                      <span className="text-[10px] text-slate-400 block">Unit: {c.ward_unit}</span>
+                      <span className="font-bold text-slate-900 dark:text-white uppercase block tracking-wide">{c.department}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">Unit : {c.ward_unit}</span>
                     </td>
 
                     <td className="py-3.5 px-5 whitespace-nowrap">
@@ -310,9 +310,8 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-5 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      <div>Adm: {c.date_of_admission}</div>
-                      <div className="text-[10px] text-slate-400">Coll: {c.date_of_collection}</div>
+                    <td className="py-3.5 px-5 font-mono text-slate-800 dark:text-slate-200 font-bold whitespace-nowrap">
+                      {c.date_of_admission}
                     </td>
 
                     <td className="py-3.5 px-5 whitespace-nowrap">
@@ -331,62 +330,68 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                           <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="bottom-right" />
                         )}
 
-                        {/* 5 CLINICAL DOCUMENTATION MODULE BUTTONS WITH STATUS DOTS */}
-                        <div className="inline-flex items-center gap-1">
-                          {/* Open Patient Profile */}
-                          <button
-                            onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
-                            className="px-2 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
-                            title={`Patient Profile (${moduleStatuses[c.id]?.profileStatus || 'Not Started'})`}
-                          >
-                            {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
-                            <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            <span>Profile</span>
-                          </button>
+                        {/* 5 CLINICAL DOCUMENTATION MODULE BUTTONS WITH SECTION TITLE & STATUS DOTS */}
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[9px] uppercase font-black tracking-wider text-slate-400 dark:text-slate-500">
+                            Clinical Documentation Modules
+                          </span>
 
-                          {/* Open Patient Counselling */}
-                          <button
-                            onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
-                            className="px-2 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
-                            title={`Patient Counselling (${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'})`}
-                          >
-                            {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
-                            <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                            <span>Counselling</span>
-                          </button>
+                          <div className="inline-flex items-center gap-1">
+                            {/* Open Patient Profile */}
+                            <button
+                              onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
+                              className="px-2 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
+                              title={`Profile: ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
+                            >
+                              {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
+                              <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              <span>Profile</span>
+                            </button>
 
-                          {/* Open Pharmacist Intervention */}
-                          <button
-                            onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
-                            className="px-2 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
-                            title={`Pharmacist Intervention (${moduleStatuses[c.id]?.interventionStatus || 'Not Added'})`}
-                          >
-                            {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
-                            <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                            <span>Intervention</span>
-                          </button>
+                            {/* Open Patient Counselling */}
+                            <button
+                              onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
+                              className="px-2 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
+                              title={`Counselling: ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
+                            >
+                              {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
+                              <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                              <span>Counselling</span>
+                            </button>
 
-                          {/* Open Drug Information Request */}
-                          <button
-                            onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
-                            className="px-2 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
-                            title={`Drug Information Request (${moduleStatuses[c.id]?.dirStatus || 'Not Added'})`}
-                          >
-                            {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
-                            <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                            <span>Drug Info</span>
-                          </button>
+                            {/* Open Pharmacist Intervention */}
+                            <button
+                              onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
+                              className="px-2 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
+                              title={`Intervention: ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
+                            >
+                              {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
+                              <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              <span>Intervention</span>
+                            </button>
 
-                          {/* Open ADR Documentation */}
-                          <button
-                            onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
-                            className="px-2 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
-                            title={`ADR Documentation (${moduleStatuses[c.id]?.adrStatus || 'Not Added'})`}
-                          >
-                            {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                            <span>ADR Log</span>
-                          </button>
+                            {/* Open Drug Information Request */}
+                            <button
+                              onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
+                              className="px-2 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
+                              title={`Drug Information Request: ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
+                            >
+                              {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
+                              <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                              <span>Drug Info</span>
+                            </button>
+
+                            {/* Open ADR Documentation */}
+                            <button
+                              onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
+                              className="px-2 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
+                              title={`ADR Documentation: ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
+                            >
+                              {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
+                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>ADR Log</span>
+                            </button>
+                          </div>
                         </div>
 
                         {/* VERTICAL DIVIDER SEPARATOR */}

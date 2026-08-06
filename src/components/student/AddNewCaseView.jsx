@@ -45,7 +45,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     e.preventDefault();
     setFormError('');
 
-    if (!hospitalName.trim() || !department.trim() || !wardUnit.trim() || !dateOfAdmission || !dateOfCollection) {
+    if (!hospitalName.trim() || !department.trim() || !wardUnit.trim() || !dateOfAdmission) {
       setFormError('Please fill in all required clinical case details.');
       return;
     }
@@ -61,7 +61,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
       wardUnit: wardUnit.trim(),
       ipOpType,
       dateOfAdmission,
-      dateOfCollection,
+      dateOfCollection: dateOfAdmission,
       academicYear: student.academic_year || '2026–2027',
       status
     });
@@ -226,7 +226,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               </select>
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Date of Admission *
               </label>
@@ -235,20 +235,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
                 required
                 value={dateOfAdmission}
                 onChange={(e) => setDateOfAdmission(e.target.value)}
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Date of Data Collection *
-              </label>
-              <input
-                type="date"
-                required
-                value={dateOfCollection}
-                onChange={(e) => setDateOfCollection(e.target.value)}
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-mono"
+                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-mono font-bold"
               />
             </div>
           </div>

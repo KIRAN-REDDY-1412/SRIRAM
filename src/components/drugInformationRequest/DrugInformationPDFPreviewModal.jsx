@@ -183,13 +183,22 @@ export const DrugInformationPDFPreviewModal = ({ isOpen, onClose, clinicalCase, 
             <div className="border-2 border-slate-900 p-4 space-y-2 bg-slate-50/20 font-serif text-xs">
               <strong className="font-bold text-xs uppercase block border-b border-slate-900 pb-1">References:</strong>
               
-              <div>Text book (mention): <span className="font-bold italic">{dirData?.ref_textbooks || '—'}</span></div>
-              <div>Journals (mention): <span className="font-bold italic">{dirData?.ref_journals || '—'}</span></div>
-              <div>Micromedex: <span className="font-bold italic">{dirData?.ref_micromedex || '—'}</span></div>
-              <div>Clinirex: <span className="font-bold italic">{dirData?.ref_clinirex || '—'}</span></div>
-              <div>IDIS: <span className="font-bold italic">{dirData?.ref_idis || '—'}</span></div>
-              <div>Website: <span className="font-mono font-bold">{dirData?.ref_website || '—'}</span></div>
-              <div>Others (specify): <span className="font-bold italic">{dirData?.ref_others || '—'}</span></div>
+              {Array.isArray(dirData?.references) && dirData.references.length > 0 ? (
+                <ol className="list-decimal pl-5 space-y-1">
+                  {dirData.references.map((ref, idx) => (
+                    <li key={idx} className="font-bold">
+                      <span className="text-slate-700 font-semibold font-sans">[{ref.type || 'Reference'}]:</span> {ref.source || '—'}
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="space-y-1">
+                  {dirData?.ref_textbooks && <div>Textbook: <span className="font-bold italic">{dirData.ref_textbooks}</span></div>}
+                  {dirData?.ref_journals && <div>Journals: <span className="font-bold italic">{dirData.ref_journals}</span></div>}
+                  {dirData?.ref_micromedex && <div>Database: <span className="font-bold italic">{dirData.ref_micromedex}</span></div>}
+                  {dirData?.ref_website && <div>Website: <span className="font-mono font-bold">{dirData.ref_website}</span></div>}
+                </div>
+              )}
             </div>
           </PharmDVerseBrandedDocumentContainer>
 

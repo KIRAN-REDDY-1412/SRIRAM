@@ -1,22 +1,95 @@
 import React, { useState, useEffect } from 'react';
-import { FileSearch, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck, RefreshCw } from 'lucide-react';
+import { FileSearch, User, Clock, FileText, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck, RefreshCw, Plus, Trash2, Phone, Calendar } from 'lucide-react';
 import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { DrugInformationPDFPreviewModal } from './DrugInformationPDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 
+const ENQUIRER_TYPES = [
+  'Resident Physician',
+  'Consultant Physician',
+  'Staff Nurse',
+  'Clinical Pharmacist',
+  'Pharmacology Faculty',
+  'Intern',
+  'PG Student',
+  'Patient',
+  'Patient Attender',
+  'Other'
+];
+
+const DEFAULT_DESIGNATIONS = {
+  'Resident Physician': 'Resident Doctor',
+  'Consultant Physician': 'Consultant Physician',
+  'Staff Nurse': 'Nursing Staff',
+  'Clinical Pharmacist': 'Clinical Pharmacist',
+  'Pharmacology Faculty': 'Faculty / Professor',
+  'Intern': 'Clinical Intern',
+  'PG Student': 'Postgraduate Student',
+  'Patient': 'N/A',
+  'Patient Attender': 'Patient Relative',
+  'Other': 'Healthcare Professional'
+};
+
+const PROFESSIONAL_STATUSES = [
+  'Physician',
+  'Nurse',
+  'Pharmacist',
+  'Student',
+  'Patient',
+  'Caregiver',
+  'Other Healthcare Professional'
+];
+
 const QUESTION_CATEGORIES = [
-  'Adverse Drug Reaction',
   'Dosage & Administration',
-  'Choice of Drug / Therapeutics',
   'Drug Interaction',
-  'Contraindications & Warnings',
-  'Pharmacokinetics / Dosing in Renal-Hepatic Impairment',
-  'Stability & Storage',
-  'Pregnancy & Lactation Safety',
-  'Drug Identification / Availability',
-  'Toxicity & Poisoning Management',
-  'Others'
+  'Adverse Drug Reaction',
+  'Contraindications',
+  'Pregnancy & Lactation',
+  'Renal Dose Adjustment',
+  'Hepatic Dose Adjustment',
+  'Therapeutic Use',
+  'Pharmacokinetics',
+  'Pharmacodynamics',
+  'Drug Compatibility',
+  'Poisoning / Toxicology',
+  'Storage & Stability',
+  'Availability',
+  'Cost Information',
+  'Other'
+];
+
+const TIMEFRAMES_NEEDED = [
+  'Immediately',
+  'Within 30 Minutes',
+  'Within 2–4 Hours',
+  'Same Day',
+  'Next Working Day'
+];
+
+const REFERENCE_TYPES = [
+  'Textbook',
+  'Database',
+  'Guideline',
+  'Journal',
+  'Package Insert',
+  'Institutional SOP',
+  'Website',
+  'Other'
+];
+
+const FREQUENTLY_USED_REFERENCES = [
+  "Goodman & Gilman's Pharmacological Basis of Therapeutics",
+  "Katzung Basic & Clinical Pharmacology",
+  "Harrison's Principles of Internal Medicine",
+  "Micromedex",
+  "Lexicomp",
+  "UpToDate",
+  "AHFS Drug Information",
+  "BNF (British National Formulary)",
+  "Martindale: The Complete Drug Reference",
+  "Stockley's Drug Interactions"
 ];
 
 export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
@@ -26,49 +99,39 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
   // Inline Notification Hook
   const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   // 1. Session & Enquirer Details
-  const [requestDate, setRequestDate] = useState(new Date().toISOString().split('T')[0]);
+  const [requestDate, setRequestDate] = useState(todayStr);
   const [requestTime, setRequestTime] = useState('11:00 AM');
-  const [enquirerName, setEnquirerName] = useState('');
-  const [designation, setDesignation] = useState('Resident Physician');
+  
+  const [enquirerSelect, setEnquirerSelect] = useState('Resident Physician');
+  const [enquirerNameOther, setEnquirerNameOther] = useState('');
+  const [designation, setDesignation] = useState('Resident Doctor');
   const [phoneNo, setPhoneNo] = useState('');
   const [unitWard, setUnitWard] = useState('');
   const [professionalStatus, setProfessionalStatus] = useState('Physician');
-  const [professionalStatusOther, setProfessionalStatusOther] = useState('');
 
-  // 2. Request Details
-  const [modeOfRequest, setModeOfRequest] = useState('Direct');
-  const [answerNeeded, setAnswerNeeded] = useState('Within 2-4hrs');
+  // 2. Details of Enquiry
+  const [questionCategorySelect, setQuestionCategorySelect] = useState('Dosage & Administration');
+  const [questionCategoryOther, setQuestionCategoryOther] = useState('');
+  const [timeframeNeeded, setTimeframeNeeded] = useState('Within 2–4 Hours');
   const [detailsOfEnquiry, setDetailsOfEnquiry] = useState('');
-  const [questionCategory, setQuestionCategory] = useState('Dosage & Administration');
-  const [purposeOfEnquiry, setPurposeOfEnquiry] = useState('Better patient care');
-  const [purposeOther, setPurposeOther] = useState('');
 
-  // 3. Patient Details (Background Information)
+  // 3. Patient Background Information (Auto Synced)
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('M');
   const [weightKg, setWeightKg] = useState('');
   const [allergies, setAllergies] = useState('None');
-  const [currentMedicalProblem, setCurrentMedicalProblem] = useState('');
-  const [isPregnantLactating, setIsPregnantLactating] = useState(false);
-  const [pregnancyLactationDetails, setPregnancyLactationDetails] = useState('');
-  const [otherInvestigations, setOtherInvestigations] = useState('');
-  const [drugTherapy, setDrugTherapy] = useState('');
+  const [currentDiagnosis, setCurrentDiagnosis] = useState('');
 
-  // 4. Response Delivery Metadata & Response
-  const [answerGivenTimeframe, setAnswerGivenTimeframe] = useState('Within 2-4hrs');
-  const [reasonForDelay, setReasonForDelay] = useState('');
-  const [modeOfReply, setModeOfReply] = useState('Written');
+  // 4. Response Provided
   const [informationProvided, setInformationProvided] = useState('');
 
-  // 5. References
-  const [refTextbooks, setRefTextbooks] = useState('Goodman & Gilman’s Pharmacological Basis of Therapeutics (14th Ed)');
-  const [refJournals, setRefJournals] = useState('');
-  const [refMicromedex, setRefMicromedex] = useState('Micromedex 2.0 Drug Interactions Database');
-  const [refClinirex, setRefClinirex] = useState('');
-  const [refIdis, setRefIdis] = useState('');
-  const [refWebsite, setRefWebsite] = useState('https://www.ncbi.nlm.nih.gov/pubmed');
-  const [refOthers, setRefOthers] = useState('');
+  // 5. Dynamic References
+  const [references, setReferences] = useState([
+    { id: 'ref-1', type: 'Textbook', source: "Goodman & Gilman's Pharmacological Basis of Therapeutics (14th Ed)" }
+  ]);
 
   // Meta
   const [status, setStatus] = useState('Draft');
@@ -76,6 +139,18 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Helper: Placeholder Focus Handlers
+  const handleFocusPlaceholder = (e) => {
+    e.target.dataset.ph = e.target.placeholder;
+    e.target.placeholder = '';
+  };
+
+  const handleBlurPlaceholder = (e) => {
+    if (e.target.dataset.ph) {
+      e.target.placeholder = e.target.dataset.ph;
+    }
+  };
 
   useEffect(() => {
     const loadDIRData = async () => {
@@ -87,7 +162,6 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
 
       // Pre-fill defaults from clinicalCase
       setUnitWard(clinicalCase.ward_unit || '');
-      setEnquirerName(clinicalCase.hospital_name ? `Dr. On-Duty (${clinicalCase.department})` : '');
 
       try {
         const [dirRes, profileRes] = await Promise.all([
@@ -102,50 +176,66 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
           setWeightKg(p.weight || '');
           setUnitWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
           setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
-          setCurrentMedicalProblem(p.final_diagnosis || p.provisional_diagnosis || '');
+          setCurrentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
         }
 
         if (dirRes.success && dirRes.request) {
           const item = dirRes.request;
           setExistingRequestId(item.id);
-          setRequestDate(item.request_date || new Date().toISOString().split('T')[0]);
+          setRequestDate(item.request_date || todayStr);
           setRequestTime(item.request_time || '11:00 AM');
-          setEnquirerName(item.enquirer_name || '');
+          
+          if (ENQUIRER_TYPES.includes(item.enquirer_name)) {
+            setEnquirerSelect(item.enquirer_name);
+            setEnquirerNameOther('');
+          } else if (item.enquirer_name) {
+            setEnquirerSelect('Other');
+            setEnquirerNameOther(item.enquirer_name);
+          }
+
           setDesignation(item.designation || '');
           setPhoneNo(item.phone_no || '');
           setUnitWard(item.unit_ward || clinicalCase.ward_unit || '');
           setProfessionalStatus(item.professional_status || 'Physician');
-          setProfessionalStatusOther(item.professional_status_other || '');
 
-          setModeOfRequest(item.mode_of_request || 'Direct');
-          setAnswerNeeded(item.answer_needed || 'Within 2-4hrs');
+          if (QUESTION_CATEGORIES.includes(item.question_category)) {
+            setQuestionCategorySelect(item.question_category);
+            setQuestionCategoryOther('');
+          } else if (item.question_category) {
+            setQuestionCategorySelect('Other');
+            setQuestionCategoryOther(item.question_category);
+          }
+
+          setTimeframeNeeded(item.answer_needed || 'Within 2–4 Hours');
           setDetailsOfEnquiry(item.details_of_enquiry || '');
-          setQuestionCategory(item.question_category || 'Dosage & Administration');
-          setPurposeOfEnquiry(item.purpose_of_enquiry || 'Better patient care');
-          setPurposeOther(item.purpose_other || '');
 
           setAge(item.age || '');
           setSex(item.sex || 'M');
           setWeightKg(item.weight_kg || '');
           setAllergies(item.allergies || 'None');
-          setCurrentMedicalProblem(item.current_medical_problem || '');
-          setIsPregnantLactating(Boolean(item.is_pregnant_lactating));
-          setPregnancyLactationDetails(item.pregnancy_lactation_details || '');
-          setOtherInvestigations(item.other_investigations || '');
-          setDrugTherapy(item.drug_therapy || '');
-
-          setAnswerGivenTimeframe(item.answer_given_timeframe || 'Within 2-4hrs');
-          setReasonForDelay(item.reason_for_delay || '');
-          setModeOfReply(item.mode_of_reply || 'Written');
+          setCurrentDiagnosis(item.current_medical_problem || '');
           setInformationProvided(item.information_provided || '');
 
-          setRefTextbooks(item.ref_textbooks || '');
-          setRefJournals(item.ref_journals || '');
-          setRefMicromedex(item.ref_micromedex || '');
-          setRefClinirex(item.ref_clinirex || '');
-          setRefIdis(item.ref_idis || '');
-          setRefWebsite(item.ref_website || '');
-          setRefOthers(item.ref_others || '');
+          // Try parsing dynamic references array from ref_others or fallback to legacy fields
+          if (item.ref_others && item.ref_others.startsWith('[') && item.ref_others.endsWith(']')) {
+            try {
+              const parsedRefs = JSON.parse(item.ref_others);
+              if (Array.isArray(parsedRefs) && parsedRefs.length > 0) {
+                setReferences(parsedRefs);
+              }
+            } catch (e) {
+              // Fallback to text
+            }
+          } else {
+            const legacyList = [];
+            if (item.ref_textbooks) legacyList.push({ id: 'ref-1', type: 'Textbook', source: item.ref_textbooks });
+            if (item.ref_journals) legacyList.push({ id: 'ref-2', type: 'Journal', source: item.ref_journals });
+            if (item.ref_micromedex) legacyList.push({ id: 'ref-3', type: 'Database', source: item.ref_micromedex });
+            if (item.ref_website) legacyList.push({ id: 'ref-4', type: 'Website', source: item.ref_website });
+            if (item.ref_others && !item.ref_others.startsWith('[')) legacyList.push({ id: 'ref-5', type: 'Other', source: item.ref_others });
+            
+            if (legacyList.length > 0) setReferences(legacyList);
+          }
 
           setStatus(item.status || 'Draft');
         }
@@ -159,21 +249,84 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     loadDIRData();
   }, [clinicalCase]);
 
+  // Handle Enquirer Selection Change
+  const handleEnquirerChange = (val) => {
+    setEnquirerSelect(val);
+    if (val !== 'Other') {
+      setEnquirerNameOther('');
+      setDesignation(DEFAULT_DESIGNATIONS[val] || '');
+    } else {
+      setDesignation('Healthcare Professional');
+    }
+  };
+
+  // Dynamic Reference Handlers
+  const handleAddReference = () => {
+    setReferences([
+      ...references,
+      { id: `ref-${Date.now()}`, type: 'Textbook', source: '' }
+    ]);
+  };
+
+  const handleRemoveReference = (id) => {
+    if (references.length <= 1) {
+      showBottomNotify({ type: 'warning', message: '⚠ At least one reference row must remain.' });
+      return;
+    }
+    setReferences(references.filter(r => r.id !== id));
+  };
+
+  const handleUpdateReference = (id, field, value) => {
+    setReferences(references.map(r => r.id === id ? { ...r, [field]: value } : r));
+  };
+
   const handleSaveRequest = async (newStatus = 'Draft') => {
     clearBottomNotify();
 
+    const finalEnquirerName = enquirerSelect === 'Other' ? enquirerNameOther.trim() : enquirerSelect;
+    const finalQuestionCategory = questionCategorySelect === 'Other' ? questionCategoryOther.trim() : questionCategorySelect;
+
+    // Strict Validation only on Submit
     if (newStatus === 'Submitted') {
-      if (!enquirerName.trim()) {
+      if (requestDate > todayStr) {
+        showBottomNotify({ type: 'error', message: '✖ Request Date cannot be a future date.' });
+        return;
+      }
+      if (phoneNo.trim() && phoneNo.trim().length !== 10) {
+        showBottomNotify({ type: 'error', message: '✖ Phone Number must be exactly 10 digits.' });
+        return;
+      }
+      if (enquirerSelect === 'Other' && !enquirerNameOther.trim()) {
         showBottomNotify({ type: 'error', message: '✖ Please enter Enquirer Name.' });
+        return;
+      }
+      if (questionCategorySelect === 'Other' && !questionCategoryOther.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Question Category.' });
         return;
       }
       if (!detailsOfEnquiry.trim()) {
         showBottomNotify({ type: 'error', message: '✖ Please enter Details of Enquiry (Question).' });
         return;
       }
+      if (!informationProvided.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Information Provided (Answer).' });
+        return;
+      }
+      const validRefs = references.filter(r => r.source.trim().length > 0);
+      if (validRefs.length === 0) {
+        showBottomNotify({ type: 'error', message: '✖ At least one valid Reference source is required before submitting.' });
+        return;
+      }
     }
 
     setSaving(true);
+
+    // Format references for backward compatibility + JSON serialization
+    const textbooksRef = references.filter(r => r.type === 'Textbook').map(r => r.source).join('; ');
+    const journalsRef = references.filter(r => r.type === 'Journal').map(r => r.source).join('; ');
+    const databaseRef = references.filter(r => r.type === 'Database').map(r => r.source).join('; ');
+    const websiteRef = references.filter(r => r.type === 'Website').map(r => r.source).join('; ');
+    const jsonRefsString = JSON.stringify(references.map(r => ({ type: r.type, source: r.source.trim() })));
 
     const payload = {
       clinical_case_id: clinicalCase.id,
@@ -181,38 +334,29 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
       college_id: student.college_id,
       request_date: requestDate,
       request_time: requestTime,
-      enquirer_name: enquirerName.trim(),
+      enquirer_name: finalEnquirerName,
       designation: designation.trim(),
       phone_no: phoneNo.trim(),
       unit_ward: unitWard,
       professional_status: professionalStatus,
-      professional_status_other: professionalStatus === 'Other' ? professionalStatusOther.trim() : null,
-      mode_of_request: modeOfRequest,
-      answer_needed: answerNeeded,
+      mode_of_request: 'Direct',
+      answer_needed: timeframeNeeded,
       details_of_enquiry: detailsOfEnquiry.trim(),
-      question_category: questionCategory,
-      purpose_of_enquiry: purposeOfEnquiry,
-      purpose_other: purposeOfEnquiry === 'Other' ? purposeOther.trim() : null,
+      question_category: finalQuestionCategory,
+      purpose_of_enquiry: 'Better patient care',
       age,
       sex,
       weight_kg: weightKg,
       allergies,
-      current_medical_problem: currentMedicalProblem.trim(),
-      is_pregnant_lactating: isPregnantLactating,
-      pregnancy_lactation_details: isPregnantLactating ? pregnancyLactationDetails.trim() : null,
-      other_investigations: otherInvestigations.trim(),
-      drug_therapy: drugTherapy.trim(),
-      answer_given_timeframe: answerGivenTimeframe,
-      reason_for_delay: reasonForDelay.trim(),
-      mode_of_reply: modeOfReply,
+      current_medical_problem: currentDiagnosis.trim(),
+      answer_given_timeframe: timeframeNeeded,
+      mode_of_reply: 'Written',
       information_provided: informationProvided.trim(),
-      ref_textbooks: refTextbooks.trim(),
-      ref_journals: refJournals.trim(),
-      ref_micromedex: refMicromedex.trim(),
-      ref_clinirex: refClinirex.trim(),
-      ref_idis: refIdis.trim(),
-      ref_website: refWebsite.trim(),
-      ref_others: refOthers.trim(),
+      ref_textbooks: textbooksRef,
+      ref_journals: journalsRef,
+      ref_micromedex: databaseRef,
+      ref_website: websiteRef,
+      ref_others: jsonRefsString,
       status: newStatus
     };
 
@@ -254,6 +398,8 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     );
   }
 
+  const isReadOnly = status === 'Submitted' || status === 'Approved';
+
   return (
     <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
       
@@ -274,7 +420,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
               <span>Drug Information Request & Documentation Form</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Case ID: <strong className="font-mono text-cyan-600 dark:text-cyan-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
+              Case ID: <strong className="font-mono text-cyan-600 dark:text-cyan-400">{clinicalCase.case_id}</strong> • Status: <strong className="uppercase font-bold text-emerald-600 dark:text-emerald-400">{status}</strong>
             </p>
           </div>
         </div>
@@ -289,89 +435,120 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Request Date *</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-cyan-600" /> Request Date *
+            </label>
             <input
               type="date"
+              disabled={isReadOnly}
+              max={todayStr}
               value={requestDate}
               onChange={(e) => setRequestDate(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Request Time</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-cyan-600" /> Request Time *
+            </label>
             <input
-              type="text"
+              type="time"
+              disabled={isReadOnly}
               value={requestTime}
               onChange={(e) => setRequestTime(e.target.value)}
-              placeholder="e.g. 11:00 AM"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Enquirer Category *</label>
+            <select
+              disabled={isReadOnly}
+              value={enquirerSelect}
+              onChange={(e) => handleEnquirerChange(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+            >
+              {ENQUIRER_TYPES.map((type, i) => (
+                <option key={i} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          {enquirerSelect === 'Other' ? (
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Name of Enquirer *</label>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={enquirerNameOther}
+                onChange={(e) => setEnquirerNameOther(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter Enquirer Name"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Designation</label>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter designation"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Phone className="w-3.5 h-3.5 text-cyan-600" /> Phone Number (10 Digits)
+            </label>
+            <input
+              type="text"
+              disabled={isReadOnly}
+              value={phoneNo}
+              onChange={(e) => setPhoneNo(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
+              placeholder="Enter 10-digit phone number"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit / Ward (Auto-Fetched)</label>
+            <input
+              type="text"
+              readOnly
+              value={unitWard}
+              placeholder="Unit/Ward"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Name of Enquirer *</label>
-            <input
-              type="text"
-              value={enquirerName}
-              onChange={(e) => setEnquirerName(e.target.value)}
-              placeholder="Enter name of enquirer"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Designation</label>
-            <input
-              type="text"
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              placeholder="Enter designation"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
-            <input
-              type="text"
-              value={phoneNo}
-              onChange={(e) => setPhoneNo(e.target.value)}
-              placeholder="Enter phone number"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit / Ward</label>
-            <input
-              type="text"
-              value={unitWard}
-              onChange={(e) => setUnitWard(e.target.value)}
-              placeholder="Enter unit/ward"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
-            />
-          </div>
-
-          <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Professional Status *</label>
             <select
+              disabled={isReadOnly}
               value={professionalStatus}
               onChange={(e) => setProfessionalStatus(e.target.value)}
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
             >
-              <option value="Physician">Physician</option>
-              <option value="Post Graduate Resident">Post Graduate Resident</option>
-              <option value="Nurse">Nurse</option>
-              <option value="Pharmacist">Pharmacist</option>
-              <option value="Patient / Public">Patient / Public</option>
-              <option value="Other">Other</option>
+              {PROFESSIONAL_STATUSES.map((st, i) => (
+                <option key={i} value={st}>{st}</option>
+              ))}
             </select>
           </div>
         </div>
       </div>
 
-      {/* 2. ENQUIRY DETAILS */}
+      {/* 2. DETAILS OF ENQUIRY */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <BookOpen className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -383,9 +560,10 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Question Category *</label>
               <select
-                value={questionCategory}
-                onChange={(e) => setQuestionCategory(e.target.value)}
-                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                disabled={isReadOnly}
+                value={questionCategorySelect}
+                onChange={(e) => setQuestionCategorySelect(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
               >
                 {QUESTION_CATEGORIES.map((cat, i) => (
                   <option key={i} value={cat}>{cat}</option>
@@ -394,28 +572,47 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Timeframe Needed</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Timeframe Needed *</label>
               <select
-                value={answerNeeded}
-                onChange={(e) => setAnswerNeeded(e.target.value)}
-                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                disabled={isReadOnly}
+                value={timeframeNeeded}
+                onChange={(e) => setTimeframeNeeded(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
               >
-                <option value="Immediate / STAT">Immediate / STAT</option>
-                <option value="Within 2-4hrs">Within 2-4hrs</option>
-                <option value="Within 24hrs">Within 24hrs</option>
+                {TIMEFRAMES_NEEDED.map((tf, i) => (
+                  <option key={i} value={tf}>{tf}</option>
+                ))}
               </select>
             </div>
           </div>
 
+          {questionCategorySelect === 'Other' && (
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Specify Question Category *</label>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={questionCategoryOther}
+                onChange={(e) => setQuestionCategoryOther(e.target.value)}
+                onFocus={handleFocusPlaceholder}
+                onBlur={handleBlurPlaceholder}
+                placeholder="Enter Question Category"
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Details of Enquiry (Question) *</label>
             <textarea
-              rows={3}
-              required
+              rows={4}
+              disabled={isReadOnly}
               value={detailsOfEnquiry}
               onChange={(e) => setDetailsOfEnquiry(e.target.value)}
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
               placeholder="Enter details of enquiry"
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/40 leading-relaxed"
             />
           </div>
         </div>
@@ -429,7 +626,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
             3. Patient Background Information
           </h3>
           <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-200 dark:border-cyan-800 flex items-center gap-1">
-            <RefreshCw className="w-3 h-3 animate-spin" /> Auto-Synced from Patient Profile
+            <RefreshCw className="w-3 h-3 animate-spin" /> Auto Synced from Patient Profile
           </span>
         </div>
 
@@ -437,14 +634,14 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Sex</label>
             <div className="flex gap-2">
-              <input type="text" readOnly value={age} placeholder="Age" className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono" />
+              <input type="text" readOnly value={age} placeholder="Age" className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold" />
               <input type="text" readOnly value={sex} placeholder="Sex" className="w-16 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-center" />
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Weight (kg)</label>
-            <input type="text" readOnly value={weightKg} placeholder="Weight" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono" />
+            <input type="text" readOnly value={weightKg} placeholder="Weight" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold" />
           </div>
 
           <div className="sm:col-span-2">
@@ -453,42 +650,125 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
           </div>
 
           <div className="sm:col-span-4">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Medical Problem / Diagnosis</label>
-            <textarea rows={2} readOnly value={currentMedicalProblem} placeholder="Diagnosis" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Diagnosis</label>
+            <textarea rows={2} readOnly value={currentDiagnosis} placeholder="Current Diagnosis" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold" />
           </div>
         </div>
       </div>
 
-      {/* 4. RESPONSE / INFORMATION PROVIDED */}
+      {/* 4. RESPONSE PROVIDED */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
           <ShieldCheck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-          4. Response Provided & References
+          4. Response Provided (Information Provided) *
         </h3>
 
         <div className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Information Provided (Answer)</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Information Provided (Answer) *
+            </label>
             <textarea
-              rows={4}
+              rows={6}
+              disabled={isReadOnly}
               value={informationProvided}
               onChange={(e) => setInformationProvided(e.target.value)}
-              placeholder="Enter response/information provided"
-              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+              onFocus={handleFocusPlaceholder}
+              onBlur={handleBlurPlaceholder}
+              placeholder="Enter response or information provided"
+              className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
             />
           </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ref 1: Textbooks</label>
-              <input type="text" value={refTextbooks} onChange={(e) => setRefTextbooks(e.target.value)} placeholder="Enter textbook reference" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
-            </div>
+      {/* 5. DYNAMIC REFERENCES & FREQUENTLY USED REFERENCES */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            5. References & Quick References *
+          </h3>
 
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ref 2: Databases</label>
-              <input type="text" value={refMicromedex} onChange={(e) => setRefMicromedex(e.target.value)} placeholder="Enter database reference" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleAddReference}
+              className="px-3 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-xs font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Reference</span>
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-4 text-xs">
+          {references.map((ref, idx) => (
+            <div key={ref.id || idx} className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/60 space-y-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                
+                {/* Reference Type Dropdown */}
+                <div className="w-full sm:w-48">
+                  <label className="block text-[10px] uppercase font-extrabold text-slate-500 mb-1">Reference Type</label>
+                  <select
+                    disabled={isReadOnly}
+                    value={ref.type}
+                    onChange={(e) => handleUpdateReference(ref.id, 'type', e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                  >
+                    {REFERENCE_TYPES.map((rt, i) => (
+                      <option key={i} value={rt}>{rt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Frequently Used Reference Quick Select */}
+                {!isReadOnly && (
+                  <div className="w-full sm:w-64">
+                    <label className="block text-[10px] uppercase font-extrabold text-cyan-600 dark:text-cyan-400 mb-1">Frequently Used Quick Select</label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) handleUpdateReference(ref.id, 'source', e.target.value);
+                      }}
+                      className="w-full h-10 px-3 rounded-xl border border-cyan-200 dark:border-cyan-900 bg-cyan-50/50 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-300 font-semibold"
+                    >
+                      <option value="">-- Choose Quick Reference --</option>
+                      {FREQUENTLY_USED_REFERENCES.map((freq, i) => (
+                        <option key={i} value={freq}>{freq}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Delete Row Button */}
+                {!isReadOnly && references.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveReference(ref.id)}
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 self-end sm:self-center transition-colors"
+                    title="Delete Reference"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Reference Source Free Text Input */}
+              <div>
+                <label className="block text-[10px] uppercase font-extrabold text-slate-500 mb-1">Reference Source Details *</label>
+                <input
+                  type="text"
+                  disabled={isReadOnly}
+                  value={ref.source}
+                  onChange={(e) => handleUpdateReference(ref.id, 'source', e.target.value)}
+                  onFocus={handleFocusPlaceholder}
+                  onBlur={handleBlurPlaceholder}
+                  placeholder="Enter reference source details"
+                  className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                />
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -496,15 +776,17 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
       <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
 
-        <button
-          type="button"
-          onClick={() => handleSaveRequest('Draft')}
-          disabled={saving}
-          className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
-        </button>
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={() => handleSaveRequest('Draft')}
+            disabled={saving}
+            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -515,24 +797,26 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
           <span>Preview Form PDF</span>
         </button>
 
-        <button
-          type="button"
-          onClick={() => handleSaveRequest('Submitted')}
-          disabled={saving}
-          className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Submitting Form...</span>
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4" />
-              <span>Submit Form</span>
-            </>
-          )}
-        </button>
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={() => handleSaveRequest('Submitted')}
+            disabled={saving}
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Submitting Form...</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                <span>Submit Form</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* PDF PREVIEW MODAL */}
@@ -545,38 +829,23 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
           dirData={{
             request_date: requestDate,
             request_time: requestTime,
-            enquirer_name: enquirerName,
+            enquirer_name: enquirerSelect === 'Other' ? enquirerNameOther : enquirerSelect,
             designation,
             phone_no: phoneNo,
             unit_ward: unitWard,
             professional_status: professionalStatus,
-            professional_status_other: professionalStatusOther,
-            mode_of_request: modeOfRequest,
-            answer_needed: answerNeeded,
+            answer_needed: timeframeNeeded,
             details_of_enquiry: detailsOfEnquiry,
-            question_category: questionCategory,
-            purpose_of_enquiry: purposeOfEnquiry,
-            purpose_other: purposeOther,
+            question_category: questionCategorySelect === 'Other' ? questionCategoryOther : questionCategorySelect,
             age,
             sex,
             weight_kg: weightKg,
             allergies,
-            current_medical_problem: currentMedicalProblem,
-            is_pregnant_lactating: isPregnantLactating,
-            pregnancy_lactation_details: pregnancyLactationDetails,
-            other_investigations: otherInvestigations,
-            drug_therapy: drugTherapy,
-            answer_given_timeframe: answerGivenTimeframe,
-            reason_for_delay: reasonForDelay,
-            mode_of_reply: modeOfReply,
+            current_medical_problem: currentDiagnosis,
+            answer_given_timeframe: timeframeNeeded,
+            mode_of_reply: 'Written',
             information_provided: informationProvided,
-            ref_textbooks: refTextbooks,
-            ref_journals: refJournals,
-            ref_micromedex: refMicromedex,
-            ref_clinirex: refClinirex,
-            ref_idis: refIdis,
-            ref_website: refWebsite,
-            ref_others: refOthers
+            references: references
           }}
         />
       )}

@@ -3,7 +3,7 @@ import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, E
 import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase } from '../../services/supabaseService';
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 
-// Master Lab Category & Parameter Definition with Reference Ranges and Ranges for Validation
+// Master Lab Category & Parameter Definition with Reference Ranges
 const LAB_CATEGORY_MAP = {
   'Haematological Patterns': [
     { parameter_name: 'Hb %', reference_range: '11-16.5 %' },
@@ -170,6 +170,23 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Inline Real-Time Date Error Computations
+  const getDocError = () => {
+    if (!doc) return null;
+    if (doa && doc < doa) return 'DOC cannot be earlier than DOA';
+    if (dod && doc > dod) return 'DOC cannot be later than DOD';
+    return null;
+  };
+
+  const getDodError = () => {
+    if (!dod) return null;
+    if (doa && dod < doa) return 'DOD cannot be earlier than DOA';
+    return null;
+  };
+
+  const docError = getDocError();
+  const dodError = getDodError();
 
   // Load Existing Profile if available
   useEffect(() => {
@@ -347,9 +364,22 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
     setFormError('');
     setSaveSuccess('');
 
-    // DRAFT SAVE: Allows saving at any stage without mandatory validation
+    // Common Date Validation for BOTH Draft and Submit
+    if (dod && doa && dod < doa) {
+      setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
+      return;
+    }
+    if (doc && doa && doc < doa) {
+      setFormError('Date of Collection (DOC) cannot be earlier than Date of Admission (DOA).');
+      return;
+    }
+    if (doc && dod && doc > dod) {
+      setFormError('Date of Collection (DOC) cannot be after Date of Discharge (DOD).');
+      return;
+    }
+
+    // SUBMIT PROFILE STRICT VALIDATION
     if (newStatus === 'Submitted') {
-      // SUBMIT PROFILE VALIDATION
       if (!patientName.trim()) {
         setFormError('Patient Initials are required.');
         return;
@@ -370,30 +400,12 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         setFormError('Date of Admission (DOA) is required.');
         return;
       }
-      if (dod && dod < doa) {
-        setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
-        return;
-      }
-      if (doc && doc < doa) {
-        setFormError('Date of Collection (DOC) cannot be earlier than Date of Admission (DOA).');
-        return;
-      }
-      if (doc && dod && doc > dod) {
-        setFormError('Date of Collection (DOC) cannot be after Date of Discharge (DOD).');
-        return;
-      }
       if (!chiefComplaints.trim()) {
         setFormError('Chief Complaints are required.');
         return;
       }
       if (!finalDiagnosis.trim()) {
         setFormError('Final Diagnosis is required.');
-        return;
-      }
-    } else {
-      // Soft date check even for draft if both are entered
-      if (dod && doa && dod < doa) {
-        setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
         return;
       }
     }
@@ -653,7 +665,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             </div>
           </div>
 
-          {/* Date of Admission */}
+          {/* Date of Admission (DOA) */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Admission (DOA) *</label>
             <input
@@ -664,26 +676,51 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             />
           </div>
 
-          {/* Date of Collection */}
+          {/* Date of Collection (DOC) with Physical min/max & Inline Realtime Validation */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Collection (DOC)</label>
             <input
               type="date"
               value={doc}
+              min={doa || undefined}
+              max={dod || undefined}
               onChange={(e) => setDoc(e.target.value)}
-              className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+              className={`w-full h-[44px] px-3 rounded-xl border font-mono transition-colors ${
+                docError
+                  ? 'border-rose-500 bg-rose-50/60 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white'
+              }`}
             />
+            {docError ? (
+              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 block animate-fadeIn">
+                ⚠️ {docError}
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 mt-0.5 block">DOA ≤ DOC ≤ DOD</span>
+            )}
           </div>
 
-          {/* Date of Discharge */}
+          {/* Date of Discharge (DOD) with Physical min & Inline Realtime Validation */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Discharge (DOD)</label>
             <input
               type="date"
               value={dod}
+              min={doa || undefined}
               onChange={(e) => setDod(e.target.value)}
-              className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+              className={`w-full h-[44px] px-3 rounded-xl border font-mono transition-colors ${
+                dodError
+                  ? 'border-rose-500 bg-rose-50/60 text-rose-900 dark:bg-rose-950/40 dark:text-rose-200'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white'
+              }`}
             />
+            {dodError ? (
+              <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 block animate-fadeIn">
+                ⚠️ {dodError}
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 mt-0.5 block">DOD ≥ DOA</span>
+            )}
           </div>
         </div>
       </div>
@@ -1122,7 +1159,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         />
       </div>
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM (RULE 3 IMPLEMENTATION) */}
+      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
       <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <button
           type="button"

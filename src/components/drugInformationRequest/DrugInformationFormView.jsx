@@ -426,6 +426,9 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
         </div>
       </div>
 
+      {/* FORM BODY — wrapped in fieldset for read-only enforcement */}
+      <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0, minInlineSize: 'auto' }}>
+
       {/* 1. ENQUIRER & SESSION INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
@@ -771,6 +774,9 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
           ))}
         </div>
       </div>
+
+      </fieldset>
+      {/* END FORM BODY */}
 
       {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
       {!isReadOnly && (

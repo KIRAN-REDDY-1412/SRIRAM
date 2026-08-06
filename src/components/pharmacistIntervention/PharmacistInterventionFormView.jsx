@@ -399,6 +399,9 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
         </div>
       </div>
 
+      {/* FORM BODY — wrapped in fieldset for read-only enforcement */}
+      <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0, minInlineSize: 'auto' }}>
+
       {/* 1. PATIENT INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
@@ -850,6 +853,9 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
           </div>
         </div>
       </div>
+
+      </fieldset>
+      {/* END FORM BODY */}
 
       {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
       {!isReadOnly && (

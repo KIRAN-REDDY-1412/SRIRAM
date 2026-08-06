@@ -3,28 +3,100 @@ import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, E
 import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase } from '../../services/supabaseService';
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 
-const DEFAULT_LAB_PARAMETERS = [
-  // Haematology
-  { category: 'Haematological Patterns', parameter_name: 'Hb %', reference_range: '11-16.5 %', unit: '%', test_value: '' },
-  { category: 'Haematological Patterns', parameter_name: 'RBC Count', reference_range: '3.8-5.8 cells/mm', unit: 'cells/mm', test_value: '' },
-  { category: 'Haematological Patterns', parameter_name: 'WBC Count', reference_range: '4000-10000 cells/mm', unit: 'cells/mm', test_value: '' },
-  { category: 'Haematological Patterns', parameter_name: 'Neutrophils', reference_range: '40-70 %', unit: '%', test_value: '' },
-  { category: 'Haematological Patterns', parameter_name: 'Lymphocytes', reference_range: '15-30 %', unit: '%', test_value: '' },
-  { category: 'Haematological Patterns', parameter_name: 'Platelets', reference_range: '1.5-4 lakhs/cell', unit: 'lakhs/cell', test_value: '' },
-  
-  // Blood Glucose
-  { category: 'Blood Glucose', parameter_name: 'FBS', reference_range: '70-100 mg/dl', unit: 'mg/dl', test_value: '' },
-  { category: 'Blood Glucose', parameter_name: 'RBS', reference_range: '70-140 mg/dl', unit: 'mg/dl', test_value: '' },
-  { category: 'Blood Glucose', parameter_name: 'PPBS', reference_range: '110-160 mg/dl', unit: 'mg/dl', test_value: '' },
+// Master Lab Category & Parameter Definition with Reference Ranges and Ranges for Validation
+const LAB_CATEGORY_MAP = {
+  'Haematological Patterns': [
+    { parameter_name: 'Hb %', reference_range: '11-16.5 %' },
+    { parameter_name: 'RBC Count', reference_range: '3.8-5.8 cells/mm' },
+    { parameter_name: 'WBC Count', reference_range: '4000-10000 cells/mm' },
+    { parameter_name: 'Neutrophils', reference_range: '40-70 %' },
+    { parameter_name: 'Lymphocytes', reference_range: '15-30 %' },
+    { parameter_name: 'Eosinophils', reference_range: '1-6 %' },
+    { parameter_name: 'Monocytes', reference_range: '2-10 %' },
+    { parameter_name: 'MCH', reference_range: '27-32 pg/cell' },
+    { parameter_name: 'MCHC', reference_range: '31-35 gm%' },
+    { parameter_name: 'MCV', reference_range: '49-80 fl' },
+    { parameter_name: 'Platelets', reference_range: '1.5-4 lakhs/cell' },
+    { parameter_name: 'PCV', reference_range: '35-40 %' }
+  ],
+  'Blood Glucose': [
+    { parameter_name: 'FBS', reference_range: '70-100 mg/dl' },
+    { parameter_name: 'RBS', reference_range: '70-140 mg/dl' },
+    { parameter_name: 'PPBS', reference_range: '110-160 mg/dl' }
+  ],
+  'Renal Function Tests': [
+    { parameter_name: 'Serum Creatinine', reference_range: '0.6-1.1 mg%' },
+    { parameter_name: 'Blood Urea', reference_range: '3-8 mg%' },
+    { parameter_name: 'Uric Acid', reference_range: '2.6-7.2 mg%' }
+  ],
+  'Liver Function Tests': [
+    { parameter_name: 'SGOT (AST)', reference_range: '6-38 u/l' },
+    { parameter_name: 'SGPT (ALT)', reference_range: '6-38 u/l' },
+    { parameter_name: 'Bilirubin Total', reference_range: '0.5-1.1 mg/dl' },
+    { parameter_name: 'Bilirubin Direct', reference_range: '0-0.6 mg/dl' },
+    { parameter_name: 'Bilirubin Indirect', reference_range: '0-0.4 mg/dl' },
+    { parameter_name: 'Alkaline Phosphatase', reference_range: '36-142 mu/ml' }
+  ],
+  'Electrolytes': [
+    { parameter_name: 'Serum Sodium (Na+)', reference_range: '135-145 meq/l' },
+    { parameter_name: 'Serum Potassium (K+)', reference_range: '3.5-5.5 meq/l' },
+    { parameter_name: 'Chlorides', reference_range: '98-107 meq/l' },
+    { parameter_name: 'Serum Calcium', reference_range: '8.4-10.8 mg/dl' }
+  ],
+  'Thyroid Function Tests': [
+    { parameter_name: 'TSH', reference_range: '0.5-4 mIU/L' },
+    { parameter_name: 'Free T4', reference_range: '0.8-1.8 ng/dL' },
+    { parameter_name: 'Total T3', reference_range: '80-180 ng/dL' }
+  ],
+  'Cardiac Function Tests': [
+    { parameter_name: 'CPK-MB', reference_range: '0-24 IU/L' }
+  ],
+  'Lipid Profile Tests': [
+    { parameter_name: 'Total Cholesterol', reference_range: '130-250 mg/dl' },
+    { parameter_name: 'HDL', reference_range: '30-70 mg/dl' },
+    { parameter_name: 'LDL', reference_range: '60-170 mg/dl' },
+    { parameter_name: 'VLDL', reference_range: '5-40 mg/dl' },
+    { parameter_name: 'Triglycerides', reference_range: '0-170 mg/dl' }
+  ],
+  'Urine Analysis': [
+    { parameter_name: 'Specific Gravity', reference_range: '1.010-1.030' },
+    { parameter_name: 'pH', reference_range: '5.0-8.0' },
+    { parameter_name: 'Pus Cells', reference_range: '1-5 hpf' },
+    { parameter_name: 'Epi Cells', reference_range: '1-5 hpf' }
+  ],
+  'General': [
+    { parameter_name: 'General Parameter', reference_range: '0-100' }
+  ]
+};
 
-  // Renal & Liver
-  { category: 'Renal Function Tests', parameter_name: 'Serum Creatinine', reference_range: '0.6-1.1 mg%', unit: 'mg%', test_value: '' },
-  { category: 'Renal Function Tests', parameter_name: 'Blood Urea', reference_range: '3-8 mg%', unit: 'mg%', test_value: '' },
-  { category: 'Liver Function Tests', parameter_name: 'SGOT (AST)', reference_range: '6-38 u/l', unit: 'u/l', test_value: '' },
-  { category: 'Liver Function Tests', parameter_name: 'SGPT (ALT)', reference_range: '6-38 u/l', unit: 'u/l', test_value: '' },
-  { category: 'Electrolytes', parameter_name: 'Serum Sodium (Na+)', reference_range: '135-145 meq/l', unit: 'meq/l', test_value: '' },
-  { category: 'Electrolytes', parameter_name: 'Serum Potassium (K+)', reference_range: '3.5-5.5 meq/l', unit: 'meq/l', test_value: '' }
+const DEFAULT_LAB_ROWS = [
+  { category: 'Haematological Patterns', parameter_name: 'Hb %', reference_range: '11-16.5 %', test_value: '' },
+  { category: 'Haematological Patterns', parameter_name: 'RBC Count', reference_range: '3.8-5.8 cells/mm', test_value: '' },
+  { category: 'Haematological Patterns', parameter_name: 'WBC Count', reference_range: '4000-10000 cells/mm', test_value: '' },
+  { category: 'Blood Glucose', parameter_name: 'FBS', reference_range: '70-100 mg/dl', test_value: '' },
+  { category: 'Blood Glucose', parameter_name: 'RBS', reference_range: '70-140 mg/dl', test_value: '' },
+  { category: 'Renal Function Tests', parameter_name: 'Serum Creatinine', reference_range: '0.6-1.1 mg%', test_value: '' },
+  { category: 'Liver Function Tests', parameter_name: 'SGOT (AST)', reference_range: '6-38 u/l', test_value: '' },
+  { category: 'Electrolytes', parameter_name: 'Serum Sodium (Na+)', reference_range: '135-145 meq/l', test_value: '' }
 ];
+
+// Helper to evaluate if test value is Normal or Abnormal (below/above ref range)
+const evaluateTestValueStatus = (valStr, refRangeStr) => {
+  if (!valStr || isNaN(valStr.trim())) return 'none';
+  const val = parseFloat(valStr.trim());
+
+  const match = refRangeStr ? refRangeStr.match(/([\d.]+)\s*-\s*([\d.]+)/) : null;
+  if (!match) return 'none';
+
+  const min = parseFloat(match[1]);
+  const max = parseFloat(match[2]);
+
+  if (!isNaN(min) && !isNaN(max)) {
+    if (val >= min && val <= max) return 'normal'; // Green
+    return 'abnormal'; // Red
+  }
+  return 'none';
+};
 
 export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
@@ -78,7 +150,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
   ]);
 
   // 6. Dynamic Lab Investigations (Array)
-  const [labInvestigations, setLabInvestigations] = useState(DEFAULT_LAB_PARAMETERS);
+  const [labInvestigations, setLabInvestigations] = useState(DEFAULT_LAB_ROWS);
 
   // 7. Other & Final Diagnosis
   const [otherInvestigations, setOtherInvestigations] = useState('');
@@ -115,13 +187,20 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       if (res.success && res.profile) {
         const p = res.profile;
         setExistingProfileId(p.id);
-        setPatientName(p.patient_name || p.patient_initials || '');
-        setAge(p.age || '');
+
+        const initName = p.patient_name || p.patient_initials || '';
+        setPatientName(initName.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4));
+
+        setAge(p.age ? p.age.toString().replace(/\D/g, '').slice(0, 2) : '');
         setGender(p.gender || 'Male');
-        setIpNo(p.ip_no || p.ip_op_number || '');
-        setHeight(p.height || p.height_cm || '');
-        setWeight(p.weight || p.weight_kg || '');
+
+        const loadedIp = p.ip_no || p.ip_op_number || '';
+        setIpNo(loadedIp.replace(/\D/g, '').slice(0, 10));
+
+        setHeight(p.height || p.height_cm ? (p.height || p.height_cm).toString().replace(/\D/g, '').slice(0, 3) : '');
+        setWeight(p.weight || p.weight_kg ? (p.weight || p.weight_kg).toString().replace(/\D/g, '').slice(0, 3) : '');
         setBmi(p.bmi || '');
+
         setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
         setDepartment(p.department || clinicalCase.department || '');
         setDoa(p.doa || p.date_of_admission || clinicalCase.date_of_admission || '');
@@ -158,11 +237,25 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         setProfileStatus(p.status || 'Draft');
 
         if (res.labInvestigations && res.labInvestigations.length > 0) {
-          setLabInvestigations(res.labInvestigations);
+          setLabInvestigations(res.labInvestigations.map(item => ({
+            category: item.category || 'Haematological Patterns',
+            parameter_name: item.parameter_name || '',
+            reference_range: item.reference_range || '',
+            test_value: item.test_value || ''
+          })));
         }
 
         if (res.prescribedDrugs && res.prescribedDrugs.length > 0) {
-          setPrescribedDrugs(res.prescribedDrugs);
+          setPrescribedDrugs(res.prescribedDrugs.map((item, i) => ({
+            s_no: item.s_no || i + 1,
+            trade_name: (item.trade_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
+            generic_name: (item.generic_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
+            route_of_admin: item.route_of_admin || 'Oral',
+            dose: item.dose || '',
+            frequency: item.frequency || 'OD',
+            start_date: item.start_date || '',
+            stop_date: item.stop_date || ''
+          })));
         }
       }
 
@@ -173,13 +266,15 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
   }, [clinicalCase]);
 
   // Height Weight BMI Calculation Helper
-  const handleWeightHeightChange = (w, h) => {
-    setWeight(w);
-    setHeight(h);
-    if (w && h && !isNaN(w) && !isNaN(h) && parseFloat(h) > 0) {
-      const heightInMeters = parseFloat(h) / 100;
-      const calculatedBmi = (parseFloat(w) / (heightInMeters * heightInMeters)).toFixed(1);
+  const handleWeightHeightChange = (wVal, hVal) => {
+    setWeight(wVal);
+    setHeight(hVal);
+    if (wVal && hVal && !isNaN(wVal) && !isNaN(hVal) && parseFloat(hVal) > 0) {
+      const heightInMeters = parseFloat(hVal) / 100;
+      const calculatedBmi = (parseFloat(wVal) / (heightInMeters * heightInMeters)).toFixed(1);
       setBmi(calculatedBmi);
+    } else {
+      setBmi('');
     }
   };
 
@@ -194,7 +289,41 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
   // Dynamic Lab Investigations Handlers
   const handleAddLabRow = () => {
-    setLabInvestigations([...labInvestigations, { category: 'General', parameter_name: '', reference_range: '', test_date: new Date().toISOString().split('T')[0], test_value: '', unit: '' }]);
+    const defaultCat = 'Haematological Patterns';
+    const defaultParamObj = LAB_CATEGORY_MAP[defaultCat][0];
+    setLabInvestigations([
+      ...labInvestigations,
+      {
+        category: defaultCat,
+        parameter_name: defaultParamObj.parameter_name,
+        reference_range: defaultParamObj.reference_range,
+        test_value: ''
+      }
+    ]);
+  };
+
+  const handleLabCategoryChange = (idx, newCategory) => {
+    const paramsList = LAB_CATEGORY_MAP[newCategory] || LAB_CATEGORY_MAP['General'];
+    const defaultParamObj = paramsList[0];
+    const copy = [...labInvestigations];
+    copy[idx] = {
+      category: newCategory,
+      parameter_name: defaultParamObj.parameter_name,
+      reference_range: defaultParamObj.reference_range,
+      test_value: ''
+    };
+    setLabInvestigations(copy);
+  };
+
+  const handleLabParameterChange = (idx, newParamName) => {
+    const copy = [...labInvestigations];
+    const currentCat = copy[idx].category;
+    const paramsList = LAB_CATEGORY_MAP[currentCat] || LAB_CATEGORY_MAP['General'];
+    const foundObj = paramsList.find(p => p.parameter_name === newParamName) || { parameter_name: newParamName, reference_range: '' };
+
+    copy[idx].parameter_name = foundObj.parameter_name;
+    copy[idx].reference_range = foundObj.reference_range;
+    setLabInvestigations(copy);
   };
 
   const handleRemoveLabRow = (idx) => {
@@ -203,7 +332,10 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
   // Dynamic Prescribed Drugs Handlers
   const handleAddDrugRow = () => {
-    setPrescribedDrugs([...prescribedDrugs, { s_no: prescribedDrugs.length + 1, trade_name: '', generic_name: '', route_of_admin: 'Oral', dose: '', frequency: 'OD', start_date: '', stop_date: '' }]);
+    setPrescribedDrugs([
+      ...prescribedDrugs,
+      { s_no: prescribedDrugs.length + 1, trade_name: '', generic_name: '', route_of_admin: 'Oral', dose: '', frequency: 'OD', start_date: '', stop_date: '' }
+    ]);
   };
 
   const handleRemoveDrugRow = (idx) => {
@@ -215,9 +347,55 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
     setFormError('');
     setSaveSuccess('');
 
-    if (!patientName.trim()) {
-      setFormError('Patient Name is required.');
-      return;
+    // DRAFT SAVE: Allows saving at any stage without mandatory validation
+    if (newStatus === 'Submitted') {
+      // SUBMIT PROFILE VALIDATION
+      if (!patientName.trim()) {
+        setFormError('Patient Initials are required.');
+        return;
+      }
+      if (!age.trim()) {
+        setFormError('Age is required.');
+        return;
+      }
+      if (!ipNo.trim()) {
+        setFormError('I.P Number is required.');
+        return;
+      }
+      if (ipNo.trim().length !== 10) {
+        setFormError('I.P Number must be exactly 10 digits.');
+        return;
+      }
+      if (!doa) {
+        setFormError('Date of Admission (DOA) is required.');
+        return;
+      }
+      if (dod && dod < doa) {
+        setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
+        return;
+      }
+      if (doc && doc < doa) {
+        setFormError('Date of Collection (DOC) cannot be earlier than Date of Admission (DOA).');
+        return;
+      }
+      if (doc && dod && doc > dod) {
+        setFormError('Date of Collection (DOC) cannot be after Date of Discharge (DOD).');
+        return;
+      }
+      if (!chiefComplaints.trim()) {
+        setFormError('Chief Complaints are required.');
+        return;
+      }
+      if (!finalDiagnosis.trim()) {
+        setFormError('Final Diagnosis is required.');
+        return;
+      }
+    } else {
+      // Soft date check even for draft if both are entered
+      if (dod && doa && dod < doa) {
+        setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
+        return;
+      }
     }
 
     setSaving(true);
@@ -311,9 +489,9 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
   }
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
       
-      {/* TOP BAR */}
+      {/* TOP BAR - CLEAN NO DUPLICATE BUTTONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <button
@@ -333,38 +511,6 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               Case ID: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
             </p>
           </div>
-        </div>
-
-        {/* TOP ACTIONS */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveProfile('Draft')}
-            disabled={saving}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveProfile('Submitted')}
-            disabled={saving}
-            className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            <span>Submit Profile</span>
-          </button>
         </div>
       </div>
 
@@ -390,27 +536,30 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+          {/* Patient Initials */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Name *</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Initials *</label>
             <input
               type="text"
               required
               value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-              placeholder="Full Name of Patient"
-              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              onChange={(e) => setPatientName(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4))}
+              placeholder="Enter patient initials"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold tracking-wider uppercase focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">Initials only (Max 4 letters)</span>
           </div>
 
+          {/* Age / Sex */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Sex *</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Age (e.g. 45 Yrs)"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => setAge(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                placeholder="Enter age"
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
               />
               <select
                 value={gender}
@@ -422,39 +571,44 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
                 <option value="Other">Other</option>
               </select>
             </div>
+            <span className="text-[10px] text-slate-400 mt-0.5 block">Numeric (Max 2 digits)</span>
           </div>
 
+          {/* I.P Number */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">I.P No *</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">I.P Number *</label>
             <input
               type="text"
               value={ipNo}
-              onChange={(e) => setIpNo(e.target.value)}
-              placeholder="In-Patient No."
+              onChange={(e) => setIpNo(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              placeholder="Enter I.P. number"
               className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold"
             />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">Numeric (Exactly 10 digits)</span>
           </div>
 
+          {/* Height / Weight */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Height (cm) / Weight (kg)</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={height}
-                onChange={(e) => handleWeightHeightChange(weight, e.target.value)}
-                placeholder="Ht (cm)"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => handleWeightHeightChange(weight, e.target.value.replace(/\D/g, '').slice(0, 3))}
+                placeholder="Enter height (cm)"
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
               />
               <input
                 type="text"
                 value={weight}
-                onChange={(e) => handleWeightHeightChange(e.target.value, height)}
-                placeholder="Wt (kg)"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => handleWeightHeightChange(e.target.value.replace(/\D/g, '').slice(0, 3), height)}
+                placeholder="Enter weight (kg)"
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
               />
             </div>
           </div>
 
+          {/* BMI */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">BMI (kg/m²)</label>
             <input
@@ -466,17 +620,19 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             />
           </div>
 
+          {/* Attending Physician */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Attending Physician</label>
             <input
               type="text"
               value={physician}
-              onChange={(e) => setPhysician(e.target.value)}
-              placeholder="Doctor / Physician Name"
+              onChange={(e) => setPhysician(e.target.value.replace(/[^A-Za-z\s.]/g, ''))}
+              placeholder="Enter attending physician"
               className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
 
+          {/* Ward / Department */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ward / Department</label>
             <div className="flex gap-2">
@@ -484,21 +640,22 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
                 type="text"
                 value={ward}
                 onChange={(e) => setWard(e.target.value)}
-                placeholder="Ward"
+                placeholder="Enter ward"
                 className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
               />
               <input
                 type="text"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Dept"
+                placeholder="Enter department"
                 className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
               />
             </div>
           </div>
 
+          {/* Date of Admission */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Admission (DOA)</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Admission (DOA) *</label>
             <input
               type="date"
               value={doa}
@@ -507,6 +664,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             />
           </div>
 
+          {/* Date of Collection */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Collection (DOC)</label>
             <input
@@ -517,6 +675,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             />
           </div>
 
+          {/* Date of Discharge */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date of Discharge (DOD)</label>
             <input
@@ -543,7 +702,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={chiefComplaints}
               onChange={(e) => setChiefComplaints(e.target.value)}
-              placeholder="Presenting complaints with duration (e.g. Fever x 3 days, Shortness of breath)..."
+              placeholder="Enter chief complaints"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -554,7 +713,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={pastMedicalHistory}
               onChange={(e) => setPastMedicalHistory(e.target.value)}
-              placeholder="Previous medical conditions (e.g. Type 2 DM x 5 yrs, HTN)..."
+              placeholder="Enter past medical history"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -565,7 +724,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={pastMedicationHistory}
               onChange={(e) => setPastMedicationHistory(e.target.value)}
-              placeholder="Medications taken prior to admission (Name, Dose, Frequency)..."
+              placeholder="Enter past medication history"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -576,7 +735,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               rows={3}
               value={familyHistory}
               onChange={(e) => setFamilyHistory(e.target.value)}
-              placeholder="Heritable conditions in family (e.g. Father had CAD, Mother DM)..."
+              placeholder="Enter family medical history"
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
             />
           </div>
@@ -595,7 +754,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Smoker History</label>
             <div className="space-y-2">
               <input type="text" value={smokerPackDay} onChange={(e) => setSmokerPackDay(e.target.value)} placeholder="Pack / Day" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
-              <input type="text" value={smokerDuration} onChange={(e) => setSmokerDuration(e.target.value)} placeholder="Duration (e.g. 5 Yrs)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={smokerDuration} onChange={(e) => setSmokerDuration(e.target.value)} placeholder="Duration" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
             </div>
           </div>
 
@@ -603,15 +762,15 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Alcohol History</label>
             <div className="space-y-2">
               <input type="text" value={alcoholicAmountDay} onChange={(e) => setAlcoholicAmountDay(e.target.value)} placeholder="Amount / Day" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
-              <input type="text" value={alcoholicDuration} onChange={(e) => setAlcoholicDuration(e.target.value)} placeholder="Duration (e.g. 3 Yrs)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={alcoholicDuration} onChange={(e) => setAlcoholicDuration(e.target.value)} placeholder="Duration" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
             </div>
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Allergies</label>
             <div className="space-y-2">
-              <input type="text" value={allergyFood} onChange={(e) => setAllergyFood(e.target.value)} placeholder="Food Allergies" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
-              <input type="text" value={allergyDrugs} onChange={(e) => setAllergyDrugs(e.target.value)} placeholder="Drug Allergies (e.g. Penicillin)" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-rose-600" />
+              <input type="text" value={allergyFood} onChange={(e) => setAllergyFood(e.target.value)} placeholder="Enter food allergies" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+              <input type="text" value={allergyDrugs} onChange={(e) => setAllergyDrugs(e.target.value)} placeholder="Enter drug allergies" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-rose-600" />
             </div>
           </div>
 
@@ -663,28 +822,28 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">CVS (Cardiovascular)</label>
-            <input type="text" value={cvs} onChange={(e) => setCvs(e.target.value)} placeholder="S1 S2 heard, no murmurs" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            <input type="text" value={cvs} onChange={(e) => setCvs(e.target.value)} placeholder="Enter CVS status" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">GI (Gastrointestinal)</label>
-            <input type="text" value={gi} onChange={(e) => setGi(e.target.value)} placeholder="Soft, non-tender" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            <input type="text" value={gi} onChange={(e) => setGi(e.target.value)} placeholder="Enter GI status" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">RS (Respiratory System)</label>
-            <input type="text" value={rs} onChange={(e) => setRs(e.target.value)} placeholder="NVBS, no wheeze" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            <input type="text" value={rs} onChange={(e) => setRs(e.target.value)} placeholder="Enter RS status" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">CNS (Central Nervous System)</label>
-            <input type="text" value={cns} onChange={(e) => setCns(e.target.value)} placeholder="Conscious, oriented to time, place, person" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            <input type="text" value={cns} onChange={(e) => setCns(e.target.value)} placeholder="Enter CNS status" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
           </div>
         </div>
 
         <div>
           <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 text-xs">Provisional Diagnosis</label>
-          <input type="text" value={provisionalDiagnosis} onChange={(e) => setProvisionalDiagnosis(e.target.value)} placeholder="Provisional Diagnosis..." className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-xs" />
+          <input type="text" value={provisionalDiagnosis} onChange={(e) => setProvisionalDiagnosis(e.target.value)} placeholder="Enter provisional diagnosis" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-xs" />
         </div>
       </div>
 
@@ -717,11 +876,11 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               {vitalSigns.map((row, idx) => (
                 <tr key={idx}>
                   <td className="p-2"><input type="date" value={row.date} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].date = e.target.value; setVitalSigns(copy); }} className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
-                  <td className="p-2"><input type="text" value={row.temp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].temp = e.target.value; setVitalSigns(copy); }} placeholder="98.6" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
-                  <td className="p-2"><input type="text" value={row.bp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].bp = e.target.value; setVitalSigns(copy); }} placeholder="120/80" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
-                  <td className="p-2"><input type="text" value={row.pr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].pr = e.target.value; setVitalSigns(copy); }} placeholder="72" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
-                  <td className="p-2"><input type="text" value={row.rr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].rr = e.target.value; setVitalSigns(copy); }} placeholder="18" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
-                  <td className="p-2"><input type="text" value={row.spo2} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].spo2 = e.target.value; setVitalSigns(copy); }} placeholder="99" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.temp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].temp = e.target.value; setVitalSigns(copy); }} placeholder="Temp" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.bp} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].bp = e.target.value; setVitalSigns(copy); }} placeholder="BP" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
+                  <td className="p-2"><input type="text" value={row.pr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].pr = e.target.value; setVitalSigns(copy); }} placeholder="PR" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.rr} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].rr = e.target.value; setVitalSigns(copy); }} placeholder="RR" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
+                  <td className="p-2"><input type="text" value={row.spo2} onChange={(e) => { const copy = [...vitalSigns]; copy[idx].spo2 = e.target.value; setVitalSigns(copy); }} placeholder="SpO2" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
                   <td className="p-2 text-center">
                     {vitalSigns.length > 1 && (
                       <button type="button" onClick={() => handleRemoveVitalRow(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
@@ -734,7 +893,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         </div>
       </div>
 
-      {/* 6. LAB INVESTIGATIONS */}
+      {/* 6. LAB INVESTIGATIONS (RULE 2 IMPLEMENTATION) */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -750,27 +909,95 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300">
               <tr>
-                <th className="p-2">Category</th>
-                <th className="p-2">Parameter Name</th>
-                <th className="p-2">Test Value</th>
-                <th className="p-2">Unit</th>
-                <th className="p-2">Ref Range</th>
-                <th className="p-2 text-center">Action</th>
+                <th className="p-2.5">Category</th>
+                <th className="p-2.5">Parameter Name</th>
+                <th className="p-2.5">Reference Range (Auto)</th>
+                <th className="p-2.5">Test Value</th>
+                <th className="p-2.5 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {labInvestigations.map((lab, idx) => (
-                <tr key={idx}>
-                  <td className="p-2"><input type="text" value={lab.category} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].category = e.target.value; setLabInvestigations(copy); }} className="w-36 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-indigo-900 dark:text-indigo-300" /></td>
-                  <td className="p-2"><input type="text" value={lab.parameter_name} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].parameter_name = e.target.value; setLabInvestigations(copy); }} placeholder="Parameter" className="w-40 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-semibold" /></td>
-                  <td className="p-2"><input type="text" value={lab.test_value} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].test_value = e.target.value; setLabInvestigations(copy); }} placeholder="Value" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold text-indigo-600 dark:text-indigo-400" /></td>
-                  <td className="p-2"><input type="text" value={lab.unit} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].unit = e.target.value; setLabInvestigations(copy); }} placeholder="Unit" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono" /></td>
-                  <td className="p-2"><input type="text" value={lab.reference_range} onChange={(e) => { const copy = [...labInvestigations]; copy[idx].reference_range = e.target.value; setLabInvestigations(copy); }} placeholder="Ref Range" className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
-                  <td className="p-2 text-center">
-                    <button type="button" onClick={() => handleRemoveLabRow(idx)} className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                  </td>
-                </tr>
-              ))}
+              {labInvestigations.map((lab, idx) => {
+                const categoryList = Object.keys(LAB_CATEGORY_MAP);
+                const currentCategory = LAB_CATEGORY_MAP[lab.category] ? lab.category : categoryList[0];
+                const parameterOptions = LAB_CATEGORY_MAP[currentCategory] || [];
+                const valStatus = evaluateTestValueStatus(lab.test_value, lab.reference_range);
+
+                let testValueClasses = "w-28 h-8 px-2 rounded-lg border bg-transparent font-mono font-bold focus:outline-none transition-colors ";
+                if (valStatus === 'normal') {
+                  testValueClasses += "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200 ";
+                } else if (valStatus === 'abnormal') {
+                  testValueClasses += "border-rose-500 bg-rose-50 text-rose-900 dark:bg-rose-950/60 dark:text-rose-200 ";
+                } else {
+                  testValueClasses += "border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white ";
+                }
+
+                return (
+                  <tr key={idx}>
+                    {/* Category Dropdown */}
+                    <td className="p-2">
+                      <select
+                        value={currentCategory}
+                        onChange={(e) => handleLabCategoryChange(idx, e.target.value)}
+                        className="w-44 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold text-indigo-900 dark:text-indigo-300"
+                      >
+                        {categoryList.map((cat, cIdx) => (
+                          <option key={cIdx} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Dependent Parameter Dropdown */}
+                    <td className="p-2">
+                      <select
+                        value={lab.parameter_name}
+                        onChange={(e) => handleLabParameterChange(idx, e.target.value)}
+                        className="w-48 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-semibold"
+                      >
+                        {parameterOptions.map((pObj, pIdx) => (
+                          <option key={pIdx} value={pObj.parameter_name}>{pObj.parameter_name}</option>
+                        ))}
+                      </select>
+                    </td>
+
+                    {/* Reference Range (Auto-populated, Read Only) */}
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={lab.reference_range}
+                        placeholder="Auto ref range"
+                        className="w-40 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono text-[11px]"
+                      />
+                    </td>
+
+                    {/* Test Value (Numeric Input with Auto Highlighting) */}
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        value={lab.test_value}
+                        onChange={(e) => {
+                          const copy = [...labInvestigations];
+                          copy[idx].test_value = e.target.value.replace(/[^0-9.]/g, '');
+                          setLabInvestigations(copy);
+                        }}
+                        placeholder="Enter test value"
+                        className={testValueClasses}
+                      />
+                    </td>
+
+                    <td className="p-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLabRow(idx)}
+                        className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -786,17 +1013,17 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Radiological / Other Investigations</label>
-            <textarea rows={3} value={otherInvestigations} onChange={(e) => setOtherInvestigations(e.target.value)} placeholder="X-Ray, ECG, CT Scan, Ultrasound findings..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <textarea rows={3} value={otherInvestigations} onChange={(e) => setOtherInvestigations(e.target.value)} placeholder="Enter radiological / other investigations" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis *</label>
-            <textarea rows={3} value={finalDiagnosis} onChange={(e) => setFinalDiagnosis(e.target.value)} placeholder="Confirmed Final Diagnosis..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
+            <textarea rows={3} value={finalDiagnosis} onChange={(e) => setFinalDiagnosis(e.target.value)} placeholder="Enter final diagnosis" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
           </div>
         </div>
       </div>
 
-      {/* 8. PRESCRIBED MEDICATIONS */}
+      {/* 8. PRESCRIBED MEDICATIONS (RULE 4 IMPLEMENTATION) */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -827,8 +1054,32 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
               {prescribedDrugs.map((d, idx) => (
                 <tr key={idx}>
                   <td className="p-2 font-mono font-bold text-center">{idx + 1}</td>
-                  <td className="p-2"><input type="text" value={d.trade_name} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].trade_name = e.target.value; setPrescribedDrugs(copy); }} placeholder="Trade Name" className="w-32 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold" /></td>
-                  <td className="p-2"><input type="text" value={d.generic_name} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].generic_name = e.target.value; setPrescribedDrugs(copy); }} placeholder="Generic Name" className="w-36 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent italic" /></td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      value={d.trade_name}
+                      onChange={(e) => {
+                        const copy = [...prescribedDrugs];
+                        copy[idx].trade_name = e.target.value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
+                        setPrescribedDrugs(copy);
+                      }}
+                      placeholder="Enter trade name"
+                      className="w-36 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold uppercase"
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      value={d.generic_name}
+                      onChange={(e) => {
+                        const copy = [...prescribedDrugs];
+                        copy[idx].generic_name = e.target.value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
+                        setPrescribedDrugs(copy);
+                      }}
+                      placeholder="Enter generic name"
+                      className="w-40 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-semibold uppercase"
+                    />
+                  </td>
                   <td className="p-2">
                     <select value={d.route_of_admin} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].route_of_admin = e.target.value; setPrescribedDrugs(copy); }} className="w-20 h-8 px-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent">
                       <option value="Oral">Oral</option>
@@ -839,8 +1090,8 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
                       <option value="Topical">Topical</option>
                     </select>
                   </td>
-                  <td className="p-2"><input type="text" value={d.dose} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].dose = e.target.value; setPrescribedDrugs(copy); }} placeholder="500 mg" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
-                  <td className="p-2"><input type="text" value={d.frequency} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].frequency = e.target.value; setPrescribedDrugs(copy); }} placeholder="OD / BD" className="w-20 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold" /></td>
+                  <td className="p-2"><input type="text" value={d.dose} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].dose = e.target.value; setPrescribedDrugs(copy); }} placeholder="Enter dose" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono font-bold" /></td>
+                  <td className="p-2"><input type="text" value={d.frequency} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].frequency = e.target.value; setPrescribedDrugs(copy); }} placeholder="Enter frequency" className="w-24 h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-bold" /></td>
                   <td className="p-2"><input type="date" value={d.start_date} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].start_date = e.target.value; setPrescribedDrugs(copy); }} className="w-28 h-8 px-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
                   <td className="p-2"><input type="date" value={d.stop_date} onChange={(e) => { const copy = [...prescribedDrugs]; copy[idx].stop_date = e.target.value; setPrescribedDrugs(copy); }} className="w-28 h-8 px-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-transparent font-mono text-[11px]" /></td>
                   <td className="p-2 text-center">
@@ -866,22 +1117,13 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           rows={3}
           value={dischargeSummary}
           onChange={(e) => setDischargeSummary(e.target.value)}
-          placeholder="Condition at discharge, advice on discharge, follow-up instructions..."
+          placeholder="Enter discharge summary"
           className="w-full p-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
         />
       </div>
 
-      {/* BOTTOM ACTIONS */}
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <button
-          type="button"
-          onClick={() => setIsPreviewOpen(true)}
-          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-        >
-          <Eye className="w-4 h-4 text-indigo-500" />
-          <span>Preview Form PDF</span>
-        </button>
-
+      {/* SINGLE ACTION SECTION AT THE BOTTOM (RULE 3 IMPLEMENTATION) */}
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <button
           type="button"
           onClick={() => handleSaveProfile('Draft')}
@@ -890,6 +1132,15 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         >
           <Save className="w-4 h-4" />
           <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsPreviewOpen(true)}
+          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+        >
+          <Eye className="w-4 h-4 text-indigo-500" />
+          <span>Preview Form PDF</span>
         </button>
 
         <button

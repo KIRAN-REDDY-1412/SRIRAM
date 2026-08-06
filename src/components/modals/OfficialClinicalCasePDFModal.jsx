@@ -18,28 +18,24 @@ const loadScript = (src) => {
 };
 
 const getPdfLibraries = async () => {
-  let html2canvasFn = window.html2canvas;
-  let jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
-
-  if (!html2canvasFn) {
+  if (!window.html2canvas) {
     try {
-      const h2cMod = await import(/* @vite-ignore */ 'html2canvas');
-      html2canvasFn = h2cMod.default || h2cMod;
-    } catch (e) {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      html2canvasFn = window.html2canvas;
+    } catch (e) {
+      console.warn('html2canvas CDN load failed:', e);
     }
   }
 
-  if (!jsPDFFn) {
+  if (!window.jspdf) {
     try {
-      const jspdfMod = await import(/* @vite-ignore */ 'jspdf');
-      jsPDFFn = jspdfMod.default || jspdfMod;
-    } catch (e) {
       await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-      jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
+    } catch (e) {
+      console.warn('jsPDF CDN load failed:', e);
     }
   }
+
+  const html2canvasFn = window.html2canvas;
+  const jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
 
   return { html2canvas: html2canvasFn, jsPDF: jsPDFFn };
 };

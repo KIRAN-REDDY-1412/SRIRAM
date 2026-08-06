@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
@@ -12,6 +12,7 @@ import { AssignStudentsView } from './AssignStudentsView';
 import { AssignmentListView } from './AssignmentListView';
 import { DocumentBrandingView } from './DocumentBrandingView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
+import { ClinicalCaseManagementView } from './ClinicalCaseManagementView';
 
 export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
@@ -153,6 +154,19 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
             >
               <ClipboardList className="w-4 h-4 shrink-0" />
               <span>Assignment Management</span>
+            </button>
+
+            {/* Clinical Case Management */}
+            <button
+              onClick={() => handleNavigate('clinical-cases')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'clinical-cases'
+                  ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FileCheck2 className="w-4 h-4 shrink-0" />
+              <span>Clinical Case Management</span>
             </button>
 
             {/* Document Branding */}
@@ -301,6 +315,10 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               college={college}
               onAddNew={() => handleNavigate('assign-students')}
             />
+          )}
+
+          {activeTab === 'clinical-cases' && (
+            <ClinicalCaseManagementView college={college} />
           )}
 
           {activeTab === 'document-branding' && (

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert, FileSearch } from 'lucide-react';
+import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, Download } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase, fetchCaseModuleStatusesMapFromSupabase, submitCompleteClinicalCaseInSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
+import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
 export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest, onOpenADRDocumentation }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
+  const [selectedCaseForPDF, setSelectedCaseForPDF] = useState(null);
 
   // Inline Notification
   const { notification: actionNotify, showNotification: showActionNotify, clearNotification: clearActionNotify } = useInlineNotification();
@@ -404,6 +406,18 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                           <Eye className="w-4 h-4" />
                         </button>
 
+                        {/* Approved PDF button (only if Approved) */}
+                        {(c.status === 'Approved' || c.overall_case_status === 'Approved') && (
+                          <button
+                            onClick={() => setSelectedCaseForPDF(c)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                            title="Download Approved Official PDF"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Approved PDF</span>
+                          </button>
+                        )}
+
                         {/* Edit / Submit / Delete (only if Draft or Returned) */}
                         {(c.status === 'Draft' || c.status === 'Returned') && (
                           <>
@@ -724,6 +738,18 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
             </div>
           </div>
         </ModalWrapper>
+      )}
+
+      {/* OFFICIAL APPROVED PDF MODAL */}
+      {selectedCaseForPDF && (
+        <OfficialClinicalCasePDFModal
+          isOpen={Boolean(selectedCaseForPDF)}
+          onClose={() => setSelectedCaseForPDF(null)}
+          clinicalCase={selectedCaseForPDF}
+          student={student}
+          preceptor={selectedCaseForPDF.preceptors}
+          college={student?.colleges}
+        />
       )}
 
     </div>

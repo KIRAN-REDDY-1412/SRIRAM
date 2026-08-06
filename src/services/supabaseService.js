@@ -1394,6 +1394,34 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
   }
 };
 
+export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
+  if (!clinicalCaseId) return { success: false, records: {} };
+
+  try {
+    const [profileRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
+      supabase.from('patient_profiles').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
+      supabase.from('patient_counselling').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
+      supabase.from('pharmacist_interventions').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
+      supabase.from('drug_information_requests').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
+      supabase.from('adr_reports').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle()
+    ]);
+
+    return {
+      success: true,
+      records: {
+        profile: profileRes.data || {},
+        counselling: counsellingRes.data || {},
+        intervention: interventionRes.data || {},
+        dir: dirRes.data || {},
+        adr: adrRes.data || {}
+      }
+    };
+  } catch (err) {
+    return { success: false, error: err.message, records: {} };
+  }
+};
+
+
 export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseModuleStatus) => {
   try {
     if (!caseModuleStatus || !caseModuleStatus.hasProfile || !caseModuleStatus.hasCounselling) {
@@ -1575,5 +1603,34 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
     return { success: false, error: err.message };
   }
 };
+
+export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select(`
+        *,
+        students!fk_clinical_cases_student(*),
+        preceptors!fk_clinical_cases_preceptor(*)
+      `)
+      .eq('college_id', collegeId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      const { data: simpleData } = await supabase
+        .from('clinical_cases')
+        .select('*')
+        .eq('college_id', collegeId)
+        .order('created_at', { ascending: false });
+
+      return { success: true, data: simpleData || [] };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
+  }
+};
+
 
 

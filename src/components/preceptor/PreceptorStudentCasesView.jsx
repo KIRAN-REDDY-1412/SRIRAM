@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ClipboardList, Search, Filter, Eye, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, User, GraduationCap, Building2 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Search, Filter, Eye, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, User, GraduationCap, Building2, Download } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { PreceptorReviewCaseView } from './PreceptorReviewCaseView';
+import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
 export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
+  const [selectedCaseForPDF, setSelectedCaseForPDF] = useState(null);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -314,14 +316,27 @@ export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
 
                     {/* ACTIONS COLUMN */}
                     <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => setSelectedCaseForReview(c)}
-                        className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
-                        title="Review Complete Clinical Case"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Review Case</span>
-                      </button>
+                      <div className="inline-flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setSelectedCaseForReview(c)}
+                          className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+                          title="Review Complete Clinical Case"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{c.status === 'Approved' || c.overall_case_status === 'Approved' ? 'View Case' : 'Review Case'}</span>
+                        </button>
+
+                        {(c.status === 'Approved' || c.overall_case_status === 'Approved') && (
+                          <button
+                            onClick={() => setSelectedCaseForPDF(c)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                            title="Download Approved Official PDF"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Approved PDF</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -356,6 +371,18 @@ export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* OFFICIAL APPROVED PDF MODAL */}
+      {selectedCaseForPDF && (
+        <OfficialClinicalCasePDFModal
+          isOpen={Boolean(selectedCaseForPDF)}
+          onClose={() => setSelectedCaseForPDF(null)}
+          clinicalCase={selectedCaseForPDF}
+          student={student}
+          preceptor={preceptor}
+          college={student?.colleges}
+        />
       )}
     </div>
   );

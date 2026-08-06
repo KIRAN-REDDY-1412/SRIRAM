@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert, FileSearch } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest, onOpenADRDocumentation }) => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Inline Notification
+  const { notification: actionNotify, showNotification: showActionNotify, clearNotification: clearActionNotify } = useInlineNotification();
+  const [activeCaseNotifyId, setActiveCaseNotifyId] = useState(null);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +27,22 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [caseToDelete, setCaseToDelete] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const handleTriggerAction = (e, actionFn, caseObj, moduleName) => {
+    e.stopPropagation();
+    clearActionNotify();
+    setActiveCaseNotifyId(caseObj.id);
+
+    try {
+      if (typeof actionFn === 'function') {
+        actionFn(caseObj);
+      } else {
+        showActionNotify({ type: 'error', message: `❌ Unable to open ${moduleName}.` });
+      }
+    } catch (err) {
+      showActionNotify({ type: 'error', message: `❌ Unable to open ${moduleName}.` });
+    }
+  };
 
   // Edit Form State
   const [editFormData, setEditFormData] = useState({
@@ -267,11 +289,15 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-5 text-right">
-                      <div className="flex flex-wrap items-center justify-end gap-1">
+                    <td className="py-3.5 px-5 text-right relative">
+                      <div className="flex flex-wrap items-center justify-end gap-1 relative">
+                        {activeCaseNotifyId === c.id && (
+                          <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="bottom-right" />
+                        )}
+
                         {/* Open Patient Profile */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenPatientProfile && onOpenPatientProfile(c); }}
+                          onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
                           className="px-1.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Profile Form"
                         >
@@ -281,7 +307,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Patient Counselling */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenPatientCounselling && onOpenPatientCounselling(c); }}
+                          onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
                           className="px-1.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-bold border border-teal-200 dark:border-teal-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Counselling Form"
                         >
@@ -291,7 +317,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Pharmacist Intervention */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenPharmacistIntervention && onOpenPharmacistIntervention(c); }}
+                          onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
                           className="px-1.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition-colors"
                           title="Open Pharmacist Intervention Form"
                         >
@@ -301,7 +327,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Drug Information Request */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenDrugInformationRequest && onOpenDrugInformationRequest(c); }}
+                          onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
                           className="px-1.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1 transition-colors"
                           title="Open Drug Information Request Form"
                         >
@@ -311,7 +337,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open ADR Documentation */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenADRDocumentation && onOpenADRDocumentation(c); }}
+                          onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
                           className="px-1.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1 transition-colors"
                           title="Open ADR Documentation System"
                         >

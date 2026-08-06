@@ -175,9 +175,35 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           if (res.concomitantMeds) setConcomitantMeds(res.concomitantMeds);
           if (res.attachments) setAttachments(res.attachments);
         } else {
-          // Auto-generate ADR Record Number
+          // Auto-generate ADR Record Number & create initial Draft record in Supabase
           const genRes = await generateUniqueAdrNumberInSupabase();
-          if (genRes.success) setAdrNumber(genRes.adrNumber);
+          const newAdrNo = genRes.success ? genRes.adrNumber : `ADR-${new Date().getFullYear()}-000001`;
+          setAdrNumber(newAdrNo);
+
+          // Initial draft payload
+          const initialDraftPayload = {
+            clinical_case_id: clinicalCase.id,
+            student_id: student.id,
+            college_id: student.college_id,
+            adr_number: newAdrNo,
+            reporting_date: new Date().toISOString().split('T')[0],
+            reported_by_student_name: student?.full_name || '',
+            assigned_preceptor_name: 'Faculty Preceptor',
+            patient_initials: profileRes?.profile?.patient_name || profileRes?.profile?.patient_initials || '',
+            hospital_reg_number: profileRes?.profile?.ip_no || profileRes?.profile?.ip_op_number || '',
+            age: profileRes?.profile?.age ? profileRes.profile.age.toString() : '',
+            gender: profileRes?.profile?.gender === 'Female' ? 'F' : profileRes?.profile?.gender === 'Male' ? 'M' : profileRes?.profile?.gender || 'M',
+            weight: profileRes?.profile?.weight || '',
+            department: clinicalCase.department || '',
+            ward: profileRes?.profile?.ward || profileRes?.profile?.ward_unit || clinicalCase.ward_unit || '',
+            primary_diagnosis: profileRes?.profile?.final_diagnosis || profileRes?.profile?.provisional_diagnosis || '',
+            approval_status: 'Draft'
+          };
+
+          const draftRes = await saveOrUpdateADRReportInSupabase(initialDraftPayload, [], [], []);
+          if (draftRes.success && draftRes.report) {
+            setExistingReportId(draftRes.report.id);
+          }
         }
       } catch (err) {
         console.error('Error loading ADR report data:', err);

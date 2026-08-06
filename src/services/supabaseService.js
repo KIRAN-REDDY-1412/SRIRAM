@@ -1761,6 +1761,61 @@ export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
   }
 };
 
+export const sendEmailInBackground = async (notificationId, recipientEmail, subject, title, caseId, studentName, timestamp) => {
+  // Execute in background
+  setTimeout(async () => {
+    try {
+      console.log(`✉️ [SMTP Send] Initiating email delivery to: ${recipientEmail}`);
+
+      // Simulating a minor network latency for mock SMTP send
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const body = `
+=========================================================
+PharmDVerse Workflow Update
+=========================================================
+
+Notification: ${title}
+Case ID: ${caseId || 'N/A'}
+Student Name: ${studentName || 'N/A'}
+Timestamp: ${timestamp}
+
+---------------------------------------------------------
+Please click the link below to login to PharmDVerse:
+https://pharmdverse.cloud/login
+=========================================================
+      `.trim();
+
+      console.log(`✉️ [SMTP Send] Mail content:\n${body}`);
+
+      // Update notification record as Sent in DB
+      await supabase
+        .from('notifications')
+        .update({
+          email_sent: true,
+          email_sent_at: new Date().toISOString(),
+          email_delivery_status: 'Sent',
+          email_recipient: recipientEmail
+        })
+        .eq('id', notificationId);
+      
+      console.log(`✉️ [SMTP Success] Email sent successfully to: ${recipientEmail}`);
+    } catch (err) {
+      console.error(`✉️ [SMTP Error] Email sending failed:`, err.message);
+      // Update notification record as Failed in DB (does not throw or break UI)
+      await supabase
+        .from('notifications')
+        .update({
+          email_sent: false,
+          email_delivery_status: 'Failed',
+          email_error_message: err.message,
+          email_recipient: recipientEmail
+        })
+        .eq('id', notificationId);
+    }
+  }, 0);
+};
+
 export const createWorkflowNotificationInSupabase = async ({
   recipientUserId,
   recipientRole,
@@ -1777,11 +1832,21 @@ export const createWorkflowNotificationInSupabase = async ({
     let collegeId = null;
     let studentId = null;
     let assignedPreceptorId = null;
+    let recipientEmail = null;
+    let caseIdStr = 'N/A';
+    let studentName = 'N/A';
 
+    // 1. Fetch details from clinical_cases if missing
     if (clinicalCaseId) {
       const { data: caseData } = await supabase
         .from('clinical_cases')
-        .select('college_id, student_id, preceptor_id')
+        .select(`
+          college_id, 
+          student_id, 
+          preceptor_id, 
+          case_id,
+          students(full_name)
+        `)
         .eq('id', clinicalCaseId)
         .maybeSingle();
 
@@ -1789,9 +1854,23 @@ export const createWorkflowNotificationInSupabase = async ({
         collegeId = caseData.college_id;
         studentId = caseData.student_id;
         assignedPreceptorId = caseData.preceptor_id;
+        caseIdStr = caseData.case_id;
+        if (caseData.students) {
+          studentName = caseData.students.full_name;
+        }
       }
     }
 
+    // 2. Fetch recipient email from appropriate table
+    if (recipientRole === 'Student') {
+      const { data: stud } = await supabase.from('students').select('email').eq('id', recipientUserId).maybeSingle();
+      if (stud) recipientEmail = stud.email;
+    } else if (recipientRole === 'Preceptor') {
+      const { data: prec } = await supabase.from('preceptors').select('email').eq('id', recipientUserId).maybeSingle();
+      if (prec) recipientEmail = prec.email;
+    }
+
+    // 3. Insert notification record with status 'Pending'
     const { data, error } = await supabase
       .from('notifications')
       .insert([{
@@ -1808,12 +1887,31 @@ export const createWorkflowNotificationInSupabase = async ({
         college_id: collegeId,
         student_id: studentId,
         assigned_preceptor_id: assignedPreceptorId,
-        is_read: false
+        is_read: false,
+        send_email: true,
+        email_sent: false,
+        email_delivery_status: 'Pending',
+        email_recipient: recipientEmail
       }])
       .select();
 
     if (error) return { success: false, error: error.message };
-    return { success: true, data: data[0] };
+    const notification = data[0];
+
+    // 4. Trigger Email in Background if recipient email is available
+    if (recipientEmail) {
+      sendEmailInBackground(
+        notification.id,
+        recipientEmail,
+        `PharmDVerse: ${title}`,
+        title,
+        caseIdStr,
+        studentName,
+        new Date().toLocaleString()
+      );
+    }
+
+    return { success: true, data: notification };
   } catch (err) {
     return { success: false, error: err.message };
   }

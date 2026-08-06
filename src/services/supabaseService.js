@@ -277,12 +277,32 @@ export const fetchADRReportByCaseIdFromSupabase = async (clinicalCaseId) => {
 
 export const saveOrUpdateADRReportInSupabase = async (masterPayload, suspectedMeds = [], concomitantMeds = [], attachments = []) => {
   try {
-    const fullPayload = {
+    const VALID_ADR_COLS = new Set([
+      'id', 'created_at', 'updated_at', 'clinical_case_id', 'student_id', 'college_id',
+      'adr_number', 'reporting_date', 'reported_by_student_name', 'assigned_preceptor_name',
+      'patient_initials', 'hospital_reg_number', 'age', 'gender', 'weight', 'department', 'ward',
+      'primary_diagnosis', 'reaction_title', 'reaction_category', 'reaction_description',
+      'reaction_started_at', 'reaction_ended_at', 'reaction_duration',
+      'clinical_management_provided', 'current_patient_condition', 'drug_allergy_history',
+      'previous_adr_history', 'relevant_medical_conditions', 'pregnancy_lactation_status',
+      'renal_status', 'hepatic_status', 'lifestyle_factors', 'additional_clinical_notes',
+      'reaction_severity', 'reaction_seriousness', 'patient_outcome',
+      'action_taken_on_suspected_drug', 'rechallenge_information', 'dechallenge_information',
+      'initial_causality_opinion', 'clinical_remarks', 'student_remarks', 'preceptor_review',
+      'faculty_comments', 'approval_status', 'suspected_medications', 'concomitant_medications', 'attachments'
+    ]);
+
+    const fullPayloadRaw = {
       ...masterPayload,
       suspected_medications: suspectedMeds,
       concomitant_medications: concomitantMeds,
       attachments: attachments
     };
+
+    const fullPayload = {};
+    Object.keys(fullPayloadRaw).forEach(k => {
+      if (VALID_ADR_COLS.has(k)) fullPayload[k] = fullPayloadRaw[k];
+    });
 
     const { data: existing } = await supabase
       .from('adr_reports')
@@ -338,10 +358,26 @@ export const fetchDrugInformationRequestByCaseIdFromSupabase = async (clinicalCa
 
 export const saveOrUpdateDrugInformationRequestInSupabase = async (payload) => {
   try {
+    const VALID_DIR_COLS = new Set([
+      'id', 'created_at', 'updated_at', 'clinical_case_id', 'student_id', 'college_id',
+      'request_date', 'request_time', 'enquirer_name', 'designation', 'phone_no', 'unit_ward',
+      'professional_status', 'professional_status_other', 'mode_of_request', 'answer_needed',
+      'details_of_enquiry', 'question_category', 'purpose_of_enquiry', 'purpose_other',
+      'age', 'sex', 'weight_kg', 'allergies', 'current_medical_problem', 'is_pregnant_lactating',
+      'pregnancy_lactation_details', 'other_investigations', 'drug_therapy',
+      'answer_given_timeframe', 'reason_for_delay', 'mode_of_reply', 'information_provided',
+      'ref_textbooks', 'ref_journals', 'ref_micromedex', 'ref_clinirex', 'ref_idis', 'ref_website', 'ref_others', 'status'
+    ]);
+
+    const cleanPayload = {};
+    Object.keys(payload || {}).forEach(k => {
+      if (VALID_DIR_COLS.has(k)) cleanPayload[k] = payload[k];
+    });
+
     const { data: existing } = await supabase
       .from('drug_information_requests')
       .select('id')
-      .eq('clinical_case_id', payload.clinical_case_id)
+      .eq('clinical_case_id', cleanPayload.clinical_case_id)
       .maybeSingle();
 
     let savedData = null;
@@ -349,7 +385,7 @@ export const saveOrUpdateDrugInformationRequestInSupabase = async (payload) => {
     if (existing && existing.id) {
       const { data, error } = await supabase
         .from('drug_information_requests')
-        .update(payload)
+        .update(cleanPayload)
         .eq('id', existing.id)
         .select();
 
@@ -358,7 +394,7 @@ export const saveOrUpdateDrugInformationRequestInSupabase = async (payload) => {
     } else {
       const { data, error } = await supabase
         .from('drug_information_requests')
-        .insert([payload])
+        .insert([cleanPayload])
         .select();
 
       if (error) return { success: false, error: error.message };
@@ -392,10 +428,26 @@ export const fetchPharmacistInterventionByCaseIdFromSupabase = async (clinicalCa
 
 export const saveOrUpdatePharmacistInterventionInSupabase = async (payload) => {
   try {
+    const VALID_INTERVENTION_COLS = new Set([
+      'id', 'created_at', 'updated_at', 'clinical_case_id', 'student_id', 'college_id',
+      'patient_name', 'age', 'sex', 'date_of_intervention', 'ip_op_no', 'ward',
+      'present_diagnosis', 'prescription_details', 'prescription_problems',
+      'prescription_problem_other', 'description_of_problem', 'action_taken',
+      'action_taken_other', 'recommendations', 'recommendation_other',
+      'background_info_collected', 'discussed_with_physician', 'suggestions_appropriate_time',
+      'accepted', 'changed', 'reasons_if_no', 'significance_of_intervention', 'outcome',
+      'references_text', 'follow_up', 'status'
+    ]);
+
+    const cleanPayload = {};
+    Object.keys(payload || {}).forEach(k => {
+      if (VALID_INTERVENTION_COLS.has(k)) cleanPayload[k] = payload[k];
+    });
+
     const { data: existing } = await supabase
       .from('pharmacist_interventions')
       .select('id')
-      .eq('clinical_case_id', payload.clinical_case_id)
+      .eq('clinical_case_id', cleanPayload.clinical_case_id)
       .maybeSingle();
 
     let savedData = null;
@@ -403,7 +455,7 @@ export const saveOrUpdatePharmacistInterventionInSupabase = async (payload) => {
     if (existing && existing.id) {
       const { data, error } = await supabase
         .from('pharmacist_interventions')
-        .update(payload)
+        .update(cleanPayload)
         .eq('id', existing.id)
         .select();
 
@@ -412,7 +464,7 @@ export const saveOrUpdatePharmacistInterventionInSupabase = async (payload) => {
     } else {
       const { data, error } = await supabase
         .from('pharmacist_interventions')
-        .insert([payload])
+        .insert([cleanPayload])
         .select();
 
       if (error) return { success: false, error: error.message };
@@ -446,10 +498,25 @@ export const fetchPatientCounsellingByCaseIdFromSupabase = async (clinicalCaseId
 
 export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
   try {
+    const VALID_COUNSELLING_COLS = new Set([
+      'id', 'created_at', 'updated_at', 'clinical_case_id', 'student_id', 'college_id',
+      'counselling_date', 'counselling_time', 'patient_type', 'ip_op_number', 'unit_ward',
+      'age', 'sex', 'allergies', 'specific_background_collected', 'disease_counselled',
+      'medications_counselled', 'points_covered', 'major_barriers_involved', 'barrier_details',
+      'barrier_overcome', 'time_taken', 'counselling_provided_to', 'representative_reasons',
+      'representative_other_reason', 'counselling_aids_used', 'counselling_material_provided',
+      'understanding_ascertained', 'status'
+    ]);
+
+    const cleanPayload = {};
+    Object.keys(payload || {}).forEach(k => {
+      if (VALID_COUNSELLING_COLS.has(k)) cleanPayload[k] = payload[k];
+    });
+
     const { data: existing } = await supabase
       .from('patient_counselling')
       .select('id')
-      .eq('clinical_case_id', payload.clinical_case_id)
+      .eq('clinical_case_id', cleanPayload.clinical_case_id)
       .maybeSingle();
 
     let savedData = null;
@@ -457,7 +524,7 @@ export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
     if (existing && existing.id) {
       const { data, error } = await supabase
         .from('patient_counselling')
-        .update(payload)
+        .update(cleanPayload)
         .eq('id', existing.id)
         .select();
 
@@ -466,7 +533,7 @@ export const saveOrUpdatePatientCounsellingInSupabase = async (payload) => {
     } else {
       const { data, error } = await supabase
         .from('patient_counselling')
-        .insert([payload])
+        .insert([cleanPayload])
         .select();
 
       if (error) return { success: false, error: error.message };

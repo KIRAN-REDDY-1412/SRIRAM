@@ -1342,3 +1342,89 @@ export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
     return { success: false, error: err.message };
   }
 };
+
+// ====================================================================
+// CLINICAL CASE LEVEL MODULE STATUS & SUBMISSION SERVICES
+// ====================================================================
+
+export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
+  if (!caseIds || caseIds.length === 0) return { success: true, statusesMap: {} };
+
+  try {
+    const [profilesRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
+      supabase.from('patient_profiles').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
+      supabase.from('patient_counselling').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
+      supabase.from('pharmacist_interventions').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
+      supabase.from('drug_information_requests').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
+      supabase.from('adr_reports').select('id, clinical_case_id, approval_status').in('clinical_case_id', caseIds)
+    ]);
+
+    const profiles = profilesRes.data || [];
+    const counselling = counsellingRes.data || [];
+    const interventions = interventionRes.data || [];
+    const dirs = dirRes.data || [];
+    const adrs = adrRes.data || [];
+
+    const statusesMap = {};
+
+    caseIds.forEach(id => {
+      const p = profiles.find(item => item.clinical_case_id === id);
+      const c = counselling.find(item => item.clinical_case_id === id);
+      const i = interventions.find(item => item.clinical_case_id === id);
+      const d = dirs.find(item => item.clinical_case_id === id);
+      const a = adrs.find(item => item.clinical_case_id === id);
+
+      statusesMap[id] = {
+        profileStatus: p ? (p.approval_status || p.status || 'Completed') : 'Not Started',
+        counsellingStatus: c ? (c.approval_status || c.status || 'Completed') : 'Not Started',
+        interventionStatus: i ? (i.approval_status || i.status || 'Completed') : 'Not Added',
+        dirStatus: d ? (d.status || 'Completed') : 'Not Added',
+        adrStatus: a ? (a.approval_status || 'Completed') : 'Not Added',
+        hasProfile: Boolean(p),
+        hasCounselling: Boolean(c),
+        hasIntervention: Boolean(i),
+        hasDir: Boolean(d),
+        hasAdr: Boolean(a)
+      };
+    });
+
+    return { success: true, statusesMap };
+  } catch (err) {
+    return { success: false, error: err.message, statusesMap: {} };
+  }
+};
+
+export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseModuleStatus) => {
+  try {
+    if (!caseModuleStatus || !caseModuleStatus.hasProfile || !caseModuleStatus.hasCounselling) {
+      return {
+        success: false,
+        error: '❌ Complete Patient Profile and Patient Counselling before submitting this Clinical Case.'
+      };
+    }
+
+    const caseId = clinicalCase.id;
+
+    // 1. Update clinical_cases status to 'Submitted'
+    const { error: caseErr } = await supabase
+      .from('clinical_cases')
+      .update({ status: 'Submitted', updated_at: new Date().toISOString() })
+      .eq('id', caseId);
+
+    if (caseErr) return { success: false, error: caseErr.message };
+
+    // 2. Cascade status update to child tables if present
+    await Promise.all([
+      supabase.from('patient_profiles').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('patient_counselling').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('pharmacist_interventions').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('drug_information_requests').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('adr_reports').update({ approval_status: 'Submitted' }).eq('clinical_case_id', caseId)
+    ]);
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+

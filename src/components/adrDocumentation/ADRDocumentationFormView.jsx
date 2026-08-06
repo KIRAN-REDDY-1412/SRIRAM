@@ -1381,27 +1381,6 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
           <Eye className="w-4 h-4 text-indigo-500" />
           <span>Preview Form PDF</span>
         </button>
-
-        {!isReadOnly && (
-          <button
-            type="button"
-            onClick={() => handleSaveADR('Submitted')}
-            disabled={saving}
-            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Submitting Form...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Submit Form</span>
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       {/* PDF PREVIEW MODAL */}

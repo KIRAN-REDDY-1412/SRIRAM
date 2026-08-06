@@ -1170,16 +1170,6 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
           <Eye className="w-4 h-4 text-indigo-500" />
           <span>Preview Form PDF</span>
         </button>
-
-        <button
-          type="button"
-          onClick={() => handleSaveProfile('Submitted')}
-          disabled={saving}
-          className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-        >
-          <Send className="w-4 h-4" />
-          <span>Submit Profile</span>
-        </button>
       </div>
 
       {/* PDF PREVIEW MODAL */}

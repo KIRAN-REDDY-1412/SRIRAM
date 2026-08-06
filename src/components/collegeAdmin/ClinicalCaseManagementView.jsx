@@ -392,6 +392,19 @@ export const ClinicalCaseManagementView = ({ college }) => {
           maxWidth="max-w-4xl"
         >
           <div className="space-y-4 text-xs">
+            {/* COLLEGE ADMIN VIEW MODE BANNER */}
+            <div className="p-3.5 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/30 flex items-start gap-3 shadow-xs">
+              <ShieldAlert className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                  COLLEGE ADMIN VIEW MODE
+                </h4>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-snug">
+                  This Clinical Case is available for viewing only. Editing, Review and Approval are not permitted.
+                </p>
+              </div>
+            </div>
+
             {/* TABS */}
             <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto">
               {['profile', 'counselling', 'intervention', 'dir', 'adr'].map((tb) => (

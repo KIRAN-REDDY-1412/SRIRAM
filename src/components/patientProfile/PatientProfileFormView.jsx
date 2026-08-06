@@ -100,7 +100,7 @@ const evaluateTestValueStatus = (valStr, refRangeStr) => {
   return 'none';
 };
 
-export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
+export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -1150,27 +1150,29 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       </div>
 
       {/* SINGLE ACTION SECTION AT THE BOTTOM */}
-      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
-        <button
-          type="button"
-          onClick={() => handleSaveProfile('Draft')}
-          disabled={saving}
-          className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
-        </button>
+      {!isReadOnly && (
+        <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+          <button
+            type="button"
+            onClick={() => handleSaveProfile('Draft')}
+            disabled={saving}
+            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setIsPreviewOpen(true)}
-          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-        >
-          <Eye className="w-4 h-4 text-indigo-500" />
-          <span>Preview Form PDF</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+          >
+            <Eye className="w-4 h-4 text-indigo-500" />
+            <span>Preview Form PDF</span>
+          </button>
+        </div>
+      )}
 
       {/* PDF PREVIEW MODAL */}
       {isPreviewOpen && (

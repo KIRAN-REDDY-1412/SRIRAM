@@ -92,7 +92,7 @@ const FREQUENTLY_USED_REFERENCES = [
   "Stockley's Drug Interactions"
 ];
 
-export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
+export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -398,7 +398,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     );
   }
 
-  const isReadOnly = status === 'Submitted' || status === 'Approved';
+  const isReadOnly = propReadOnly || status === 'Submitted' || status === 'Approved';
 
   return (
     <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
@@ -773,10 +773,10 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
       </div>
 
       {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
-      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+      {!isReadOnly && (
+        <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
 
-        {!isReadOnly && (
           <button
             type="button"
             onClick={() => handleSaveRequest('Draft')}
@@ -786,17 +786,17 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
             <Save className="w-4 h-4" />
             <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-        )}
 
-        <button
-          type="button"
-          onClick={() => setIsPreviewOpen(true)}
-          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-        >
-          <Eye className="w-4 h-4 text-indigo-500" />
-          <span>Preview Form PDF</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+          >
+            <Eye className="w-4 h-4 text-indigo-500" />
+            <span>Preview Form PDF</span>
+          </button>
+        </div>
+      )}
 
       {/* PDF PREVIEW MODAL */}
       {isPreviewOpen && (

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2 } from 'lucide-react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { fetchCaseModuleStatusesFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 
@@ -38,6 +36,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
     setDownloading(true);
     try {
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default || html2canvasModule;
+
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default || jsPDFModule;
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,

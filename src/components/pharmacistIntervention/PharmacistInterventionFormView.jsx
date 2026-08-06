@@ -87,7 +87,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
 
       // Pre-fill defaults from clinicalCase
       setWard(clinicalCase.ward_unit || '');
-      setIpOpNo(clinicalCase.case_id || '');
+      setIpOpNo('');
 
       // Concurrent fetch of Intervention record AND Patient Profile for auto-sync
       const [interventionRes, profileRes] = await Promise.all([
@@ -101,7 +101,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
         setPatientName(p.patient_name || p.patient_initials || '');
         setAge(p.age ? p.age.toString() : '');
         setSex(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
-        setIpOpNo(p.ip_no || p.ip_op_number || clinicalCase.case_id || '');
+        setIpOpNo(p.ip_no || p.ip_op_number || '');
         setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
         setPresentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
         setPhysician(p.physician || p.attending_physician || '');

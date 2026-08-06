@@ -96,7 +96,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       // Pre-fill defaults from clinicalCase
       setDepartment(clinicalCase.department || '');
       setWard(clinicalCase.ward_unit || '');
-      setHospitalRegNumber(clinicalCase.case_id || '');
+      setHospitalRegNumber('');
 
       const res = await fetchADRReportByCaseIdFromSupabase(clinicalCase.id);
       if (res.success && res.report) {
@@ -108,7 +108,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
         setApprovalStatus(rep.approval_status || 'Draft');
 
         setPatientInitials(rep.patient_initials || '');
-        setHospitalRegNumber(rep.hospital_reg_number || clinicalCase.case_id || '');
+        setHospitalRegNumber(rep.hospital_reg_number || '');
         setAge(rep.age || '');
         setGender(rep.gender || 'M');
         setWeight(rep.weight || '');

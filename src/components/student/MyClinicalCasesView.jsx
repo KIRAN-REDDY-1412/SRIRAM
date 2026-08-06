@@ -271,7 +271,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
                       <div className="flex flex-wrap items-center justify-end gap-1">
                         {/* Open Patient Profile */}
                         <button
-                          onClick={() => onOpenPatientProfile(c)}
+                          onClick={(e) => { e.stopPropagation(); onOpenPatientProfile && onOpenPatientProfile(c); }}
                           className="px-1.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Profile Form"
                         >
@@ -281,7 +281,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Patient Counselling */}
                         <button
-                          onClick={() => onOpenPatientCounselling(c)}
+                          onClick={(e) => { e.stopPropagation(); onOpenPatientCounselling && onOpenPatientCounselling(c); }}
                           className="px-1.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-bold border border-teal-200 dark:border-teal-800 flex items-center gap-1 transition-colors"
                           title="Open Patient Counselling Form"
                         >
@@ -291,7 +291,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Pharmacist Intervention */}
                         <button
-                          onClick={() => onOpenPharmacistIntervention(c)}
+                          onClick={(e) => { e.stopPropagation(); onOpenPharmacistIntervention && onOpenPharmacistIntervention(c); }}
                           className="px-1.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 transition-colors"
                           title="Open Pharmacist Intervention Form"
                         >
@@ -301,7 +301,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open Drug Information Request */}
                         <button
-                          onClick={() => onOpenDrugInformationRequest(c)}
+                          onClick={(e) => { e.stopPropagation(); onOpenDrugInformationRequest && onOpenDrugInformationRequest(c); }}
                           className="px-1.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-bold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1 transition-colors"
                           title="Open Drug Information Request Form"
                         >
@@ -311,7 +311,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
 
                         {/* Open ADR Documentation */}
                         <button
-                          onClick={() => onOpenADRDocumentation(c)}
+                          onClick={(e) => { e.stopPropagation(); onOpenADRDocumentation && onOpenADRDocumentation(c); }}
                           className="px-1.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-200 dark:border-amber-800 flex items-center gap-1 transition-colors"
                           title="Open ADR Documentation System"
                         >
@@ -475,7 +475,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
-                  onOpenDrugInformationRequest(selectedCase);
+                  onOpenDrugInformationRequest && onOpenDrugInformationRequest(selectedCase);
                 }}
                 className="px-2.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
               >
@@ -486,7 +486,7 @@ export const MyClinicalCasesView = ({ student, onAddNew, onOpenPatientProfile, o
               <button
                 onClick={() => {
                   setIsViewModalOpen(false);
-                  onOpenADRDocumentation(selectedCase);
+                  onOpenADRDocumentation && onOpenADRDocumentation(selectedCase);
                 }}
                 className="col-span-2 px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
               >

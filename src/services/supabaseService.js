@@ -753,6 +753,23 @@ export const fetchStudentCasesFromSupabase = async (studentId) => {
   }
 };
 
+export const fetchStudentCasesForPreceptorFromSupabase = async (studentId) => {
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select('*')
+      .eq('student_id', studentId)
+      .neq('status', 'Draft')
+      .order('created_at', { ascending: false });
+
+    if (error) return { success: false, data: [], error: error.message };
+    const filtered = (data || []).filter(c => c.status !== 'Draft' && c.overall_case_status !== 'Draft');
+    return { success: true, data: filtered };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
+  }
+};
+
 export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) => {
   try {
     const { data, error } = await supabase
@@ -1614,6 +1631,7 @@ export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
         preceptors!fk_clinical_cases_preceptor(*)
       `)
       .eq('college_id', collegeId)
+      .eq('status', 'Approved')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -1621,12 +1639,15 @@ export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
         .from('clinical_cases')
         .select('*')
         .eq('college_id', collegeId)
+        .eq('status', 'Approved')
         .order('created_at', { ascending: false });
 
-      return { success: true, data: simpleData || [] };
+      const filteredSimple = (simpleData || []).filter(c => c.status === 'Approved' || c.overall_case_status === 'Approved');
+      return { success: true, data: filteredSimple };
     }
 
-    return { success: true, data: data || [] };
+    const filtered = (data || []).filter(c => c.status === 'Approved' || c.overall_case_status === 'Approved');
+    return { success: true, data: filtered };
   } catch (err) {
     return { success: false, data: [], error: err.message };
   }

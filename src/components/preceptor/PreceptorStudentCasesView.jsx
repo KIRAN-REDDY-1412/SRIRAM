@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ClipboardList, Search, Filter, Eye, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, User, GraduationCap, Building2, Download } from 'lucide-react';
-import { fetchStudentCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
+import { fetchStudentCasesForPreceptorFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { PreceptorReviewCaseView } from './PreceptorReviewCaseView';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
@@ -24,7 +24,7 @@ export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
   const loadCases = async () => {
     if (!student) return;
     setLoading(true);
-    const res = await fetchStudentCasesFromSupabase(student.id);
+    const res = await fetchStudentCasesForPreceptorFromSupabase(student.id);
     if (res.success) {
       const fetchedCases = res.data || [];
       setCases(fetchedCases);
@@ -183,7 +183,7 @@ export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
           </div>
 
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-            {['All', 'Submitted', 'Under Review', 'Returned', 'Approved', 'Draft'].map((st) => (
+            {['All', 'Submitted', 'Under Review', 'Returned', 'Approved'].map((st) => (
               <button
                 key={st}
                 onClick={() => {

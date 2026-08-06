@@ -16,7 +16,7 @@ export const ClinicalCaseManagementView = ({ college }) => {
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('Approved');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [hospitalFilter, setHospitalFilter] = useState('All');
 
@@ -120,35 +120,16 @@ export const ClinicalCaseManagementView = ({ college }) => {
       </div>
 
       {/* SUMMARY KPI CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-slate-400">Total Cases</span>
-          <h4 className="text-xl font-black text-slate-900 dark:text-white mt-1">{totalCount}</h4>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-amber-500">Draft</span>
-          <h4 className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">{draftCount}</h4>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-blue-500">Submitted</span>
-          <h4 className="text-xl font-black text-blue-600 dark:text-blue-400 mt-1">{submittedCount}</h4>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-cyan-500">Under Review</span>
-          <h4 className="text-xl font-black text-cyan-600 dark:text-cyan-400 mt-1">{underReviewCount}</h4>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-rose-500">Returned</span>
-          <h4 className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">{returnedCount}</h4>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase text-emerald-500">Approved</span>
-          <h4 className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{approvedCount}</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Approved Cases</span>
+            <h4 className="text-3xl font-black text-slate-900 dark:text-white mt-1.5">{approvedCount}</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Officially certified clinical records</p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center shadow-xs animate-pulse">
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          </div>
         </div>
       </div>
 
@@ -169,21 +150,6 @@ export const ClinicalCaseManagementView = ({ college }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end text-xs">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 font-bold"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Approved">Approved Only</option>
-            <option value="Submitted">Submitted Only</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Returned">Returned</option>
-            <option value="Draft">Draft</option>
-          </select>
 
           {departmentsList.length > 0 && (
             <select

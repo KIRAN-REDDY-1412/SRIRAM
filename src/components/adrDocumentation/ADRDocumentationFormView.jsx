@@ -94,7 +94,10 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
 
   useEffect(() => {
     const loadADRData = async () => {
-      if (!clinicalCase) return;
+      if (!clinicalCase || !clinicalCase.id) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
 
       // Pre-fill defaults from clinicalCase
@@ -102,65 +105,85 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       setWard(clinicalCase.ward_unit || '');
       setHospitalRegNumber('');
 
-      const res = await fetchADRReportByCaseIdFromSupabase(clinicalCase.id);
-      if (res.success && res.report) {
-        const rep = res.report;
-        setExistingReportId(rep.id);
-        setAdrNumber(rep.adr_number || '');
-        setReportingDate(rep.reporting_date || new Date().toISOString().split('T')[0]);
-        setAssignedPreceptorName(rep.assigned_preceptor_name || 'Faculty Preceptor');
-        setApprovalStatus(rep.approval_status || 'Draft');
+      try {
+        const [res, profileRes] = await Promise.all([
+          fetchADRReportByCaseIdFromSupabase(clinicalCase.id),
+          fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id)
+        ]);
 
-        setPatientInitials(rep.patient_initials || '');
-        setHospitalRegNumber(rep.hospital_reg_number || '');
-        setAge(rep.age || '');
-        setGender(rep.gender || 'M');
-        setWeight(rep.weight || '');
-        setDepartment(rep.department || clinicalCase.department || '');
-        setWard(rep.ward || clinicalCase.ward_unit || '');
-        setPrimaryDiagnosis(rep.primary_diagnosis || '');
+        if (profileRes.success && profileRes.profile) {
+          const p = profileRes.profile;
+          setPatientInitials(p.patient_name || p.patient_initials || '');
+          setHospitalRegNumber(p.ip_no || p.ip_op_number || '');
+          setAge(p.age ? p.age.toString() : '');
+          setGender(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
+          setWeight(p.weight || '');
+          setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
+          setPrimaryDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
+          setDrugAllergyHistory(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
+        }
 
-        setReactionTitle(rep.reaction_title || '');
-        setReactionCategory(rep.reaction_category || 'Dermatological');
-        setReactionDescription(rep.reaction_description || '');
-        setReactionStartedAt(rep.reaction_started_at ? rep.reaction_started_at.split('T')[0] : '');
-        setReactionEndedAt(rep.reaction_ended_at ? rep.reaction_ended_at.split('T')[0] : '');
-        setReactionDuration(rep.reaction_duration || '');
-        setClinicalManagementProvided(rep.clinical_management_provided || '');
-        setCurrentPatientCondition(rep.current_patient_condition || 'Recovering');
+        if (res.success && res.report) {
+          const rep = res.report;
+          setExistingReportId(rep.id);
+          setAdrNumber(rep.adr_number || '');
+          setReportingDate(rep.reporting_date || new Date().toISOString().split('T')[0]);
+          setAssignedPreceptorName(rep.assigned_preceptor_name || 'Faculty Preceptor');
+          setApprovalStatus(rep.approval_status || 'Draft');
 
-        setDrugAllergyHistory(rep.drug_allergy_history || 'None known');
-        setPreviousAdrHistory(rep.previous_adr_history || 'None');
-        setRelevantMedicalConditions(rep.relevant_medical_conditions || '');
-        setPregnancyLactationStatus(rep.pregnancy_lactation_status || 'Not Applicable');
-        setRenalStatus(rep.renal_status || 'Normal');
-        setHepaticStatus(rep.hepatic_status || 'Normal');
-        setLifestyleFactors(rep.lifestyle_factors || '');
-        setAdditionalClinicalNotes(rep.additional_clinical_notes || '');
+          setPatientInitials(rep.patient_initials || '');
+          setHospitalRegNumber(rep.hospital_reg_number || '');
+          setAge(rep.age || '');
+          setGender(rep.gender || 'M');
+          setWeight(rep.weight || '');
+          setDepartment(rep.department || clinicalCase.department || '');
+          setWard(rep.ward || clinicalCase.ward_unit || '');
+          setPrimaryDiagnosis(rep.primary_diagnosis || '');
 
-        setReactionSeverity(rep.reaction_severity || 'Moderate');
-        setReactionSeriousness(rep.reaction_seriousness || 'Hospitalization-Initial/Prolonged');
-        setPatientOutcome(rep.patient_outcome || 'Recovered');
-        setActionTakenOnSuspectedDrug(rep.action_taken_on_suspected_drug || 'Withdrawn');
-        setRechallengeInformation(rep.rechallenge_information || '');
-        setDechallengeInformation(rep.dechallenge_information || '');
-        setInitialCausalityOpinion(rep.initial_causality_opinion || 'Probable/Likely');
-        setClinicalRemarks(rep.clinical_remarks || '');
+          setReactionTitle(rep.reaction_title || '');
+          setReactionCategory(rep.reaction_category || 'Dermatological');
+          setReactionDescription(rep.reaction_description || '');
+          setReactionStartedAt(rep.reaction_started_at ? rep.reaction_started_at.split('T')[0] : '');
+          setReactionEndedAt(rep.reaction_ended_at ? rep.reaction_ended_at.split('T')[0] : '');
+          setReactionDuration(rep.reaction_duration || '');
+          setClinicalManagementProvided(rep.clinical_management_provided || '');
+          setCurrentPatientCondition(rep.current_patient_condition || 'Recovering');
 
-        setStudentRemarks(rep.student_remarks || '');
-        setPreceptorReview(rep.preceptor_review || '');
-        setFacultyComments(rep.faculty_comments || '');
+          setDrugAllergyHistory(rep.drug_allergy_history || 'None known');
+          setPreviousAdrHistory(rep.previous_adr_history || 'None');
+          setRelevantMedicalConditions(rep.relevant_medical_conditions || '');
+          setPregnancyLactationStatus(rep.pregnancy_lactation_status || 'Not Applicable');
+          setRenalStatus(rep.renal_status || 'Normal');
+          setHepaticStatus(rep.hepatic_status || 'Normal');
+          setLifestyleFactors(rep.lifestyle_factors || '');
+          setAdditionalClinicalNotes(rep.additional_clinical_notes || '');
 
-        if (res.suspectedMeds && res.suspectedMeds.length > 0) setSuspectedMeds(res.suspectedMeds);
-        if (res.concomitantMeds) setConcomitantMeds(res.concomitantMeds);
-        if (res.attachments) setAttachments(res.attachments);
-      } else {
-        // Auto-generate ADR Record Number
-        const genRes = await generateUniqueAdrNumberInSupabase();
-        if (genRes.success) setAdrNumber(genRes.adrNumber);
+          setReactionSeverity(rep.reaction_severity || 'Moderate');
+          setReactionSeriousness(rep.reaction_seriousness || 'Hospitalization-Initial/Prolonged');
+          setPatientOutcome(rep.patient_outcome || 'Recovered');
+          setActionTakenOnSuspectedDrug(rep.action_taken_on_suspected_drug || 'Withdrawn');
+          setRechallengeInformation(rep.rechallenge_information || '');
+          setDechallengeInformation(rep.dechallenge_information || '');
+          setInitialCausalityOpinion(rep.initial_causality_opinion || 'Probable/Likely');
+          setClinicalRemarks(rep.clinical_remarks || '');
+
+          setStudentRemarks(rep.student_remarks || '');
+          setPreceptorReview(rep.preceptor_review || '');
+          setFacultyComments(rep.faculty_comments || '');
+
+          if (res.suspectedMeds && res.suspectedMeds.length > 0) setSuspectedMeds(res.suspectedMeds);
+          if (res.concomitantMeds) setConcomitantMeds(res.concomitantMeds);
+          if (res.attachments) setAttachments(res.attachments);
+        } else {
+          // Auto-generate ADR Record Number
+          const genRes = await generateUniqueAdrNumberInSupabase();
+          if (genRes.success) setAdrNumber(genRes.adrNumber);
+        }
+      } catch (err) {
+        console.error('Error loading ADR report data:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     loadADRData();

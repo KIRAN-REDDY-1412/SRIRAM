@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileSearch, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck } from 'lucide-react';
-import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase } from '../../services/supabaseService';
+import { FileSearch, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck, RefreshCw } from 'lucide-react';
+import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { DrugInformationPDFPreviewModal } from './DrugInformationPDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -22,7 +22,6 @@ const QUESTION_CATEGORIES = [
 export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
 
   // Inline Notification Hook
   const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
@@ -80,72 +79,98 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
 
   useEffect(() => {
     const loadDIRData = async () => {
-      if (!clinicalCase) return;
+      if (!clinicalCase || !clinicalCase.id) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
 
       // Pre-fill defaults from clinicalCase
       setUnitWard(clinicalCase.ward_unit || '');
       setEnquirerName(clinicalCase.hospital_name ? `Dr. On-Duty (${clinicalCase.department})` : '');
 
-      const res = await fetchDrugInformationRequestByCaseIdFromSupabase(clinicalCase.id);
-      if (res.success && res.request) {
-        const item = res.request;
-        setExistingRequestId(item.id);
-        setRequestDate(item.request_date || new Date().toISOString().split('T')[0]);
-        setRequestTime(item.request_time || '11:00 AM');
-        setEnquirerName(item.enquirer_name || '');
-        setDesignation(item.designation || '');
-        setPhoneNo(item.phone_no || '');
-        setUnitWard(item.unit_ward || clinicalCase.ward_unit || '');
-        setProfessionalStatus(item.professional_status || 'Physician');
-        setProfessionalStatusOther(item.professional_status_other || '');
+      try {
+        const [dirRes, profileRes] = await Promise.all([
+          fetchDrugInformationRequestByCaseIdFromSupabase(clinicalCase.id),
+          fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id)
+        ]);
 
-        setModeOfRequest(item.mode_of_request || 'Direct');
-        setAnswerNeeded(item.answer_needed || 'Within 2-4hrs');
-        setDetailsOfEnquiry(item.details_of_enquiry || '');
-        setQuestionCategory(item.question_category || 'Dosage & Administration');
-        setPurposeOfEnquiry(item.purpose_of_enquiry || 'Better patient care');
-        setPurposeOther(item.purpose_other || '');
+        if (profileRes.success && profileRes.profile) {
+          const p = profileRes.profile;
+          setAge(p.age ? p.age.toString() : '');
+          setSex(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
+          setWeightKg(p.weight || '');
+          setUnitWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
+          setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
+          setCurrentMedicalProblem(p.final_diagnosis || p.provisional_diagnosis || '');
+        }
 
-        setAge(item.age || '');
-        setSex(item.sex || 'M');
-        setWeightKg(item.weight_kg || '');
-        setAllergies(item.allergies || 'None');
-        setCurrentMedicalProblem(item.current_medical_problem || '');
-        setIsPregnantLactating(Boolean(item.is_pregnant_lactating));
-        setPregnancyLactationDetails(item.pregnancy_lactation_details || '');
-        setOtherInvestigations(item.other_investigations || '');
-        setDrugTherapy(item.drug_therapy || '');
+        if (dirRes.success && dirRes.request) {
+          const item = dirRes.request;
+          setExistingRequestId(item.id);
+          setRequestDate(item.request_date || new Date().toISOString().split('T')[0]);
+          setRequestTime(item.request_time || '11:00 AM');
+          setEnquirerName(item.enquirer_name || '');
+          setDesignation(item.designation || '');
+          setPhoneNo(item.phone_no || '');
+          setUnitWard(item.unit_ward || clinicalCase.ward_unit || '');
+          setProfessionalStatus(item.professional_status || 'Physician');
+          setProfessionalStatusOther(item.professional_status_other || '');
 
-        setAnswerGivenTimeframe(item.answer_given_timeframe || 'Within 2-4hrs');
-        setReasonForDelay(item.reason_for_delay || '');
-        setModeOfReply(item.mode_of_reply || 'Written');
-        setInformationProvided(item.information_provided || '');
+          setModeOfRequest(item.mode_of_request || 'Direct');
+          setAnswerNeeded(item.answer_needed || 'Within 2-4hrs');
+          setDetailsOfEnquiry(item.details_of_enquiry || '');
+          setQuestionCategory(item.question_category || 'Dosage & Administration');
+          setPurposeOfEnquiry(item.purpose_of_enquiry || 'Better patient care');
+          setPurposeOther(item.purpose_other || '');
 
-        setRefTextbooks(item.ref_textbooks || '');
-        setRefJournals(item.ref_journals || '');
-        setRefMicromedex(item.ref_micromedex || '');
-        setRefClinirex(item.ref_clinirex || '');
-        setRefIdis(item.ref_idis || '');
-        setRefWebsite(item.ref_website || '');
-        setRefOthers(item.ref_others || '');
+          setAge(item.age || '');
+          setSex(item.sex || 'M');
+          setWeightKg(item.weight_kg || '');
+          setAllergies(item.allergies || 'None');
+          setCurrentMedicalProblem(item.current_medical_problem || '');
+          setIsPregnantLactating(Boolean(item.is_pregnant_lactating));
+          setPregnancyLactationDetails(item.pregnancy_lactation_details || '');
+          setOtherInvestigations(item.other_investigations || '');
+          setDrugTherapy(item.drug_therapy || '');
 
-        setStatus(item.status || 'Draft');
+          setAnswerGivenTimeframe(item.answer_given_timeframe || 'Within 2-4hrs');
+          setReasonForDelay(item.reason_for_delay || '');
+          setModeOfReply(item.mode_of_reply || 'Written');
+          setInformationProvided(item.information_provided || '');
+
+          setRefTextbooks(item.ref_textbooks || '');
+          setRefJournals(item.ref_journals || '');
+          setRefMicromedex(item.ref_micromedex || '');
+          setRefClinirex(item.ref_clinirex || '');
+          setRefIdis(item.ref_idis || '');
+          setRefWebsite(item.ref_website || '');
+          setRefOthers(item.ref_others || '');
+
+          setStatus(item.status || 'Draft');
+        }
+      } catch (err) {
+        console.error('Error loading DIR data:', err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     loadDIRData();
   }, [clinicalCase]);
 
   const handleSaveRequest = async (newStatus = 'Draft') => {
-    setFormError('');
-    setSaveSuccess('');
+    clearBottomNotify();
 
-    if (!enquirerName.trim() || !detailsOfEnquiry.trim()) {
-      setFormError('Please enter Name of Enquirer and Details of Enquiry (Question).');
-      return;
+    if (newStatus === 'Submitted') {
+      if (!enquirerName.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Enquirer Name.' });
+        return;
+      }
+      if (!detailsOfEnquiry.trim()) {
+        showBottomNotify({ type: 'error', message: '✖ Please enter Details of Enquiry (Question).' });
+        return;
+      }
     }
 
     setSaving(true);
@@ -159,22 +184,22 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
       enquirer_name: enquirerName.trim(),
       designation: designation.trim(),
       phone_no: phoneNo.trim(),
-      unit_ward: unitWard.trim(),
+      unit_ward: unitWard,
       professional_status: professionalStatus,
-      professional_status_other: professionalStatus === 'Others' ? professionalStatusOther : null,
+      professional_status_other: professionalStatus === 'Other' ? professionalStatusOther.trim() : null,
       mode_of_request: modeOfRequest,
       answer_needed: answerNeeded,
       details_of_enquiry: detailsOfEnquiry.trim(),
       question_category: questionCategory,
       purpose_of_enquiry: purposeOfEnquiry,
-      purpose_other: purposeOfEnquiry === 'Others' ? purposeOther : null,
+      purpose_other: purposeOfEnquiry === 'Other' ? purposeOther.trim() : null,
       age,
       sex,
       weight_kg: weightKg,
       allergies,
       current_medical_problem: currentMedicalProblem.trim(),
       is_pregnant_lactating: isPregnantLactating,
-      pregnancy_lactation_details: isPregnantLactating ? pregnancyLactationDetails : null,
+      pregnancy_lactation_details: isPregnantLactating ? pregnancyLactationDetails.trim() : null,
       other_investigations: otherInvestigations.trim(),
       drug_therapy: drugTherapy.trim(),
       answer_given_timeframe: answerGivenTimeframe,
@@ -209,7 +234,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     }
   };
 
-  if (loading || !clinicalCase) {
+  if (loading) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-cyan-500 animate-spin mx-auto mb-2" />
@@ -218,10 +243,21 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     );
   }
 
+  if (!clinicalCase) {
+    return (
+      <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-8">
+        <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No Clinical Case Selected</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">Please select a case from My Clinical Cases list to document Drug Information Request.</p>
+        <button onClick={onBack} className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">Back to My Cases</button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto">
+    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
       
-      {/* TOP HEADER & ACTIONS */}
+      {/* TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">
           <button
@@ -234,393 +270,269 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
 
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              <FileSearch className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <FileSearch className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
               <span>Drug Information Request & Documentation Form</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Case ID: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
+              Case ID: <strong className="font-mono text-cyan-600 dark:text-cyan-400">{clinicalCase.case_id}</strong> • Student: <strong className="text-slate-800 dark:text-slate-200">{student?.full_name}</strong>
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveRequest('Draft')}
-            disabled={saving}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveRequest('Submitted')}
-            disabled={saving}
-            className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            <span>Submit Form</span>
-          </button>
-        </div>
       </div>
 
-      {formError && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
-          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <span>{formError}</span>
-        </div>
-      )}
-
-      {saveSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
-
-      {/* 1. REQUESTER DETAILS */}
+      {/* 1. ENQUIRER & SESSION INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          1. Requester & Session Details
+          <User className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+          1. Enquirer & Session Details
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Request Date *</label>
-            <input type="date" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Request Time</label>
-            <input type="text" value={requestTime} onChange={(e) => setRequestTime(e.target.value)} placeholder="e.g. 11:00 AM" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Name of the Enquirer *</label>
-            <input type="text" required value={enquirerName} onChange={(e) => setEnquirerName(e.target.value)} placeholder="Dr. / Pharmacist / Nurse Name" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Designation</label>
-            <input type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="e.g. Senior Resident" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone No.</label>
-            <input type="text" value={phoneNo} onChange={(e) => setPhoneNo(e.target.value)} placeholder="Contact number" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit / Ward</label>
-            <input type="text" value={unitWard} onChange={(e) => setUnitWard(e.target.value)} placeholder="e.g. ICU Ward 4" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div className="sm:col-span-4">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Professional Status *</label>
-            <div className="flex flex-wrap gap-2">
-              {['Physician', 'Surgeon', 'Resident', 'Interns', 'Pharmacist', 'Nurse', 'Others'].map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setProfessionalStatus(st)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                    professionalStatus === st
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-
-            {professionalStatus === 'Others' && (
-              <input
-                type="text"
-                value={professionalStatusOther}
-                onChange={(e) => setProfessionalStatusOther(e.target.value)}
-                placeholder="Specify professional status..."
-                className="w-full h-10 px-3.5 mt-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs"
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 2. QUESTION CATEGORY & DETAILS OF ENQUIRY */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          2. Details of Enquiry & Question Category
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mode of Request *</label>
-            <select value={modeOfRequest} onChange={(e) => setModeOfRequest(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Direct">Direct</option>
-              <option value="Ward rounds">Ward rounds</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Answer Needed *</label>
-            <select value={answerNeeded} onChange={(e) => setAnswerNeeded(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-indigo-600 dark:text-indigo-400">
-              <option value="Immediately">Immediately</option>
-              <option value="Within 2-4hrs">Within 2-4hrs</option>
-              <option value="Within 1-2 days">Within 1-2 days</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Details of Enquiry (Drug Information Question) *</label>
-            <textarea
-              rows={3}
-              required
-              value={detailsOfEnquiry}
-              onChange={(e) => setDetailsOfEnquiry(e.target.value)}
-              placeholder="What is the specific drug information query asked by physician/nurse?"
-              className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+            <input
+              type="date"
+              value={requestDate}
+              onChange={(e) => setRequestDate(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Question Category *</label>
-            <select value={questionCategory} onChange={(e) => setQuestionCategory(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              {QUESTION_CATEGORIES.map((cat, i) => (
-                <option key={i} value={cat}>{cat}</option>
-              ))}
-            </select>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Request Time</label>
+            <input
+              type="text"
+              value={requestTime}
+              onChange={(e) => setRequestTime(e.target.value)}
+              placeholder="e.g. 11:00 AM"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Name of Enquirer *</label>
+            <input
+              type="text"
+              value={enquirerName}
+              onChange={(e) => setEnquirerName(e.target.value)}
+              placeholder="Enter name of enquirer"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+            />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Purpose of Enquiry *</label>
-            <select value={purposeOfEnquiry} onChange={(e) => setPurposeOfEnquiry(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Update knowledge">Update knowledge</option>
-              <option value="Better patient care">Better patient care</option>
-              <option value="Others">Others</option>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Designation</label>
+            <input
+              type="text"
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+              placeholder="Enter designation"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+            <input
+              type="text"
+              value={phoneNo}
+              onChange={(e) => setPhoneNo(e.target.value)}
+              placeholder="Enter phone number"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit / Ward</label>
+            <input
+              type="text"
+              value={unitWard}
+              onChange={(e) => setUnitWard(e.target.value)}
+              placeholder="Enter unit/ward"
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-semibold"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Professional Status *</label>
+            <select
+              value={professionalStatus}
+              onChange={(e) => setProfessionalStatus(e.target.value)}
+              className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+            >
+              <option value="Physician">Physician</option>
+              <option value="Post Graduate Resident">Post Graduate Resident</option>
+              <option value="Nurse">Nurse</option>
+              <option value="Pharmacist">Pharmacist</option>
+              <option value="Patient / Public">Patient / Public</option>
+              <option value="Other">Other</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* 3. PATIENT DETAILS (BACKGROUND INFORMATION) */}
+      {/* 2. ENQUIRY DETAILS */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          3. Patient Details (Background Information)
+          <BookOpen className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+          2. Details of Enquiry & Category
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Sex</label>
-            <div className="flex gap-2">
-              <input type="text" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-              <select value={sex} onChange={(e) => setSex(e.target.value)} className="h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-                <option value="M">M</option>
-                <option value="F">F</option>
+        <div className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Question Category *</label>
+              <select
+                value={questionCategory}
+                onChange={(e) => setQuestionCategory(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+              >
+                {QUESTION_CATEGORIES.map((cat, i) => (
+                  <option key={i} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Timeframe Needed</label>
+              <select
+                value={answerNeeded}
+                onChange={(e) => setAnswerNeeded(e.target.value)}
+                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+              >
+                <option value="Immediate / STAT">Immediate / STAT</option>
+                <option value="Within 2-4hrs">Within 2-4hrs</option>
+                <option value="Within 24hrs">Within 24hrs</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Weight (Kgs)</label>
-            <input type="text" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} placeholder="e.g. 65" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Known Allergies</label>
-            <input type="text" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Known drug/food allergies" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-rose-600 dark:text-rose-400" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Medical Problem</label>
-            <textarea rows={2} value={currentMedicalProblem} onChange={(e) => setCurrentMedicalProblem(e.target.value)} placeholder="Primary medical diagnosis..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Drug Therapy</label>
-            <textarea rows={2} value={drugTherapy} onChange={(e) => setDrugTherapy(e.target.value)} placeholder="Current prescribed medications..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div className="sm:col-span-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Pregnancy / Lactation Status?</span>
-              <div className="flex items-center gap-4 font-bold">
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="preg" checked={isPregnantLactating === true} onChange={() => setIsPregnantLactating(true)} />
-                  <span>YES</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="preg" checked={isPregnantLactating === false} onChange={() => setIsPregnantLactating(false)} />
-                  <span>NO</span>
-                </label>
-              </div>
-            </div>
-
-            {isPregnantLactating && (
-              <input
-                type="text"
-                value={pregnancyLactationDetails}
-                onChange={(e) => setPregnancyLactationDetails(e.target.value)}
-                placeholder="Give trimester / gestational details..."
-                className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white mt-1"
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. RESPONSE PROVIDED & DELIVERY METADATA */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          4. Response Provided (Information Provided)
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Answer Given Timeframe *</label>
-            <select value={answerGivenTimeframe} onChange={(e) => setAnswerGivenTimeframe(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold">
-              <option value="Immediately">Immediately</option>
-              <option value="Within 2-4hrs">Within 2-4hrs</option>
-              <option value="Within 1-2 days">Within 1-2 days</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Mode of Reply *</label>
-            <select value={modeOfReply} onChange={(e) => setModeOfReply(e.target.value)} className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-emerald-600 dark:text-emerald-400">
-              <option value="Written">Written</option>
-              <option value="Verbal">Verbal</option>
-              <option value="Both">Both</option>
-              <option value="Printed literature">Printed literature</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reason for Delay (If any)</label>
-            <input type="text" value={reasonForDelay} onChange={(e) => setReasonForDelay(e.target.value)} placeholder="Reason for delay..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div className="sm:col-span-3">
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Information Provided (Detailed Drug Response) *</label>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Details of Enquiry (Question) *</label>
             <textarea
-              rows={6}
+              rows={3}
               required
-              value={informationProvided}
-              onChange={(e) => setInformationProvided(e.target.value)}
-              placeholder="Provide evidence-based clinical answer to the drug information query..."
-              className="w-full p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium text-xs leading-relaxed"
+              value={detailsOfEnquiry}
+              onChange={(e) => setDetailsOfEnquiry(e.target.value)}
+              placeholder="Enter details of enquiry"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
             />
           </div>
         </div>
       </div>
 
-      {/* 5. REFERENCES */}
+      {/* 3. PATIENT BACKGROUND INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          5. References Consulted
-        </h3>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            3. Patient Background Information
+          </h3>
+          <span className="text-[10px] font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-200 dark:border-cyan-800 flex items-center gap-1">
+            <RefreshCw className="w-3 h-3 animate-spin" /> Auto-Synced from Patient Profile
+          </span>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Text book (mention)</label>
-            <input type="text" value={refTextbooks} onChange={(e) => setRefTextbooks(e.target.value)} placeholder="Textbook references..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Age / Sex</label>
+            <div className="flex gap-2">
+              <input type="text" readOnly value={age} placeholder="Age" className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono" />
+              <input type="text" readOnly value={sex} placeholder="Sex" className="w-16 h-[44px] px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-center" />
+            </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Journals (mention)</label>
-            <input type="text" value={refJournals} onChange={(e) => setRefJournals(e.target.value)} placeholder="Journal citations..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Weight (kg)</label>
+            <input type="text" readOnly value={weightKg} placeholder="Weight" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-mono" />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Micromedex</label>
-            <input type="text" value={refMicromedex} onChange={(e) => setRefMicromedex(e.target.value)} placeholder="Micromedex database details..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          <div className="sm:col-span-2">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Known Allergies</label>
+            <input type="text" readOnly value={allergies} placeholder="Allergies" className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold text-rose-600 dark:text-rose-400" />
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clinirex</label>
-            <input type="text" value={refClinirex} onChange={(e) => setRefClinirex(e.target.value)} placeholder="Clinirex reference..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Website URL</label>
-            <input type="text" value={refWebsite} onChange={(e) => setRefWebsite(e.target.value)} placeholder="https://..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono" />
-          </div>
-
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Others (specify)</label>
-            <input type="text" value={refOthers} onChange={(e) => setRefOthers(e.target.value)} placeholder="Other references..." className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white" />
+          <div className="sm:col-span-4">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Medical Problem / Diagnosis</label>
+            <textarea rows={2} readOnly value={currentMedicalProblem} placeholder="Diagnosis" className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 font-bold" />
           </div>
         </div>
       </div>
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
-      <div className="relative flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+      {/* 4. RESPONSE / INFORMATION PROVIDED */}
+      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <ShieldCheck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+          4. Response Provided & References
+        </h3>
+
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Information Provided (Answer)</label>
+            <textarea
+              rows={4}
+              value={informationProvided}
+              onChange={(e) => setInformationProvided(e.target.value)}
+              placeholder="Enter response/information provided"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ref 1: Textbooks</label>
+              <input type="text" value={refTextbooks} onChange={(e) => setRefTextbooks(e.target.value)} placeholder="Enter textbook reference" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ref 2: Databases</label>
+              <input type="text" value={refMicromedex} onChange={(e) => setRefMicromedex(e.target.value)} placeholder="Enter database reference" className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
+      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
         <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+
         <button
           type="button"
-          onClick={onBack}
-          className="h-[48px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-colors"
+          onClick={() => handleSaveRequest('Draft')}
+          disabled={saving}
+          className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
         >
-          Cancel & Back
+          <Save className="w-4 h-4" />
+          <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
         </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[48px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
+        <button
+          type="button"
+          onClick={() => setIsPreviewOpen(true)}
+          className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
+        >
+          <Eye className="w-4 h-4 text-indigo-500" />
+          <span>Preview Form PDF</span>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => handleSaveRequest('Draft')}
-            disabled={saving}
-            className="h-[48px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save Draft</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSaveRequest('Submitted')}
-            disabled={saving}
-            className="h-[48px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Submitting Form...</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                <span>Submit Form</span>
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => handleSaveRequest('Submitted')}
+          disabled={saving}
+          className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Submitting Form...</span>
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              <span>Submit Form</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* PDF PREVIEW MODAL */}

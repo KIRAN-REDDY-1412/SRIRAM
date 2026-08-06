@@ -1450,6 +1450,31 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
 
     const caseId = clinicalCase.id;
 
+    // Fetch previous status and student profile details to determine if resubmission
+    let isResubmission = false;
+    let preceptorId = clinicalCase.preceptor_id;
+    let studentId = clinicalCase.student_id;
+    let studentName = '';
+    let studentRoll = '';
+
+    const { data: currentCase } = await supabase
+      .from('clinical_cases')
+      .select('status, preceptor_id, student_id, case_id, hospital_name, department, students(full_name, roll_number)')
+      .eq('id', caseId)
+      .maybeSingle();
+
+    if (currentCase) {
+      if (currentCase.status === 'Returned') {
+        isResubmission = true;
+      }
+      preceptorId = currentCase.preceptor_id || preceptorId;
+      studentId = currentCase.student_id || studentId;
+      if (currentCase.students) {
+        studentName = currentCase.students.full_name;
+        studentRoll = currentCase.students.roll_number;
+      }
+    }
+
     // 1. Update clinical_cases status to 'Submitted'
     const { error: caseErr } = await supabase
       .from('clinical_cases')
@@ -1466,6 +1491,38 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
       supabase.from('drug_information_requests').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
       supabase.from('adr_reports').update({ approval_status: 'Submitted' }).eq('clinical_case_id', caseId)
     ]);
+
+    // 3. Trigger Notification to Preceptor if preceptor_id is available
+    if (preceptorId) {
+      const nowStr = new Date().toLocaleString();
+      if (isResubmission) {
+        await createWorkflowNotificationInSupabase({
+          recipientUserId: preceptorId,
+          recipientRole: 'Preceptor',
+          senderUserId: studentId,
+          senderRole: 'Student',
+          clinicalCaseId: caseId,
+          notificationType: 'Case Resubmitted',
+          title: 'Clinical Case Resubmitted',
+          message: `Student Name: ${studentName}\nRoll Number: ${studentRoll}\nCase ID: ${clinicalCase.case_id}\nResubmitted: ${nowStr}`,
+          actionLabel: 'Review Case',
+          actionRoute: 'assigned-students'
+        });
+      } else {
+        await createWorkflowNotificationInSupabase({
+          recipientUserId: preceptorId,
+          recipientRole: 'Preceptor',
+          senderUserId: studentId,
+          senderRole: 'Student',
+          clinicalCaseId: caseId,
+          notificationType: 'Case Submitted',
+          title: 'New Clinical Case Submitted',
+          message: `Student Name: ${studentName}\nRoll Number: ${studentRoll}\nCase ID: ${clinicalCase.case_id}\nHospital: ${clinicalCase.hospital_name || currentCase?.hospital_name}\nDepartment: ${clinicalCase.department || currentCase?.department}\nSubmitted: ${nowStr}`,
+          actionLabel: 'Review Case',
+          actionRoute: 'assigned-students'
+        });
+      }
+    }
 
     return { success: true };
   } catch (err) {
@@ -1518,6 +1575,27 @@ export const approveClinicalCaseByPreceptorFromSupabase = async (clinicalCase, p
       });
     } catch (e) {
       // Table creation optional fallback
+    }
+
+    // Trigger Notification to Student
+    if (clinicalCase.student_id) {
+      const nowStr = new Date().toLocaleString();
+      let preceptorName = 'Your Preceptor';
+      const { data: precData } = await supabase.from('preceptors').select('full_name').eq('id', preceptorId).maybeSingle();
+      if (precData) preceptorName = precData.full_name;
+
+      await createWorkflowNotificationInSupabase({
+        recipientUserId: clinicalCase.student_id,
+        recipientRole: 'Student',
+        senderUserId: preceptorId,
+        senderRole: 'Preceptor',
+        clinicalCaseId: caseId,
+        notificationType: 'Case Approved',
+        title: 'Clinical Case Approved',
+        message: `Case ID: ${clinicalCase.case_id}\nApproved By: ${preceptorName}\nApproved Date & Time: ${nowStr}\n\nYour Clinical Case has been approved. The Official Approved PDF is now available.`,
+        actionLabel: 'Download Approved PDF',
+        actionRoute: 'my-cases'
+      });
     }
 
     return { success: true };
@@ -1615,6 +1693,36 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
       // Table creation optional fallback
     }
 
+    // Trigger Notification to Student
+    if (clinicalCase.student_id) {
+      const nowStr = new Date().toLocaleString();
+      let preceptorName = 'Your Preceptor';
+      const { data: precData } = await supabase.from('preceptors').select('full_name').eq('id', preceptorId).maybeSingle();
+      if (precData) preceptorName = precData.full_name;
+
+      const formattedReturnedForms = returnedForms.map(f => {
+        if (f === 'patient_profile' || f === 'Patient Profile') return 'Patient Profile';
+        if (f === 'patient_counselling' || f === 'Patient Counselling') return 'Patient Counselling';
+        if (f === 'pharmacist_intervention' || f === 'Pharmacist Intervention') return 'Pharmacist Intervention';
+        if (f === 'drug_information_request' || f === 'Drug Information Request') return 'Drug Information Request';
+        if (f === 'adr_documentation' || f === 'ADR Documentation') return 'ADR Documentation';
+        return f;
+      }).join(', ');
+
+      await createWorkflowNotificationInSupabase({
+        recipientUserId: clinicalCase.student_id,
+        recipientRole: 'Student',
+        senderUserId: preceptorId,
+        senderRole: 'Preceptor',
+        clinicalCaseId: caseId,
+        notificationType: 'Case Returned',
+        title: 'Clinical Case Returned',
+        message: `Case ID: ${clinicalCase.case_id}\nReturned By: ${preceptorName}\nReturned Date & Time: ${nowStr}\nReturned Forms: ${formattedReturnedForms}\nFaculty Comments: ${comments.trim()}`,
+        actionLabel: 'Open Clinical Case',
+        actionRoute: 'my-cases'
+      });
+    }
+
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -1652,6 +1760,110 @@ export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
     return { success: false, data: [], error: err.message };
   }
 };
+
+export const createWorkflowNotificationInSupabase = async ({
+  recipientUserId,
+  recipientRole,
+  senderUserId,
+  senderRole,
+  clinicalCaseId,
+  notificationType,
+  title,
+  message,
+  actionLabel,
+  actionRoute
+}) => {
+  try {
+    let collegeId = null;
+    let studentId = null;
+    let assignedPreceptorId = null;
+
+    if (clinicalCaseId) {
+      const { data: caseData } = await supabase
+        .from('clinical_cases')
+        .select('college_id, student_id, preceptor_id')
+        .eq('id', clinicalCaseId)
+        .maybeSingle();
+
+      if (caseData) {
+        collegeId = caseData.college_id;
+        studentId = caseData.student_id;
+        assignedPreceptorId = caseData.preceptor_id;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([{
+        recipient_user_id: recipientUserId,
+        recipient_role: recipientRole,
+        sender_user_id: senderUserId || null,
+        sender_role: senderRole || null,
+        clinical_case_id: clinicalCaseId || null,
+        notification_type: notificationType,
+        title,
+        message,
+        action_label: actionLabel || null,
+        action_route: actionRoute || null,
+        college_id: collegeId,
+        student_id: studentId,
+        assigned_preceptor_id: assignedPreceptorId,
+        is_read: false
+      }])
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data[0] };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const fetchNotificationsFromSupabase = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('recipient_user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) return { success: false, data: [], error: error.message };
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+export const markNotificationAsReadInSupabase = async (notificationId) => {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({ is_read: true, read_at: new Date().toISOString() })
+      .eq('id', notificationId)
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: data[0] };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const fetchUnreadNotificationsCountFromSupabase = async (userId) => {
+  try {
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipient_user_id', userId)
+      .eq('is_read', false);
+
+    if (error) return { success: false, count: 0, error: error.message };
+    return { success: true, count: count || 0 };
+  } catch (err) {
+    return { success: false, count: 0, error: err.message };
+  }
+};
+
 
 
 

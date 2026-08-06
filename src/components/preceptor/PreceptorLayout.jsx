@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, GraduationCap, User, LogOut, Sun, Moon, Menu, X, Stethoscope, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, GraduationCap, User, LogOut, Sun, Moon, Menu, X, Stethoscope, ShieldCheck, Bell } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { PreceptorDashboardView } from './PreceptorDashboardView';
 import { PreceptorAssignedStudentsView } from './PreceptorAssignedStudentsView';
 import { PreceptorProfileView } from './PreceptorProfileView';
+import { NotificationsView } from '../common/NotificationsView';
+import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const PreceptorLayout = ({ preceptor, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'assigned-students' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadUnreadCount = async () => {
+    if (!preceptor?.id) return;
+    const res = await fetchUnreadNotificationsCountFromSupabase(preceptor.id);
+    if (res.success) {
+      setUnreadCount(res.count || 0);
+    }
+  };
+
+  useEffect(() => {
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [preceptor?.id, activeTab]);
 
   const handleNavigate = (tab) => {
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    loadUnreadCount();
   };
 
   return (
@@ -85,6 +103,26 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
             >
               <GraduationCap className="w-4 h-4 shrink-0" />
               <span>Assigned Students</span>
+            </button>
+
+            {/* Notifications */}
+            <button
+              onClick={() => handleNavigate('notifications')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center justify-between transition-all ${
+                activeTab === 'notifications'
+                  ? 'bg-cyan-600 text-white font-bold shadow-md shadow-cyan-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="w-4 h-4 shrink-0" />
+                <span>Notifications</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="h-5 px-1.5 min-w-[20px] rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm leading-none shrink-0 animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {/* My Profile */}
@@ -179,6 +217,17 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
 
           {activeTab === 'assigned-students' && (
             <PreceptorAssignedStudentsView preceptor={preceptor} />
+          )}
+
+          {activeTab === 'notifications' && (
+            <NotificationsView
+              userId={preceptor.id}
+              userRole="Preceptor"
+              onNavigate={(route, caseId) => {
+                handleNavigate(route);
+              }}
+              onBack={() => handleNavigate('dashboard')}
+            />
           )}
 
           {activeTab === 'profile' && (

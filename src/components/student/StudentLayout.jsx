@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, Stethoscope, User, LogOut, Sun, Moon, Menu, X, UserCheck, ShieldCheck, ClipboardList, FilePlus2, FolderKanban } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Stethoscope, User, LogOut, Sun, Moon, Menu, X, UserCheck, ShieldCheck, ClipboardList, FilePlus2, FolderKanban, Bell } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { StudentDashboardView } from './StudentDashboardView';
@@ -12,17 +12,36 @@ import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsel
 import { PharmacistInterventionFormView } from '../pharmacistIntervention/PharmacistInterventionFormView';
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
+import { NotificationsView } from '../common/NotificationsView';
+import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'add-new-case' | 'my-cases' | 'patient-profile' | 'patient-counselling' | 'pharmacist-intervention' | 'drug-info-request' | 'adr-documentation' | 'my-preceptor' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard'); 
   const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadUnreadCount = async () => {
+    if (!student?.id) return;
+    const res = await fetchUnreadNotificationsCountFromSupabase(student.id);
+    if (res.success) {
+      setUnreadCount(res.count || 0);
+    }
+  };
+
+  useEffect(() => {
+    loadUnreadCount();
+    // Poll notifications every 30 seconds for real-time feel
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [student?.id, activeTab]);
 
   const handleNavigate = (tab) => {
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    loadUnreadCount();
   };
 
   const handleOpenPatientProfile = (clinicalCase) => {
@@ -151,6 +170,26 @@ export const StudentLayout = ({ student, onLogout }) => {
             >
               <Stethoscope className="w-4 h-4 shrink-0" />
               <span>My Preceptor</span>
+            </button>
+
+            {/* Notifications */}
+            <button
+              onClick={() => handleNavigate('notifications')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center justify-between transition-all ${
+                activeTab === 'notifications'
+                  ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="w-4 h-4 shrink-0" />
+                <span>Notifications</span>
+              </div>
+              {unreadCount > 0 && (
+                <span className="h-5 px-1.5 min-w-[20px] rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-sm leading-none shrink-0 animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {/* My Profile */}
@@ -305,6 +344,23 @@ export const StudentLayout = ({ student, onLogout }) => {
 
           {activeTab === 'my-preceptor' && (
             <StudentMyPreceptorView student={student} />
+          )}
+
+          {activeTab === 'notifications' && (
+            <NotificationsView
+              userId={student.id}
+              userRole="Student"
+              onNavigate={(route, caseId) => {
+                // If caseId is provided, we can set it and open the specific view or route
+                if (caseId) {
+                  // Simply open the clinical cases screen
+                  handleNavigate(route);
+                } else {
+                  handleNavigate(route);
+                }
+              }}
+              onBack={() => handleNavigate('dashboard')}
+            />
           )}
 
           {activeTab === 'profile' && (

@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { X, Printer, ShieldAlert } from 'lucide-react';
-import { fetchDocumentBrandingSettingsFromSupabase } from '../../services/supabaseService';
+import { fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
 export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinicalCase, student, interventionData }) => {
   const [branding, setBranding] = useState(null);
+  const [college, setCollege] = useState(student?.colleges);
 
   useEffect(() => {
-    const loadBranding = async () => {
+    const loadBrandingAndCollege = async () => {
       if (student?.college_id) {
-        const res = await fetchDocumentBrandingSettingsFromSupabase(student.college_id);
-        if (res.success && res.settings) {
-          setBranding(res.settings);
+        const [brandingRes, collegeRes] = await Promise.all([
+          fetchDocumentBrandingSettingsFromSupabase(student.college_id),
+          fetchCollegeByIdFromSupabase(student.college_id)
+        ]);
+
+        if (brandingRes.success && brandingRes.settings) {
+          setBranding(brandingRes.settings);
+        }
+        if (collegeRes.success && collegeRes.college) {
+          setCollege(collegeRes.college);
         }
       }
     };
-    if (isOpen) loadBranding();
+    if (isOpen) loadBrandingAndCollege();
   }, [isOpen, student]);
 
   if (!isOpen) return null;
-
-  const college = student?.colleges;
 
   const handlePrint = () => {
     window.print();
@@ -77,11 +83,12 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
             <div className="space-y-2 border border-slate-900 p-3 bg-slate-50/20 text-xs font-bold">
               <strong className="block uppercase border-b border-slate-900 pb-1 text-teal-900">1. Patient Information</strong>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div>Patient Name: <span className="underline">{interventionData?.patient_name || '—'}</span></div>
-                <div>Age / Sex: <span className="underline">{interventionData?.age} yrs / {interventionData?.sex}</span></div>
+                <div>Patient Initials: <span className="underline">{interventionData?.patient_name || '—'}</span></div>
+                <div>Age / Sex: <span className="underline">{interventionData?.age ? `${interventionData.age} yrs` : '—'} / {interventionData?.sex || '—'}</span></div>
                 <div>Date of Intervention: <span className="font-mono underline">{interventionData?.date_of_intervention || '—'}</span></div>
                 <div>IP/OP No: <span className="font-mono underline">{interventionData?.ip_op_no || '—'}</span></div>
                 <div className="col-span-2">Ward / Unit: <span className="underline">{interventionData?.ward || '—'}</span></div>
+                <div className="col-span-2">Department: <span className="underline">{clinicalCase?.department || '—'}</span></div>
               </div>
             </div>
 
@@ -97,24 +104,22 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
               <table className="w-full text-left border border-slate-900 border-collapse text-xs">
                 <thead className="bg-slate-100 font-bold uppercase text-[10px] border-b border-slate-900">
                   <tr>
-                    <th className="p-1.5 border-r border-slate-900">Drug Name</th>
-                    <th className="p-1.5 border-r border-slate-900">Dose</th>
-                    <th className="p-1.5 border-r border-slate-900">Route</th>
-                    <th className="p-1.5">Frequency</th>
+                    <th className="p-1.5 w-12 text-center border-r border-slate-900">S.No</th>
+                    <th className="p-1.5 border-r border-slate-900">Name of the Drug</th>
+                    <th className="p-1.5">Dose & Frequency</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-900 font-serif">
                   {rxDetails && rxDetails.length > 0 ? (
                     rxDetails.map((rx, i) => (
                       <tr key={i} className="border-b border-slate-900">
-                        <td className="p-1.5 border-r border-slate-900 font-bold">{rx.drug_name}</td>
-                        <td className="p-1.5 border-r border-slate-900 font-mono">{rx.dose}</td>
-                        <td className="p-1.5 border-r border-slate-900">{rx.route}</td>
-                        <td className="p-1.5 font-bold">{rx.frequency}</td>
+                        <td className="p-1.5 text-center font-mono font-bold border-r border-slate-900">{rx.s_no || i + 1}</td>
+                        <td className="p-1.5 border-r border-slate-900 font-bold uppercase">{rx.drug_name}</td>
+                        <td className="p-1.5 font-mono font-bold uppercase">{rx.dose_frequency || `${rx.dose || ''} ${rx.frequency || ''}`.trim()}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={4} className="p-2 text-center italic text-slate-500">No prescription details recorded.</td></tr>
+                    <tr><td colSpan={3} className="p-2 text-center italic text-slate-500">No prescription details recorded.</td></tr>
                   )}
                 </tbody>
               </table>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ShieldAlert, User, FileText, Plus, Trash2, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, RefreshCw, Download } from 'lucide-react';
 import { fetchPharmacistInterventionByCaseIdFromSupabase, saveOrUpdatePharmacistInterventionInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { PharmacistInterventionPDFPreviewModal } from './PharmacistInterventionPDFPreviewModal';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 const ALL_PRESCRIPTION_PROBLEMS = [
   'Allergy', 'Prior ADR', 'Contraindication',
@@ -26,8 +28,10 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
+
+  // Inline Notification Hooks
+  const { notification: importNotify, showNotification: showImportNotify, clearNotification: clearImportNotify } = useInlineNotification();
+  const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
   // 1. Patient Information (Auto-synced from Patient Profile)
   const [patientName, setPatientName] = useState('');
@@ -156,52 +160,67 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
     loadInterventionAndProfileData();
   }, [clinicalCase]);
 
-  // NEW FEATURE: IMPORT FROM PATIENT PROFILE
+  // NEW FEATURE: IMPORT FROM PATIENT PROFILE WITH INLINE NOTIFICATION
   const handleImportFromPatientProfile = async () => {
     setImporting(true);
-    setFormError('');
+    clearImportNotify();
 
-    const profileRes = await fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id);
-    if (profileRes.success && profileRes.prescribedDrugs && profileRes.prescribedDrugs.length > 0) {
-      const importedDrugs = profileRes.prescribedDrugs;
-      let addedCount = 0;
+    try {
+      const profileRes = await fetchPatientProfileByCaseIdFromSupabase(clinicalCase.id);
+      if (profileRes.success && profileRes.prescribedDrugs && profileRes.prescribedDrugs.length > 0) {
+        const importedDrugs = profileRes.prescribedDrugs;
+        let addedCount = 0;
 
-      // Filter out blank rows from current list
-      const currentNonEmpty = prescriptionDetails.filter(d => d.drug_name || d.dose_frequency);
+        const currentNonEmpty = prescriptionDetails.filter(d => d.drug_name || d.dose_frequency);
 
-      importedDrugs.forEach(d => {
-        const dName = (d.trade_name || d.generic_name || '').replace(/[^A-Za-z0-9\s/.\-()]/g, '').toUpperCase().trim();
-        const dDose = `${d.dose || ''} ${d.frequency || ''}`.toUpperCase().trim();
+        importedDrugs.forEach(d => {
+          const dName = (d.trade_name || d.generic_name || '').replace(/[^A-Za-z0-9\s/.\-()]/g, '').toUpperCase().trim();
+          const dDose = `${d.dose || ''} ${d.frequency || ''}`.toUpperCase().trim();
 
-        if (dName) {
-          const exists = currentNonEmpty.some(existing => 
-            existing.drug_name.toUpperCase().trim() === dName && 
-            existing.dose_frequency.toUpperCase().trim() === dDose
-          );
+          if (dName) {
+            const exists = currentNonEmpty.some(existing => 
+              existing.drug_name.toUpperCase().trim() === dName && 
+              existing.dose_frequency.toUpperCase().trim() === dDose
+            );
 
-          if (!exists) {
-            currentNonEmpty.push({
-              s_no: currentNonEmpty.length + 1,
-              drug_name: dName,
-              dose_frequency: dDose
-            });
-            addedCount++;
+            if (!exists) {
+              currentNonEmpty.push({
+                s_no: currentNonEmpty.length + 1,
+                drug_name: dName,
+                dose_frequency: dDose
+              });
+              addedCount++;
+            }
           }
+        });
+
+        const reindexed = currentNonEmpty.map((row, idx) => ({ ...row, s_no: idx + 1 }));
+        setPrescriptionDetails(reindexed.length > 0 ? reindexed : [{ s_no: 1, drug_name: '', dose_frequency: '' }]);
+
+        if (addedCount > 0) {
+          showImportNotify({
+            type: 'success',
+            message: `✅ Prescription details imported successfully (${addedCount} medicines added).`
+          });
+        } else {
+          showImportNotify({
+            type: 'info',
+            message: 'ℹ Prescription details are already up to date.'
+          });
         }
-      });
-
-      const reindexed = currentNonEmpty.map((row, idx) => ({ ...row, s_no: idx + 1 }));
-      setPrescriptionDetails(reindexed.length > 0 ? reindexed : [{ s_no: 1, drug_name: '', dose_frequency: '' }]);
-
-      if (addedCount > 0) {
-        setSaveSuccess(`Prescription details imported successfully (${addedCount} medicines added).`);
       } else {
-        setSaveSuccess('Prescription details are already up to date.');
+        showImportNotify({
+          type: 'warning',
+          message: '⚠️ No prescribed medications found in the Patient Profile to import.'
+        });
       }
-      setTimeout(() => setSaveSuccess(''), 3000);
-    } else {
-      setFormError('No prescribed medications found in the Patient Profile to import.');
+    } catch (err) {
+      showImportNotify({
+        type: 'error',
+        message: '❌ Unable to import prescription details. Please try again.'
+      });
     }
+
     setImporting(false);
   };
 
@@ -256,28 +275,27 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
   };
 
   const handleSaveIntervention = async (newStatus = 'Draft') => {
-    setFormError('');
-    setSaveSuccess('');
+    clearBottomNotify();
 
     // Filter out completely empty drug rows
     const cleanedRxDetails = prescriptionDetails.filter(d => d.drug_name.trim() || d.dose_frequency.trim());
 
     if (newStatus === 'Submitted') {
       if (!patientName.trim()) {
-        setFormError('Patient Initials are required.');
+        showBottomNotify({ type: 'error', message: '✖ Patient Initials are required.' });
         return;
       }
       if (!descriptionOfProblem.trim()) {
-        setFormError('Please enter Description of Problem.');
+        showBottomNotify({ type: 'error', message: '✖ Please enter Description of Problem.' });
         return;
       }
       if (cleanedRxDetails.length === 0) {
-        setFormError('Please enter at least one Prescription Detail row.');
+        showBottomNotify({ type: 'error', message: '✖ Please enter at least one Prescription Detail row.' });
         return;
       }
       for (const rx of cleanedRxDetails) {
         if (!rx.drug_name.trim() || !rx.dose_frequency.trim()) {
-          setFormError('Drug Name and Dose & Frequency are required for all prescription rows.');
+          showBottomNotify({ type: 'error', message: '✖ Drug Name and Dose & Frequency are required for all prescription rows.' });
           return;
         }
       }
@@ -323,10 +341,15 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
     if (res.success) {
       setExistingInterventionId(res.intervention.id);
       setStatus(newStatus);
-      setSaveSuccess(newStatus === 'Submitted' ? 'Pharmacist Intervention Form submitted successfully!' : 'Pharmacist Intervention Form saved as Draft.');
-      setTimeout(() => setSaveSuccess(''), 3000);
+      showBottomNotify({
+        type: 'success',
+        message: newStatus === 'Submitted' ? '✓ Pharmacist Intervention Form submitted successfully!' : '✓ Pharmacist Intervention Form saved as Draft.'
+      });
     } else {
-      setFormError(res.error || 'Failed to save Pharmacist Intervention documentation.');
+      showBottomNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save Pharmacist Intervention documentation.'
+      });
     }
   };
 
@@ -364,20 +387,6 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
           </div>
         </div>
       </div>
-
-      {formError && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
-          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <span>{formError}</span>
-        </div>
-      )}
-
-      {saveSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
 
       {/* 1. PATIENT INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
@@ -475,7 +484,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
         </div>
       </div>
 
-      {/* 2. PRESCRIPTION DETAILS TABLE WITH IMPORT FROM PATIENT PROFILE */}
+      {/* 2. PRESCRIPTION DETAILS TABLE WITH INLINE NOTIFICATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -484,16 +493,19 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
           </h3>
 
           <div className="flex items-center gap-2">
-            {/* IMPORT FROM PATIENT PROFILE BUTTON */}
-            <button
-              type="button"
-              onClick={handleImportFromPatientProfile}
-              disabled={importing}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-extrabold flex items-center gap-1.5 transition-colors disabled:opacity-50"
-            >
-              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-              <span>Import from Patient Profile</span>
-            </button>
+            {/* IMPORT FROM PATIENT PROFILE BUTTON WITH INLINE NOTIFICATION */}
+            <div className="relative inline-block">
+              <button
+                type="button"
+                onClick={handleImportFromPatientProfile}
+                disabled={importing}
+                className="px-3.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-extrabold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              >
+                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                <span>Import from Patient Profile</span>
+              </button>
+              <InlineActionNotification notification={importNotify} onClose={clearImportNotify} position="bottom-right" />
+            </div>
 
             {/* ADD DRUG ROW BUTTON */}
             <button
@@ -828,8 +840,10 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack }
         </div>
       </div>
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+      {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
+      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+
         <button
           type="button"
           onClick={() => handleSaveIntervention('Draft')}

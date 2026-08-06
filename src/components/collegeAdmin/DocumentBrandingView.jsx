@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Palette, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info } from 'lucide-react';
 import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
@@ -116,13 +118,15 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     }
   };
 
+  // Inline Notification Hook
+  const { notification: brandNotify, showNotification: showBrandNotify, clearNotification: clearBrandNotify } = useInlineNotification();
+
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!college?.id) return;
 
     setSaving(true);
-    setErrorMsg('');
-    setSuccessMsg('');
+    clearBrandNotify();
 
     const res = await saveOrUpdateDocumentBrandingSettingsInSupabase(college.id, settings);
     setSaving(false);
@@ -134,10 +138,15 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
       // BROADCAST LIVE SYNCHRONIZATION EVENT TO ALL OPEN MODALS AND PREVIEWS
       window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updatedSettings }));
 
-      setSuccessMsg('Document Branding Settings saved successfully to Supabase! Live Preview, Print Previews, and PDFs across PharmDVerse have been synchronized instantly.');
-      setTimeout(() => setSuccessMsg(''), 4000);
+      showBrandNotify({
+        type: 'success',
+        message: '✓ Document Branding Settings saved successfully!'
+      });
     } else {
-      setErrorMsg(res.error || 'Failed to save Document Branding Settings.');
+      showBrandNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save Document Branding Settings.'
+      });
     }
   };
 
@@ -197,15 +206,18 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             <span>Restore Default</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{saving ? 'Saving...' : 'Save Branding'}</span>
-          </button>
+          <div className="relative inline-block">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              <span>{saving ? 'Saving...' : 'Save Branding'}</span>
+            </button>
+            <InlineActionNotification notification={brandNotify} onClose={clearBrandNotify} position="bottom-right" />
+          </div>
         </div>
       </div>
 

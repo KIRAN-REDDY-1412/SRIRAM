@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, Eye, Send, ArrowLeft, Plus, Trash2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase } from '../../services/supabaseService';
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 // Master Lab Category & Parameter Definition with Reference Ranges
 const LAB_CATEGORY_MAP = {
@@ -167,6 +169,9 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
   // Profile Status
   const [profileStatus, setProfileStatus] = useState('Draft');
   const [existingProfileId, setExistingProfileId] = useState(null);
+
+  // Inline Notification Hook
+  const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -469,7 +474,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
     if (!profRes.success) {
       setSaving(false);
-      setFormError(profRes.error || 'Failed to save Patient Profile.');
+      showBottomNotify({ type: 'error', message: profRes.error || '✖ Failed to save Patient Profile.' });
       return;
     }
 
@@ -486,8 +491,10 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
 
     setSaving(false);
     setProfileStatus(newStatus);
-    setSaveSuccess(newStatus === 'Submitted' ? 'Patient Profile submitted successfully!' : 'Patient Profile saved as Draft.');
-    setTimeout(() => setSaveSuccess(''), 3000);
+    showBottomNotify({
+      type: 'success',
+      message: newStatus === 'Submitted' ? '✓ Patient Profile submitted successfully!' : '✓ Patient Profile saved as Draft.'
+    });
   };
 
   if (loading) {
@@ -529,13 +536,6 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
           <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
           <span>{formError}</span>
-        </div>
-      )}
-
-      {saveSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{saveSuccess}</span>
         </div>
       )}
 
@@ -1159,7 +1159,8 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack }) => {
       </div>
 
       {/* SINGLE ACTION SECTION AT THE BOTTOM */}
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
         <button
           type="button"
           onClick={() => handleSaveProfile('Draft')}

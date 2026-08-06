@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock } from 'lucide-react';
 import { fetchADRReportByCaseIdFromSupabase, generateUniqueAdrNumberInSupabase, saveOrUpdateADRReportInSupabase } from '../../services/supabaseService';
 import { ADRReportPreviewModal } from './ADRReportPreviewModal';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
+
+  // Inline Notification Hook
+  const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
   // 1. GENERAL RECORD & PATIENT INFORMATION
   const [adrNumber, setAdrNumber] = useState('');
@@ -310,10 +314,15 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
     if (res.success) {
       setExistingReportId(res.report.id);
       setApprovalStatus(newStatus);
-      setSaveSuccess(newStatus === 'Submitted' ? 'Adverse Drug Reaction Form submitted successfully!' : 'Adverse Drug Reaction Form saved as Draft.');
-      setTimeout(() => setSaveSuccess(''), 3000);
+      showBottomNotify({
+        type: 'success',
+        message: newStatus === 'Submitted' ? '✓ Adverse Drug Reaction Form submitted successfully!' : '✓ Adverse Drug Reaction Form saved as Draft.'
+      });
     } else {
-      setFormError(res.error || 'Failed to save ADR Documentation.');
+      showBottomNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save ADR Documentation.'
+      });
     }
   };
 
@@ -822,7 +831,8 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack }) => {
       </div>
 
       {/* BOTTOM ACTION BUTTONS */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+      <div className="relative flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
         <button
           type="button"
           onClick={onBack}

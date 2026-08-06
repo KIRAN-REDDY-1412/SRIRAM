@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
 import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
 import { PatientCounsellingPDFPreviewModal } from './PatientCounsellingPDFPreviewModal';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 const ALL_POINTS_COVERED = [
   'Name and purpose of medication',
@@ -46,8 +48,9 @@ const parseTo24Hour = (time12Str) => {
 export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
+
+  // Inline Notification Hook
+  const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
   // 1. Session & Patient Details
   const [counsellingDate, setCounsellingDate] = useState(new Date().toISOString().split('T')[0]);
@@ -183,27 +186,25 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
   };
 
   const handleSaveCounselling = async (newStatus = 'Draft') => {
-    setFormError('');
-    setSaveSuccess('');
-
+    clearBottomNotify();
     const formattedTime = formatTo12Hour(counsellingTimeRaw);
 
     // Strict Validation only on Submit
     if (newStatus === 'Submitted') {
       if (!diseaseCounselled.trim()) {
-        setFormError('Please enter Disease Counselled.');
+        showBottomNotify({ type: 'error', message: '✖ Please enter Disease Counselled.' });
         return;
       }
       if (!medicationsCounselled.trim()) {
-        setFormError('Please enter Medications Counselled.');
+        showBottomNotify({ type: 'error', message: '✖ Please enter Medications Counselled.' });
         return;
       }
       if (majorBarriersInvolved && !barrierDetails.trim()) {
-        setFormError('Please specify details of the barrier involved.');
+        showBottomNotify({ type: 'error', message: '✖ Please specify details of the barrier involved.' });
         return;
       }
       if (counsellingProvidedTo === 'Patient representative' && representativeReasons.length === 0 && !representativeOtherReason.trim()) {
-        setFormError('Please select or enter a reason for patient representative.');
+        showBottomNotify({ type: 'error', message: '✖ Please select or enter a reason for patient representative.' });
         return;
       }
     }
@@ -251,10 +252,15 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
     if (res.success) {
       setExistingCounsellingId(res.counselling.id);
       setStatus(newStatus);
-      setSaveSuccess(newStatus === 'Submitted' ? 'Patient Counselling Form submitted successfully!' : 'Patient Counselling Form saved as Draft.');
-      setTimeout(() => setSaveSuccess(''), 3000);
+      showBottomNotify({
+        type: 'success',
+        message: newStatus === 'Submitted' ? '✓ Patient Counselling Form submitted successfully!' : '✓ Patient Counselling Form saved as Draft.'
+      });
     } else {
-      setFormError(res.error || 'Failed to save Patient Counselling documentation.');
+      showBottomNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save Patient Counselling documentation.'
+      });
     }
   };
 
@@ -294,20 +300,6 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
           </div>
         </div>
       </div>
-
-      {formError && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">
-          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <span>{formError}</span>
-        </div>
-      )}
-
-      {saveSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{saveSuccess}</span>
-        </div>
-      )}
 
       {/* 1. PATIENT INFORMATION */}
       <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
@@ -676,8 +668,10 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack }) =>
         </div>
       </div>
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+      {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
+      <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+
         <button
           type="button"
           onClick={() => handleSaveCounselling('Draft')}

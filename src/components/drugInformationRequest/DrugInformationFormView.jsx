@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FileSearch, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck } from 'lucide-react';
 import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase } from '../../services/supabaseService';
 import { DrugInformationPDFPreviewModal } from './DrugInformationPDFPreviewModal';
+import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 const QUESTION_CATEGORIES = [
   'Adverse Drug Reaction',
@@ -21,7 +23,9 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
+
+  // Inline Notification Hook
+  const { notification: bottomNotify, showNotification: showBottomNotify, clearNotification: clearBottomNotify } = useInlineNotification();
 
   // 1. Session & Enquirer Details
   const [requestDate, setRequestDate] = useState(new Date().toISOString().split('T')[0]);
@@ -193,10 +197,15 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
     if (res.success) {
       setExistingRequestId(res.request.id);
       setStatus(newStatus);
-      setSaveSuccess(newStatus === 'Submitted' ? 'Drug Information Request Form submitted successfully!' : 'Drug Information Request Form saved as Draft.');
-      setTimeout(() => setSaveSuccess(''), 3000);
+      showBottomNotify({
+        type: 'success',
+        message: newStatus === 'Submitted' ? '✓ Drug Information Request submitted successfully!' : '✓ Drug Information Request saved as Draft.'
+      });
     } else {
-      setFormError(res.error || 'Failed to save Drug Information Request documentation.');
+      showBottomNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save Drug Information Request documentation.'
+      });
     }
   };
 
@@ -562,8 +571,9 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack }) => {
         </div>
       </div>
 
-      {/* BOTTOM ACTION BUTTONS */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
+      <div className="relative flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
         <button
           type="button"
           onClick={onBack}

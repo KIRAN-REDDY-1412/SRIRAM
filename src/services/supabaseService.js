@@ -512,8 +512,23 @@ export const fetchPatientProfileByCaseIdFromSupabase = async (clinicalCaseId) =>
 
 export const saveOrUpdatePatientProfileInSupabase = async (payload) => {
   try {
-    const cleanPayload = { ...payload };
-    delete cleanPayload.allergies; // Remove non-column helper property
+    const VALID_COLS = new Set([
+      'id', 'created_at', 'updated_at', 'clinical_case_id', 'student_id', 'college_id',
+      'patient_name', 'age', 'gender', 'ip_no', 'height', 'weight', 'bmi', 'ward',
+      'department', 'doa', 'doc', 'dod', 'physician', 'chief_complaints',
+      'past_medical_history', 'past_medication_history', 'family_history',
+      'smoker_pack_day', 'smoker_duration', 'alcoholic_amount_day', 'alcoholic_duration',
+      'allergy_food', 'allergy_drugs', 'marital_status', 'cyanosis', 'icterus', 'pallor',
+      'cvs', 'gi', 'rs', 'cns', 'provisional_diagnosis', 'vital_signs',
+      'other_investigations', 'final_diagnosis', 'discharge_summary', 'status'
+    ]);
+
+    const cleanPayload = {};
+    Object.keys(payload || {}).forEach(key => {
+      if (VALID_COLS.has(key)) {
+        cleanPayload[key] = payload[key];
+      }
+    });
 
     const { data: existing } = await supabase
       .from('patient_profiles')

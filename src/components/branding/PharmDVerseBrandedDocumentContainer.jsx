@@ -213,43 +213,28 @@ export const PharmDVerseBrandedDocumentContainer = ({
         {/* BOTTOM CONTAINER FOR SIGNATURES & FOOTER */}
         <div className="space-y-4 pt-4 mt-auto break-inside-avoid print:break-inside-avoid">
           
-          {/* SIGNATURES SECTION - ALWAYS FIXED AT BOTTOM OF FINAL PAGE */}
+          {/* SIGNATURES SECTION - FIXED AT BOTTOM MARGIN OF FINAL PAGE */}
           {shouldDisplaySignatures && (showStudentSig || showPreceptorSig) && (
-            <div className="pt-4 border-t break-inside-avoid print:break-inside-avoid" style={{ borderColor: borderCol }}>
-              <div className="flex justify-between items-end text-xs gap-8">
-                
-                {/* STUDENT SIGNATURE */}
-                {showStudentSig ? (
-                  <div className="w-56 space-y-1">
-                    <div className="border-b border-dashed mb-2 pb-6 text-center text-slate-300 text-[10px] font-sans" style={{ borderColor: borderCol }}>
-                      (Student Signature Area)
-                    </div>
-                    <div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: primaryColor }}>
-                      Student Signature
-                    </div>
-                    <div className="font-bold text-[11px]">{student?.full_name || 'Student Candidate'}</div>
-                    <div className="text-[10px] font-mono text-slate-600">Roll No: {student?.roll_number || 'N/A'}</div>
-                    <div className="text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</div>
-                  </div>
-                ) : <div className="w-56" />}
+            <div className="pt-8 flex justify-between items-center text-xs font-bold font-serif border-t break-inside-avoid print:break-inside-avoid" style={{ borderColor: borderCol }}>
+              {showStudentSig ? (
+                <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>
+                  Student Signature
+                  <span className="block text-[10px] font-mono font-normal" style={{ color: secondaryColor }}>
+                    {student?.full_name} ({student?.roll_number})
+                  </span>
+                  <span className="block text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</span>
+                </div>
+              ) : <div className="w-48" />}
 
-                {/* PRECEPTOR SIGNATURE */}
-                {showPreceptorSig ? (
-                  <div className="w-56 text-right space-y-1">
-                    <div className="border-b border-dashed mb-2 pb-6 text-center text-slate-300 text-[10px] font-sans" style={{ borderColor: borderCol }}>
-                      (Preceptor Signature & Seal)
-                    </div>
-                    <div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: primaryColor }}>
-                      Preceptor Signature
-                    </div>
-                    <div className="font-bold text-[11px]">{preceptorName || preceptor?.full_name || 'Assigned Faculty Preceptor'}</div>
-                    <div className="text-[10px] text-slate-600">Designation: Faculty Preceptor</div>
-                    <div className="text-[10px] text-slate-600">Department: Dept. of Pharmacy Practice</div>
-                    <div className="text-[9px] font-mono text-slate-400">Approval Date: {currentDateTimeStr}</div>
-                  </div>
-                ) : <div className="w-56" />}
-
-              </div>
+              {showPreceptorSig ? (
+                <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>
+                  Preceptor Signature
+                  <span className="block text-[10px] font-mono font-normal" style={{ color: secondaryColor }}>
+                    {preceptorName || 'Assigned Faculty Preceptor'}
+                  </span>
+                  <span className="block text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</span>
+                </div>
+              ) : <div className="w-48" />}
             </div>
           )}
 

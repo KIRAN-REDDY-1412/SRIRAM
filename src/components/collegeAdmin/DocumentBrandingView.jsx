@@ -599,20 +599,75 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
 
                 <div className="pt-1 grid grid-cols-2 gap-1.5 text-[10px]">
                   <div>
-                    <label className="block text-slate-400">Margin Top</label>
-                    <input type="text" value={settings.margin_top} onChange={(e) => handleChange('margin_top', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                    <label className="block text-slate-400 mb-0.5">Margin Top</label>
+                    <select
+                      value={settings.margin_top || '15mm'}
+                      onChange={(e) => handleChange('margin_top', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
+                    >
+                      <option value="5mm">5 mm</option>
+                      <option value="10mm">10 mm</option>
+                      <option value="15mm">15 mm (Default)</option>
+                      <option value="20mm">20 mm</option>
+                      <option value="25mm">25 mm</option>
+                      <option value="30mm">30 mm</option>
+                      <option value="35mm">35 mm</option>
+                      <option value="40mm">40 mm</option>
+                    </select>
                   </div>
+
                   <div>
-                    <label className="block text-slate-400">Margin Bottom</label>
-                    <input type="text" value={settings.margin_bottom} onChange={(e) => handleChange('margin_bottom', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                    <label className="block text-slate-400 mb-0.5">Margin Bottom</label>
+                    <select
+                      value={settings.margin_bottom || '15mm'}
+                      onChange={(e) => handleChange('margin_bottom', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
+                    >
+                      <option value="5mm">5 mm</option>
+                      <option value="10mm">10 mm</option>
+                      <option value="15mm">15 mm (Default)</option>
+                      <option value="20mm">20 mm</option>
+                      <option value="25mm">25 mm</option>
+                      <option value="30mm">30 mm</option>
+                      <option value="35mm">35 mm</option>
+                      <option value="40mm">40 mm</option>
+                    </select>
                   </div>
+
                   <div>
-                    <label className="block text-slate-400">Margin Left</label>
-                    <input type="text" value={settings.margin_left} onChange={(e) => handleChange('margin_left', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                    <label className="block text-slate-400 mb-0.5">Margin Left</label>
+                    <select
+                      value={settings.margin_left || '15mm'}
+                      onChange={(e) => handleChange('margin_left', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
+                    >
+                      <option value="5mm">5 mm</option>
+                      <option value="10mm">10 mm</option>
+                      <option value="15mm">15 mm (Default)</option>
+                      <option value="20mm">20 mm</option>
+                      <option value="25mm">25 mm</option>
+                      <option value="30mm">30 mm</option>
+                      <option value="35mm">35 mm</option>
+                      <option value="40mm">40 mm</option>
+                    </select>
                   </div>
+
                   <div>
-                    <label className="block text-slate-400">Margin Right</label>
-                    <input type="text" value={settings.margin_right} onChange={(e) => handleChange('margin_right', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                    <label className="block text-slate-400 mb-0.5">Margin Right</label>
+                    <select
+                      value={settings.margin_right || '15mm'}
+                      onChange={(e) => handleChange('margin_right', e.target.value)}
+                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
+                    >
+                      <option value="5mm">5 mm</option>
+                      <option value="10mm">10 mm</option>
+                      <option value="15mm">15 mm (Default)</option>
+                      <option value="20mm">20 mm</option>
+                      <option value="25mm">25 mm</option>
+                      <option value="30mm">30 mm</option>
+                      <option value="35mm">35 mm</option>
+                      <option value="40mm">40 mm</option>
+                    </select>
                   </div>
                 </div>
               </div>

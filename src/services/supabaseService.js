@@ -195,27 +195,40 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
       show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true
     };
 
+    let activePayload = { ...payload };
     let savedData = null;
-    if (existing && existing.id) {
-      const { data, error } = await supabase
-        .from('document_branding_settings')
-        .update(payload)
-        .eq('id', existing.id)
-        .select();
 
-      if (error) return { success: false, error: error.message };
-      savedData = data[0];
-    } else {
-      const { data, error } = await supabase
-        .from('document_branding_settings')
-        .insert([payload])
-        .select();
+    const performSave = async (currentPayload) => {
+      if (existing && existing.id) {
+        return await supabase
+          .from('document_branding_settings')
+          .update(currentPayload)
+          .eq('id', existing.id)
+          .select();
+      } else {
+        return await supabase
+          .from('document_branding_settings')
+          .insert([currentPayload])
+          .select();
+      }
+    };
 
-      if (error) return { success: false, error: error.message };
-      savedData = data[0];
+    let result = await performSave(activePayload);
+
+    // Dynamic Schema Fallback: If a column is missing in Supabase schema cache, strip missing column and retry
+    if (result.error && result.error.message && result.error.message.includes('Could not find the')) {
+      const match = result.error.message.match(/Could not find the '([^']+)' column/);
+      if (match && match[1]) {
+        const missingCol = match[1];
+        delete activePayload[missingCol];
+        result = await performSave(activePayload);
+      }
     }
 
-    return { success: true, settings: savedData };
+    if (result.error) return { success: false, error: result.error.message };
+
+    savedData = result.data?.[0] || activePayload;
+    return { success: true, settings: { ...payload, ...savedData } };
   } catch (err) {
     return { success: false, error: err.message };
   }

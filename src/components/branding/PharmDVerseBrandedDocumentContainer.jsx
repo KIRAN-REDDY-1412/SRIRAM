@@ -91,11 +91,15 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   // Determine if this is the first page of the document
   const isFirstPage = pageNumber ? pageNumber.toString().trim().startsWith('1') : true;
+
   // If repeatHeader is ON (true), display on all pages. If OFF (false), display ONLY on Page 1.
   const shouldShowDocumentHeader = Boolean(repeatHeader || isFirstPage);
 
   // If repeatFooter is ON (true), display on all pages. If OFF (false), display ONLY on the last page.
   const shouldShowDocumentFooter = Boolean(repeatFooter || isLastPage);
+
+  // If repeatTableHeader is ON (true), repeat table headers on every page. If OFF (false), display ONLY on Page 1.
+  const shouldShowTableHeader = Boolean(repeatTableHeader || isFirstPage);
 
   const currentDateTimeStr = new Date().toLocaleDateString('en-US', {
     day: '2-digit',
@@ -114,7 +118,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
       } ${
         zebraStriping ? '[&_tbody_tr:nth-child(even)]:bg-slate-100/70' : '[&_tbody_tr]:bg-white'
       } ${
-        repeatTableHeader ? '[&_thead]:table-header-group' : '[&_thead]:table-row-group'
+        shouldShowTableHeader ? '[&_thead]:table-header-group' : '[&_thead]:hidden'
       }`}
       style={{
         fontFamily: fontFamily,
@@ -141,7 +145,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
             color: ${textColor} !important;
           }
           thead {
-            display: ${repeatTableHeader ? 'table-header-group' : 'table-row-group'} !important;
+            display: ${shouldShowTableHeader ? 'table-header-group' : 'none'} !important;
           }
           table {
             border-color: ${borderCol} !important;

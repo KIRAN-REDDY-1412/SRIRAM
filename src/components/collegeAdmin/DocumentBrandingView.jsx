@@ -38,6 +38,8 @@ const DEFAULT_SETTINGS = {
   text_color: '#0f172a',
   zebra_striping: false,
   repeat_table_header: true,
+  repeat_header: true,
+  repeat_footer: true,
   show_student_signature: true,
   show_preceptor_signature: true
 };
@@ -226,8 +228,6 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [showLivePreviewPanel, setShowLivePreviewPanel] = useState(true);
-
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   useEffect(() => {
@@ -354,19 +354,6 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={() => setShowLivePreviewPanel(!showLivePreviewPanel)}
-            className={`px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              showLivePreviewPanel
-                ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-400 text-indigo-700 dark:text-indigo-300'
-                : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <MonitorPlay className="w-4 h-4 text-indigo-500" />
-            <span>Live Preview {showLivePreviewPanel ? 'ON' : 'OFF'}</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setIsPreviewModalOpen(true)}
             className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
           >
@@ -412,11 +399,11 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         </div>
       )}
 
-      {/* SPLIT LAYOUT: FORM INPUTS + INSTANT LIVE PREVIEW PANEL */}
-      <div className={`grid grid-cols-1 ${showLivePreviewPanel ? 'lg:grid-cols-12 gap-8' : ''}`}>
+      {/* SPLIT LAYOUT: FORM INPUTS + INSTANT PERMANENT LIVE PREVIEW PANEL */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* LEFT COLUMN: BRANDING CONTROLS */}
-        <div className={`${showLivePreviewPanel ? 'lg:col-span-7' : 'col-span-1'} space-y-6`}>
+        <div className="lg:col-span-7 space-y-6">
           
           {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY WITH MANDATORY MESSAGE) */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
@@ -688,26 +675,95 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
 
           </div>
-        </div>
 
-        {/* RIGHT COLUMN: INSTANT REAL-TIME LIVE PREVIEW PANEL */}
-        {showLivePreviewPanel && (
-          <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
-            <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
-              <div className="flex items-center gap-2 text-xs font-extrabold">
-                <MonitorPlay className="w-4 h-4 text-emerald-400" />
-                <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
+          {/* SECTION 7: PDF MULTI-PAGE CONTROLS & SIGNATURES */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              Section 7: PDF Multi-Page Controls & Signatures
+            </h3>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div onClick={() => handleToggle('repeat_header')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.repeat_header ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Repeat Header</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Header on every page</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.repeat_header ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.repeat_header ? 'ON' : 'OFF'}
+                </span>
               </div>
-              <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
-                REAL-TIME 2-PAGE LIVE
-              </span>
-            </div>
 
-            <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
-              <SampleTwoPageDocument college={college} settings={settings} />
+              <div onClick={() => handleToggle('repeat_footer')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.repeat_footer ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Repeat Footer</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Footer on every page</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.repeat_footer ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.repeat_footer ? 'ON' : 'OFF'}
+                </span>
+              </div>
+
+              <div onClick={() => handleToggle('show_student_signature')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.show_student_signature ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Student Sig</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Display signature line</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.show_student_signature ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.show_student_signature ? 'SHOW' : 'HIDE'}
+                </span>
+              </div>
+
+              <div onClick={() => handleToggle('show_preceptor_signature')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.show_preceptor_signature ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Preceptor Sig</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Display signature line</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.show_preceptor_signature ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.show_preceptor_signature ? 'SHOW' : 'HIDE'}
+                </span>
+              </div>
+
+              <div onClick={() => handleToggle('zebra_striping')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.zebra_striping ? 'bg-teal-50/70 dark:bg-teal-950/40 border-teal-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Zebra Striping</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Alternating table rows</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.zebra_striping ? 'bg-teal-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.zebra_striping ? 'ON' : 'OFF'}
+                </span>
+              </div>
+
+              <div onClick={() => handleToggle('repeat_table_header')} className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${settings.repeat_table_header ? 'bg-teal-50/70 dark:bg-teal-950/40 border-teal-400 font-bold text-slate-900 dark:text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 text-slate-500'}`}>
+                <div>
+                  <span className="block font-bold">Repeat Table Th</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Table header on split</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${settings.repeat_table_header ? 'bg-teal-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'}`}>
+                  {settings.repeat_table_header ? 'ON' : 'OFF'}
+                </span>
+              </div>
             </div>
           </div>
-        )}
+
+        </div>
+
+        {/* RIGHT COLUMN: INSTANT PERMANENT REAL-TIME LIVE PREVIEW PANEL */}
+        <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
+          <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
+            <div className="flex items-center gap-2 text-xs font-extrabold">
+              <MonitorPlay className="w-4 h-4 text-emerald-400" />
+              <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
+            </div>
+            <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
+              REAL-TIME 2-PAGE LIVE
+            </span>
+          </div>
+
+          <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
+            <SampleTwoPageDocument college={college} settings={settings} />
+          </div>
+        </div>
 
       </div>
 

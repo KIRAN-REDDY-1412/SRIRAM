@@ -85,12 +85,17 @@ export const PharmDVerseBrandedDocumentContainer = ({
   const textColor = branding?.text_color || '#0f172a';
 
   const zebraStriping = Boolean(branding?.zebra_striping);
-  const repeatTableHeader = branding?.repeat_header ?? branding?.repeat_table_header ?? true;
+  const repeatTableHeader = branding?.repeat_table_header ?? true;
+  const repeatHeader = branding?.repeat_header ?? true;
+  const repeatFooter = branding?.repeat_footer ?? true;
 
   // Determine if this is the first page of the document
   const isFirstPage = pageNumber ? pageNumber.toString().trim().startsWith('1') : true;
-  // If repeatTableHeader is OFF (false), only display the College Document Header on Page 1
-  const shouldShowDocumentHeader = Boolean(repeatTableHeader || isFirstPage);
+  // If repeatHeader is ON (true), display on all pages. If OFF (false), display ONLY on Page 1.
+  const shouldShowDocumentHeader = Boolean(repeatHeader || isFirstPage);
+
+  // If repeatFooter is ON (true), display on all pages. If OFF (false), display ONLY on the last page.
+  const shouldShowDocumentFooter = Boolean(repeatFooter || isLastPage);
 
   const currentDateTimeStr = new Date().toLocaleDateString('en-US', {
     day: '2-digit',
@@ -229,11 +234,13 @@ export const PharmDVerseBrandedDocumentContainer = ({
         )}
 
         {/* FOOTER */}
-        <div className="flex justify-between items-center pt-4 border-t text-[10px] font-mono" style={{ borderColor: borderCol, color: secondaryColor }}>
-          <span>{footerLeft} {showDateTime ? `• ${currentDateTimeStr}` : ''}</span>
-          <span>{footerCenter}</span>
-          <span>{showPageNum ? `Page ${pageNumber}` : ''}</span>
-        </div>
+        {shouldShowDocumentFooter && (
+          <div className="flex justify-between items-center pt-4 border-t text-[10px] font-mono" style={{ borderColor: borderCol, color: secondaryColor }}>
+            <span>{footerLeft} {showDateTime ? `• ${currentDateTimeStr}` : ''}</span>
+            <span>{footerCenter}</span>
+            <span>{showPageNum ? `Page ${pageNumber}` : ''}</span>
+          </div>
+        )}
 
       </div>
 

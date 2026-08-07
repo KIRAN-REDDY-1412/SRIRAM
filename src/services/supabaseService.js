@@ -189,6 +189,8 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
       text_color: settingsPayload.text_color || '#0f172a',
       zebra_striping: settingsPayload.zebra_striping ?? false,
       repeat_table_header: settingsPayload.repeat_table_header ?? true,
+      repeat_header: settingsPayload.repeat_header ?? true,
+      repeat_footer: settingsPayload.repeat_footer ?? true,
       show_student_signature: settingsPayload.show_student_signature ?? true,
       show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true
     };

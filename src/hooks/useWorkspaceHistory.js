@@ -3,7 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 export function useWorkspaceHistory(initialTab = 'dashboard') {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const showLeaveModalRef = useRef(false);
   const tabHistory = useRef([initialTab]);
+
+  useEffect(() => {
+    showLeaveModalRef.current = showLeaveModal;
+  }, [showLeaveModal]);
 
   const pushTab = (newTab) => {
     if (newTab === activeTab) return;
@@ -22,8 +27,15 @@ export function useWorkspaceHistory(initialTab = 'dashboard') {
         const prevTab = tabHistory.current[tabHistory.current.length - 1];
         setActiveTab(prevTab);
       } else {
-        window.history.pushState({ tab: initialTab }, '');
-        setShowLeaveModal(true);
+        // We are on root tab (dashboard)
+        if (showLeaveModalRef.current) {
+          // Final press on back button while modal is open -> Exit to browser history!
+          setShowLeaveModal(false);
+          window.history.back();
+        } else {
+          window.history.pushState({ tab: initialTab, modalOpen: true }, '');
+          setShowLeaveModal(true);
+        }
       }
     };
 

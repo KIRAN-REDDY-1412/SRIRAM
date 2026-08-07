@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { authenticateSuperAdmin } from '../../services/authService';
-import { 
-  ShieldAlert, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle 
-} from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { LogoPreviewModal } from './LogoPreviewModal';
+import { LoginHeader } from './LoginHeader';
 
 export const SuperAdminModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -61,162 +60,138 @@ export const SuperAdminModal = ({ isOpen, onClose, onLoginSuccess }) => {
         maxWidth="max-w-[480px] w-[90vw] md:w-[480px]"
         rounded="rounded-3xl"
         hideDefaultHeader={true}
+        customHeader={
+          <LoginHeader
+            portalTitle="Super Admin"
+            portalSubtitle="Authorized Central Governance Access"
+            onClose={onClose}
+            isSuperAdmin={true}
+          />
+        }
       >
-        <div className="space-y-6 animate-fadeIn p-6 sm:p-8 relative">
+        <div className="space-y-4">
           
-          {/* Header Icon & Title */}
-          <div className="text-center space-y-2">
-            <div className="flex justify-center pb-1">
+          {/* CENTRAL ENLARGED PHARMDVERSE LOGO */}
+          <div className="py-2 flex flex-col items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setShowLogoModal(true)}
+              className="relative group p-2 rounded-2xl hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-all cursor-pointer focus:outline-none"
+              title="Click to view official logo"
+            >
               <img
                 src="/pharmdverse-logo.png"
                 alt="PharmDVerse Logo"
-                className="w-12 h-12 object-contain cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => setShowLogoModal(true)}
-                title="Click to view official logo"
+                className="w-20 h-20 sm:w-24 sm:h-24 object-contain filter drop-shadow-md transition-transform duration-300 group-hover:scale-105"
               />
+            </button>
+          </div>
+
+          {/* General Authentication Failure Alert */}
+          {authError && (
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-center gap-2 text-center font-semibold animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{authError}</span>
             </div>
+          )}
 
-            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight pt-1">
-              Super Admin Login
-            </h3>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Authorized Central Governance Access
-            </p>
-          </div>
-
-        {/* General Authentication Failure Alert */}
-        {authError && (
-          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-center gap-2 text-center font-semibold animate-fadeIn">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{authError}</span>
-          </div>
-        )}
-
-        {/* Form Fields */}
-        <form onSubmit={handleSignIn} className="space-y-4">
-          
-          {/* Email Address */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Email Address *
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(e) => {
-                  setLoginEmail(e.target.value);
-                  if (loginErrors.email) setLoginErrors(prev => ({ ...prev, email: '' }));
-                  if (authError) setAuthError('');
-                }}
-                placeholder="admin@pharmdverse.org"
-                className={`w-full h-[52px] pl-10 pr-4 text-xs rounded-[14px] border ${
-                  loginErrors.email || authError
-                    ? 'border-rose-500 ring-2 ring-rose-500/15 bg-rose-50/20 dark:bg-rose-950/20' 
-                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60'
-                } text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/15 transition-all duration-200`}
-              />
-            </div>
-            {loginErrors.email && (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 font-semibold">{loginErrors.email}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Password *
+          {/* Form Fields */}
+          <form onSubmit={handleSignIn} className="space-y-4">
+            
+            {/* Email Address */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                Email Address <span className="text-rose-500">*</span>
               </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    if (loginErrors.email) setLoginErrors((prev) => ({ ...prev, email: null }));
+                  }}
+                  placeholder="admin@pharmdverse.com"
+                  className={`w-full h-[46px] pl-10 pr-4 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border transition-all focus:outline-none focus:ring-2 ${
+                    loginErrors.email
+                      ? 'border-rose-400 focus:ring-rose-500/30'
+                      : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-blue-500/20'
+                  }`}
+                />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              </div>
+              {loginErrors.email && (
+                <p className="mt-1 text-[11px] text-rose-500 font-medium">{loginErrors.email}</p>
+              )}
             </div>
 
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={loginPassword}
-                onChange={(e) => {
-                  setLoginPassword(e.target.value);
-                  if (loginErrors.password) setLoginErrors(prev => ({ ...prev, password: '' }));
-                  if (authError) setAuthError('');
-                }}
-                placeholder="••••••••••••"
-                className={`w-full h-[52px] pl-10 pr-12 text-xs rounded-[14px] border ${
-                  loginErrors.password || authError
-                    ? 'border-rose-500 ring-2 ring-rose-500/15 bg-rose-50/20 dark:bg-rose-950/20' 
-                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60'
-                } text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/15 transition-all duration-200`}
-              />
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                Master Password <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={loginPassword}
+                  onChange={(e) => {
+                    setLoginPassword(e.target.value);
+                    if (loginErrors.password) setLoginErrors((prev) => ({ ...prev, password: null }));
+                  }}
+                  placeholder="••••••••••••"
+                  className={`w-full h-[46px] pl-10 pr-10 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white border transition-all focus:outline-none focus:ring-2 ${
+                    loginErrors.password
+                      ? 'border-rose-400 focus:ring-rose-500/30'
+                      : 'border-slate-200 dark:border-slate-800 focus:border-blue-500 focus:ring-blue-500/20'
+                  }`}
+                />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {loginErrors.password && (
+                <p className="mt-1 text-[11px] text-rose-500 font-medium">{loginErrors.password}</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-3">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
-                title={showPassword ? "Hide password" : "Show password"}
+                onClick={onClose}
+                className="h-[46px] px-5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                disabled={isAuthenticating}
+                className="flex-1 h-[46px] px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                {isAuthenticating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Authenticating...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </>
+                )}
               </button>
             </div>
-            {loginErrors.password && (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1 font-semibold">{loginErrors.password}</p>
-            )}
-          </div>
 
-          {/* Options: Remember Me & Show/Hide */}
-          <div className="flex items-center justify-between text-xs py-1">
-            <label className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-300 font-medium">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 dark:bg-slate-900"
-              />
-              <span>Remember Me</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {showPassword ? 'Hide Password' : 'Show Password'}
-            </button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-[48px] px-5 rounded-[14px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={isAuthenticating}
-              className="flex-1 h-[48px] px-6 rounded-[14px] bg-gradient-to-r from-blue-600 via-blue-600 to-emerald-500 hover:from-blue-700 hover:to-emerald-600 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
-            >
-              {isAuthenticating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </>
-              )}
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </ModalWrapper>
-    <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
+          </form>
+        </div>
+      </ModalWrapper>
+      <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
     </>
   );
 };

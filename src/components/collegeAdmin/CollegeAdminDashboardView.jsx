@@ -66,15 +66,15 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
 
   const summaryCards = [
     {
-      id: 'all',
-      title: 'Total Clinical Cases',
-      count: totalCount,
-      filter: 'All',
-      icon: FolderKanban,
-      iconColor: 'text-slate-700 dark:text-slate-300',
-      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-      borderLeft: 'border-l-slate-600',
-      description: 'Total clinical case documentations logged across all departments'
+      id: 'approved_cases',
+      title: 'Approved Clinical Cases',
+      count: approvedCount,
+      filter: 'Approved',
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      borderLeft: 'border-l-emerald-500',
+      description: 'Officially approved clinical case logbook entries across all departments'
     },
     {
       id: 'draft',

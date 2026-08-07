@@ -3,6 +3,7 @@ import { UserCheck, Search, Filter, Plus, Edit3, Trash2, CheckCircle2, XCircle, 
 import { fetchStudentsFromSupabase, updateStudentInSupabase, deleteStudentFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { SecurityManagementSection } from './SecurityManagementSection';
+import { EditStudentModal } from './EditStudentModal';
 
 export const StudentListView = ({ college, onAddNew }) => {
   const [students, setStudents] = useState([]);
@@ -18,6 +19,7 @@ export const StudentListView = ({ college, onAddNew }) => {
   // View / Edit / Delete Modal State
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -276,6 +278,18 @@ export const StudentListView = ({ college, onAddNew }) => {
                           <Eye className="w-4 h-4" />
                         </button>
 
+                        {/* Edit Trigger */}
+                        <button
+                          onClick={() => {
+                            setSelectedStudent(s);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
+                          title="Edit Student Details"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
                         {/* Status Toggle Button */}
                         <button
                           onClick={() => handleToggleStatus(s)}
@@ -315,7 +329,7 @@ export const StudentListView = ({ college, onAddNew }) => {
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-200 disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -325,7 +339,7 @@ export const StudentListView = ({ college, onAddNew }) => {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-200 disabled:opacity-40 transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -357,12 +371,24 @@ export const StudentListView = ({ college, onAddNew }) => {
                   {selectedStudent.full_name ? selectedStudent.full_name.substring(0, 2).toUpperCase() : 'ST'}
                 </div>
               )}
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{selectedStudent.full_name}</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-mono font-semibold">Roll: {selectedStudent.roll_number}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  {selectedStudent.year} • Batch {selectedStudent.batch}
-                </span>
+              <div className="flex-1 flex justify-between items-start">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">{selectedStudent.full_name}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 font-mono font-semibold">Roll: {selectedStudent.roll_number}</p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                    {selectedStudent.year} • Batch {selectedStudent.batch}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    setIsEditModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 font-bold text-xs flex items-center gap-1.5 hover:bg-indigo-100 transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
             </div>
 
@@ -409,6 +435,21 @@ export const StudentListView = ({ college, onAddNew }) => {
             </div>
           </div>
         </ModalWrapper>
+      )}
+
+      {/* EDIT STUDENT MODAL */}
+      {isEditModalOpen && selectedStudent && (
+        <EditStudentModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          student={selectedStudent}
+          onSuccess={(updatedStudent) => {
+            setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+            if (selectedStudent?.id === updatedStudent.id) {
+              setSelectedStudent(updatedStudent);
+            }
+          }}
+        />
       )}
 
       {/* DELETE CONFIRMATION MODAL */}

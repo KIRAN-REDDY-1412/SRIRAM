@@ -13,6 +13,8 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
   const [loggingIn, setLoggingIn] = useState(false);
   const [showLogoModal, setShowLogoModal] = useState(false);
 
+  const collegeName = initialCollege?.name || initialCollege?.college_name || 'Pharmacy College';
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -53,9 +55,22 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
         }
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          
+
+          {/* PORTAL LOGIN TITLE & SUBTITLE */}
+          <div className="text-center pt-2 pb-1">
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Preceptor Portal Login
+            </h2>
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 leading-relaxed">
+              Hospital Doctor & Evaluator Login for {collegeName}
+            </p>
+          </div>
+
+          {/* DIVIDER */}
+          <div className="border-t border-slate-100 dark:border-slate-800/60" />
+
           {/* CENTRAL ENLARGED PHARMDVERSE LOGO */}
-          <div className="py-2 flex flex-col items-center justify-center">
+          <div className="py-1 flex flex-col items-center justify-center">
             <button
               type="button"
               onClick={() => setShowLogoModal(true)}

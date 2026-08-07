@@ -161,15 +161,18 @@ export const PharmDVerseBrandedDocumentContainer = ({
         }
 
         .branded-title {
-          font-size: ${titleFontSize};
+          font-size: ${titleFontSize} !important;
           color: ${primaryColor};
         }
         .branded-heading {
-          font-size: ${headingFontSize};
+          font-size: ${headingFontSize} !important;
           color: ${primaryColor};
         }
         .branded-subheading {
           color: ${secondaryColor};
+        }
+        .branded-body {
+          font-size: ${bodyFontSize} !important;
         }
         .branded-border {
           border-color: ${borderCol};
@@ -211,7 +214,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
           )}
 
           {/* CLINICAL DOCUMENT BODY CHILDREN */}
-          {children}
+          <div className="branded-body space-y-6">
+            {children}
+          </div>
         </div>
 
         {/* BOTTOM CONTAINER FOR SIGNATURES & FOOTER */}

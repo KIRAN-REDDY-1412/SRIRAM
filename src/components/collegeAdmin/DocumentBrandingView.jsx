@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS = {
   margin_left: '15mm',
   margin_right: '15mm',
   font_family: 'Times New Roman',
-  title_font_size: '18pt',
+  title_font_size: '16pt',
   heading_font_size: '14pt',
   body_font_size: '12pt',
   primary_color: '#0f172a',

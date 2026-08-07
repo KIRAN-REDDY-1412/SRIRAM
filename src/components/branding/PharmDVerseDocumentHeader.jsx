@@ -65,7 +65,7 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         {/* CENTER: COLLEGE NAME (SINGLE LINE), AUTONOMOUS, HOSPITAL NAME */}
         <div className="flex-1 text-center px-1 sm:px-3 space-y-0.5 min-w-0">
           {showCollegeName && (
-            <h1 className="text-[11px] sm:text-sm md:text-base font-black uppercase tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+            <h1 className="branded-title font-black uppercase tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
               {collegeName}
             </h1>
           )}
@@ -87,7 +87,7 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-end shrink-0">
           {showHospitalLogo && hospitalLogoUrl ? (
             <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
-          ) : showHospitalLogo ? (
+          ) : showCollegeLogo ? (
             <div className="w-12 h-12 sm:w-14 sm:h-14 border border-slate-900 font-sans text-[8px] sm:text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">HOSPITAL LOGO</div>
           ) : null}
         </div>
@@ -96,7 +96,7 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
 
       {/* HEADER ROW 2 */}
       <div className="flex justify-between items-center text-xs font-extrabold font-mono border-b-2 border-slate-900 pb-2 px-1">
-        <span className="font-serif text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
+        <span className="branded-title font-serif font-black uppercase tracking-wider text-slate-900">
           {documentTitle}
         </span>
         <span className="text-slate-900">

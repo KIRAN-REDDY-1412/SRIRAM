@@ -4,6 +4,8 @@ import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSu
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
+import { SearchableSelect } from '../common/SearchableSelect';
+import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clinicalMasterData';
 
 // Master Lab Category & Parameter Definition with Reference Ranges
 const LAB_CATEGORY_MAP = {
@@ -640,20 +642,18 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
           {/* Ward / Department */}
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ward / Department</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <SearchableSelect
                 value={ward}
-                onChange={(e) => setWard(e.target.value)}
-                placeholder="Enter ward"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={setWard}
+                options={CLINICAL_WARDS_UNITS}
+                placeholder="Search or Select Ward..."
               />
-              <input
-                type="text"
+              <SearchableSelect
                 value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Enter department"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={setDepartment}
+                options={CLINICAL_DEPARTMENTS}
+                placeholder="Search or Select Department..."
               />
             </div>
           </div>

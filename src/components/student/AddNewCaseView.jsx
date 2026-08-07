@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { FilePlus2, User, GraduationCap, Building2, Stethoscope, Calendar, Save, X, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { fetchStudentAssignedPreceptorFromSupabase, generateUniqueCaseIdInSupabase, insertClinicalCaseToSupabase } from '../../services/supabaseService';
+import { SearchableSelect } from '../common/SearchableSelect';
+import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clinicalMasterData';
 
 export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [caseId, setCaseId] = useState('');
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
 
+  const configuredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || 'Lalitha Super Specialities Hospital';
+  const hospitalOptions = Array.from(new Set([configuredHospital, 'Lalitha Super Specialities Hospital'])).filter(Boolean);
+
   // Form Input States
-  const [hospitalName, setHospitalName] = useState('');
+  const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || 'Lalitha Super Specialities Hospital');
   const [department, setDepartment] = useState('');
   const [wardUnit, setWardUnit] = useState('');
   const [ipOpType, setIpOpType] = useState('IP');
@@ -46,7 +51,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     setFormError('');
 
     if (!hospitalName.trim() || !department.trim() || !wardUnit.trim() || !dateOfAdmission) {
-      setFormError('Please fill in all required clinical case details.');
+      setFormError('Please select all required clinical case details (Hospital, Department, Ward/Unit, Admission Date).');
       return;
     }
 
@@ -174,13 +179,12 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Hospital Name *
               </label>
-              <input
-                type="text"
-                required
+              <SearchableSelect
                 value={hospitalName}
-                onChange={(e) => setHospitalName(e.target.value)}
-                placeholder="Enter hospital name (e.g. Govt General Hospital)"
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                onChange={setHospitalName}
+                options={hospitalOptions}
+                placeholder="Select Hospital Name..."
+                required
               />
             </div>
 
@@ -188,13 +192,12 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Department *
               </label>
-              <input
-                type="text"
-                required
+              <SearchableSelect
                 value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Enter department (e.g. General Medicine, Cardiology)"
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                onChange={setDepartment}
+                options={CLINICAL_DEPARTMENTS}
+                placeholder="Search or Select Department..."
+                required
               />
             </div>
 
@@ -202,13 +205,12 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Ward / Unit *
               </label>
-              <input
-                type="text"
-                required
+              <SearchableSelect
                 value={wardUnit}
-                onChange={(e) => setWardUnit(e.target.value)}
-                placeholder="Enter ward / unit (e.g. Male Medical Ward 3, ICU-2)"
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                onChange={setWardUnit}
+                options={CLINICAL_WARDS_UNITS}
+                placeholder="Search or Select Ward / Unit..."
+                required
               />
             </div>
 

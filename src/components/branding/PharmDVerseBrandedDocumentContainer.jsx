@@ -55,7 +55,25 @@ export const PharmDVerseBrandedDocumentContainer = ({
   const marginLeft = branding?.margin_left || '15mm';
   const marginRight = branding?.margin_right || '15mm';
 
-  const fontFamily = branding?.font_family || 'Times New Roman';
+  const rawFontFamily = branding?.font_family || 'Times New Roman';
+  const getFontStack = (font) => {
+    switch (font) {
+      case 'Calibri':
+        return 'Calibri, Aptos, Segoe UI, sans-serif';
+      case 'Arial':
+        return 'Arial, Helvetica, sans-serif';
+      case 'Georgia':
+        return 'Georgia, Cambria, serif';
+      case 'Inter':
+        return 'Inter, system-ui, -apple-system, sans-serif';
+      case 'Roboto':
+        return 'Roboto, system-ui, sans-serif';
+      case 'Times New Roman':
+      default:
+        return '"Times New Roman", Times, serif';
+    }
+  };
+  const fontFamily = getFontStack(rawFontFamily);
   const titleFontSize = branding?.title_font_size || '18pt';
   const headingFontSize = branding?.heading_font_size || '14pt';
   const bodyFontSize = branding?.body_font_size || '12pt';

@@ -583,43 +583,149 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: INSTANT REAL-TIME LIVE PREVIEW PANEL */}
-          {showLivePreviewPanel && (
-            <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
-              <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-2 text-xs font-extrabold">
-                  <MonitorPlay className="w-4 h-4 text-emerald-400" />
-                  <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
-                </div>
-                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
-                  REAL-TIME 2-PAGE LIVE
-                </span>
-              </div>
+          {/* SECTIONS 5 & 6: PAGE SETUP, MARGINS & TYPOGRAPHY */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            {/* SECTION 5: PAGE SETUP & MARGINS */}
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                Page & Margins
+              </h4>
 
-              <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
-                <SampleTwoPageDocument college={college} settings={settings} />
+              <div className="space-y-2 text-xs">
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Paper Size</label>
+                  <select value={settings.paper_size} onChange={(e) => handleChange('paper_size', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                    <option value="A4">A4</option>
+                    <option value="Letter">Letter</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Orientation</label>
+                  <select value={settings.orientation} onChange={(e) => handleChange('orientation', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                    <option value="Portrait">Portrait</option>
+                    <option value="Landscape">Landscape</option>
+                  </select>
+                </div>
+
+                <div className="pt-1 grid grid-cols-2 gap-1.5 text-[10px]">
+                  <div>
+                    <label className="block text-slate-400">Margin Top</label>
+                    <input type="text" value={settings.margin_top} onChange={(e) => handleChange('margin_top', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Bottom</label>
+                    <input type="text" value={settings.margin_bottom} onChange={(e) => handleChange('margin_bottom', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Left</label>
+                    <input type="text" value={settings.margin_left} onChange={(e) => handleChange('margin_left', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400">Margin Right</label>
+                    <input type="text" value={settings.margin_right} onChange={(e) => handleChange('margin_right', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white" />
+                  </div>
+                </div>
               </div>
             </div>
-          )}
 
+            {/* SECTION 6: TYPOGRAPHY & FONT SIZES */}
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                <Type className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                Typography & Font Sizes
+              </h4>
+
+              <div className="space-y-2 text-xs">
+                <div>
+                  <label className="block text-[10px] text-slate-400 mb-0.5">Font Family (Font Type)</label>
+                  <select value={settings.font_family} onChange={(e) => handleChange('font_family', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                    <option value="Times New Roman">Times New Roman (Serif)</option>
+                    <option value="Calibri">Calibri (Sans-serif)</option>
+                    <option value="Arial">Arial (Sans-serif)</option>
+                    <option value="Georgia">Georgia (Serif)</option>
+                    <option value="Inter">Inter (Clean Modern)</option>
+                    <option value="Roboto">Roboto (Technical)</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <div>
+                    <label className="block text-slate-400 mb-0.5">Title Pt</label>
+                    <select value={settings.title_font_size} onChange={(e) => handleChange('title_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                      <option value="10pt">10pt</option>
+                      <option value="11pt">11pt</option>
+                      <option value="12pt">12pt</option>
+                      <option value="14pt">14pt</option>
+                      <option value="16pt">16pt</option>
+                      <option value="18pt">18pt</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-0.5">Heading Pt</label>
+                    <select value={settings.heading_font_size} onChange={(e) => handleChange('heading_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                      <option value="10pt">10pt</option>
+                      <option value="11pt">11pt</option>
+                      <option value="12pt">12pt</option>
+                      <option value="14pt">14pt</option>
+                      <option value="16pt">16pt</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 mb-0.5">Body Pt</label>
+                    <select value={settings.body_font_size} onChange={(e) => handleChange('body_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                      <option value="10pt">10pt</option>
+                      <option value="11pt">11pt</option>
+                      <option value="12pt">12pt</option>
+                      <option value="14pt">14pt</option>
+                      <option value="16pt">16pt</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        {/* PREVIEW FULL PAGE MODAL */}
-        {isPreviewModalOpen && (
-          <ModalWrapper
-            isOpen={isPreviewModalOpen}
-            onClose={() => setIsPreviewModalOpen(false)}
-            title={`Full ${settings.paper_size} (${settings.orientation}) Centralized Document Branding Preview`}
-            subtitle={`Exact rendering across all PharmDVerse clinical documentation modules (${settings.paper_size} - ${settings.orientation})`}
-            maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
-          >
-            <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
+        {/* RIGHT COLUMN: INSTANT REAL-TIME LIVE PREVIEW PANEL */}
+        {showLivePreviewPanel && (
+          <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
+            <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2 text-xs font-extrabold">
+                <MonitorPlay className="w-4 h-4 text-emerald-400" />
+                <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
+              </div>
+              <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
+                REAL-TIME 2-PAGE LIVE
+              </span>
+            </div>
+
+            <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
               <SampleTwoPageDocument college={college} settings={settings} />
             </div>
-          </ModalWrapper>
+          </div>
         )}
 
       </div>
+
+      {/* PREVIEW FULL PAGE MODAL */}
+      {isPreviewModalOpen && (
+        <ModalWrapper
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          title={`Full ${settings.paper_size} (${settings.orientation}) Centralized Document Branding Preview`}
+          subtitle={`Exact rendering across all PharmDVerse clinical documentation modules (${settings.paper_size} - ${settings.orientation})`}
+          maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
+        >
+          <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
+            <SampleTwoPageDocument college={college} settings={settings} />
+          </div>
+        </ModalWrapper>
+      )}
+
     </div>
   );
 };

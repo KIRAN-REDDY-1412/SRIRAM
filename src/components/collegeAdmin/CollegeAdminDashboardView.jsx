@@ -133,6 +133,21 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
     }
   ];
 
+  const collegeObj = {
+    ...college,
+    name: college?.college_name || college?.name || 'Pharmacy College',
+    code: college?.college_code || college?.code || 'CLG',
+    description: college?.college_description || college?.description || '',
+    logoUrl: college?.college_logo_url || college?.logoUrl || '',
+    logoBg: college?.logoBg || 'from-emerald-500 to-teal-600',
+    initials: college?.initials || (college?.college_name || college?.name || 'CLG').substring(0, 3).toUpperCase(),
+    city: college?.city || '',
+    state: college?.state || '',
+    district: college?.district || '',
+    pciApprovalNo: college?.pci_approval_no || college?.pciApprovalNo || 'Verified',
+    status: college?.status || 'Active'
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto">
       
@@ -141,15 +156,15 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
-          {college?.logoUrl ? (
+          {collegeObj?.logoUrl ? (
             <img
-              src={college.logoUrl}
-              alt={college.name}
+              src={collegeObj.logoUrl}
+              alt={collegeObj.name}
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain bg-white p-2 border-2 border-emerald-400/60 shadow-md shrink-0"
             />
           ) : (
-            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${college?.logoBg || 'from-emerald-500 to-teal-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md border-2 border-emerald-400/60 shrink-0`}>
-              {college?.initials || 'CLG'}
+            <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${collegeObj?.logoBg || 'from-emerald-500 to-teal-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md border-2 border-emerald-400/60 shrink-0`}>
+              {collegeObj?.initials || 'CLG'}
             </div>
           )}
 
@@ -159,26 +174,26 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 College Admin Dashboard
               </span>
-              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono font-bold">Code: {college?.code}</span>
+              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono font-bold">Code: {collegeObj?.code}</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              {college?.name}
+              {collegeObj?.name}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
-              {college?.description ? college.description : 'No college description provided.'}
+              {collegeObj?.description ? collegeObj.description : 'No college description provided.'}
             </p>
 
             <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>{[college?.city, college?.district, college?.state].filter(Boolean).join(', ')}</span>
+                <span>{[collegeObj?.city, collegeObj?.district, collegeObj?.state].filter(Boolean).join(', ')}</span>
               </div>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <div className="flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-                <span>PCI: {college?.pciApprovalNo || 'Verified'}</span>
+                <span>PCI: {collegeObj?.pciApprovalNo || 'Verified'}</span>
               </div>
             </div>
           </div>

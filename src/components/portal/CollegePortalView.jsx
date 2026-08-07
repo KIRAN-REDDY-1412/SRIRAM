@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn } from 'lucide-react';
+import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpenAdminLogin, onOpenPreceptorLogin, onOpenStudentLogin }) => {
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -95,6 +95,14 @@ export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpen
           <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
             {college.code}
           </span>
+
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center"
+            title="Toggle Light/Dark Mode"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+          </button>
 
           <button
             onClick={onBackToLanding}

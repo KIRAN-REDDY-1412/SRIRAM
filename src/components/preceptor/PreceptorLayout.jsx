@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, GraduationCap, User, LogOut, Sun, Moon, Menu, X, Stethoscope, ShieldCheck, Bell } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, User, LogOut, Sun, Moon, Menu, X, Stethoscope, ShieldCheck, Bell, FolderKanban } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 import { PreceptorDashboardView } from './PreceptorDashboardView';
 import { PreceptorAssignedStudentsView } from './PreceptorAssignedStudentsView';
+import { PreceptorCaseReviewView } from './PreceptorCaseReviewView';
 import { PreceptorProfileView } from './PreceptorProfileView';
 import { NotificationsView } from '../common/NotificationsView';
 
@@ -49,13 +50,13 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans flex transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans flex flex-col transition-colors duration-300">
       
-      {/* 1. SIDEBAR (DESKTOP & MOBILE DRAWER) */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col justify-between transition-transform duration-300 transform lg:translate-x-0 ${
+      {/* 1. SIDEBAR */}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex flex-col h-full">
+        <div className="h-full flex flex-col justify-between">
           
           {/* SIDEBAR BRANDING HEADER */}
           <div className="h-16 px-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
@@ -116,6 +117,19 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
             >
               <GraduationCap className="w-4 h-4 shrink-0" />
               <span>Assigned Students</span>
+            </button>
+
+            {/* Clinical Case Review */}
+            <button
+              onClick={() => handleNavigate('case-review')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'case-review'
+                  ? 'bg-cyan-600 text-white font-bold shadow-md shadow-cyan-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FolderKanban className="w-4 h-4 shrink-0" />
+              <span>Clinical Case Review</span>
             </button>
 
             {/* Notifications */}
@@ -222,7 +236,11 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
           )}
 
           {activeTab === 'assigned-students' && (
-            <PreceptorAssignedStudentsView preceptor={preceptor} initialFilter={preceptorCaseFilter} />
+            <PreceptorAssignedStudentsView preceptor={preceptor} />
+          )}
+
+          {activeTab === 'case-review' && (
+            <PreceptorCaseReviewView preceptor={preceptor} initialFilter={preceptorCaseFilter} />
           )}
 
           {activeTab === 'notifications' && (

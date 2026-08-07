@@ -32,6 +32,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
   }, [preceptor?.id]);
 
   // Compute real-time case status counts
+  const totalCasesCount = cases.length;
   const submittedCount = cases.filter(c => (c.status === 'Submitted' || c.overall_case_status === 'Submitted')).length;
   const underReviewCount = cases.filter(c => (c.status === 'Under Review' || c.overall_case_status === 'Under Review')).length;
   const returnedCount = cases.filter(c => (c.status === 'Returned' || c.overall_case_status === 'Returned')).length;
@@ -43,22 +44,24 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
 
   const summaryCards = [
     {
-      id: 'assigned_students',
-      title: 'Total Assigned Students',
-      count: assignedCount,
+      id: 'total_cases',
+      title: 'Total Clinical Cases',
+      count: totalCasesCount,
       filter: 'All',
-      icon: GraduationCap,
-      iconColor: 'text-cyan-600 dark:text-cyan-400',
-      badgeBg: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800',
-      borderLeft: 'border-l-cyan-500',
-      description: 'Active Pharm.D candidates under supervision',
-      loading: loadingAssigned
+      target: 'case-review',
+      icon: FolderKanban,
+      iconColor: 'text-slate-700 dark:text-slate-300',
+      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      borderLeft: 'border-l-slate-600',
+      description: 'Total clinical cases submitted across all assigned candidates',
+      loading: loadingCases
     },
     {
       id: 'submitted',
       title: 'Submitted Cases',
       count: submittedCount,
       filter: 'Submitted',
+      target: 'case-review',
       icon: Send,
       iconColor: 'text-blue-600 dark:text-blue-400',
       badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -71,6 +74,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
       title: 'Under Review Cases',
       count: underReviewCount,
       filter: 'Under Review',
+      target: 'case-review',
       icon: FileSearch,
       iconColor: 'text-amber-600 dark:text-amber-400',
       badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
@@ -83,6 +87,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
       title: 'Returned Cases',
       count: returnedCount,
       filter: 'Returned',
+      target: 'case-review',
       icon: RotateCcw,
       iconColor: 'text-rose-600 dark:text-rose-400',
       badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800',
@@ -95,6 +100,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
       title: 'Approved Cases',
       count: approvedCount,
       filter: 'Approved',
+      target: 'case-review',
       icon: CheckCircle2,
       iconColor: 'text-emerald-600 dark:text-emerald-400',
       badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
@@ -107,6 +113,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
       title: 'Pending Reviews',
       count: pendingReviewsCount,
       filter: 'Pending Review',
+      target: 'case-review',
       icon: Clock,
       iconColor: 'text-purple-600 dark:text-purple-400',
       badgeBg: 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800',
@@ -186,7 +193,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
               {loadingAssigned ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : assignedCount}
             </span>
             <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1">
-              Assigned Students
+              Total Assigned Students
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Pharm.D candidates currently allocated under your preceptorship.
@@ -235,7 +242,7 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
             return (
               <div
                 key={card.id}
-                onClick={() => onNavigate('assigned-students', card.filter)}
+                onClick={() => onNavigate(card.target || 'case-review', card.filter)}
                 className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between group border-l-4 ${card.borderLeft}`}
               >
                 <div>

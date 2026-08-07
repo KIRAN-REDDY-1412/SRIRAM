@@ -160,20 +160,36 @@ export const PharmDVerseBrandedDocumentContainer = ({
           }
         }
 
-        .branded-title {
-          font-size: ${titleFontSize} !important;
-          color: ${primaryColor};
-        }
-        .branded-heading {
-          font-size: ${headingFontSize} !important;
-          color: ${primaryColor};
-        }
-        .branded-subheading {
-          color: ${secondaryColor};
-        }
-        .branded-body {
+        .branded-body,
+        .branded-body div,
+        .branded-body span,
+        .branded-body p,
+        .branded-body td,
+        .branded-body th,
+        .branded-body li,
+        .branded-body strong,
+        .branded-body label,
+        .branded-body a {
           font-size: ${bodyFontSize} !important;
         }
+
+        .branded-title,
+        .branded-title * {
+          font-size: ${titleFontSize} !important;
+          color: ${primaryColor} !important;
+        }
+
+        .branded-heading,
+        .branded-heading * {
+          font-size: ${headingFontSize} !important;
+          color: ${primaryColor} !important;
+        }
+
+        .branded-subheading,
+        .branded-subheading * {
+          color: ${secondaryColor} !important;
+        }
+
         .branded-border {
           border-color: ${borderCol};
         }

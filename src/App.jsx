@@ -9,7 +9,7 @@ import { supabase } from './lib/supabaseClient';
 // Config & Hooks
 import { APP_CONFIG } from './config/appConfig';
 import { useDeveloperShortcut } from './hooks/useDeveloperShortcut';
-import { getActiveAdminSession } from './services/authService';
+import { getActiveAdminSession, saveActiveSession, getActiveSession, clearActiveSession, logoutSuperAdmin } from './services/authService';
 
 // Full Page Components
 import { SuperAdminDashboard } from './components/admin/SuperAdminDashboard';
@@ -75,11 +75,36 @@ export default function App() {
     }
   }, [loggedCollegeAdmin]);
 
-  // Check active admin session on initial load
+  // RESTORE ACTIVE SESSION ON BROWSER REFRESH (F5 / RELOAD)
   useEffect(() => {
-    const session = getActiveAdminSession();
+    const session = getActiveSession();
     if (session) {
-      setViewMode('admin');
+      if (session.viewMode === 'admin') {
+        const adminSession = getActiveAdminSession();
+        if (adminSession) {
+          setViewMode('admin');
+        } else {
+          clearActiveSession();
+        }
+      } else if (session.viewMode === 'college_admin' && (session.user || session.college)) {
+        const collegeObj = session.college || session.user;
+        setLoggedCollegeAdmin(session.user || session.college);
+        setActivePortalCollege(collegeObj);
+        setViewMode('college_admin');
+      } else if (session.viewMode === 'preceptor_portal' && session.user) {
+        setLoggedPreceptor(session.user);
+        const collegeObj = session.user.colleges || session.college;
+        if (collegeObj) setActivePortalCollege(collegeObj);
+        setViewMode('preceptor_portal');
+      } else if (session.viewMode === 'student_portal' && session.user) {
+        setLoggedStudent(session.user);
+        const collegeObj = session.user.colleges || session.college;
+        if (collegeObj) setActivePortalCollege(collegeObj);
+        setViewMode('student_portal');
+      } else if (session.viewMode === 'college_portal' && session.college) {
+        setActivePortalCollege(session.college);
+        setViewMode('college_portal');
+      }
     }
   }, []);
 
@@ -97,32 +122,90 @@ export default function App() {
     setActivePortalCollege(college);
     setViewMode('college_portal');
     setAllCollegesOpen(false);
+    saveActiveSession({ viewMode: 'college_portal', college });
   };
 
+  // Back to Main Public PharmDVerse Website
   const handleBackToLanding = () => {
     setViewMode('landing');
     setActivePortalCollege(null);
     setLoggedCollegeAdmin(null);
     setLoggedPreceptor(null);
     setLoggedStudent(null);
+    logoutSuperAdmin();
+    clearActiveSession();
+  };
+
+  // Student Logout -> Redirect to Student's College Landing Page
+  const handleStudentLogout = () => {
+    const collegeObj = loggedStudent?.colleges || activePortalCollege;
+    setLoggedStudent(null);
+    if (collegeObj) {
+      setActivePortalCollege(collegeObj);
+      setViewMode('college_portal');
+      saveActiveSession({ viewMode: 'college_portal', college: collegeObj });
+    } else {
+      handleBackToLanding();
+    }
+  };
+
+  // Preceptor Logout -> Redirect to Preceptor's College Landing Page
+  const handlePreceptorLogout = () => {
+    const collegeObj = loggedPreceptor?.colleges || activePortalCollege;
+    setLoggedPreceptor(null);
+    if (collegeObj) {
+      setActivePortalCollege(collegeObj);
+      setViewMode('college_portal');
+      saveActiveSession({ viewMode: 'college_portal', college: collegeObj });
+    } else {
+      handleBackToLanding();
+    }
+  };
+
+  // College Admin Logout -> Redirect to College Landing Page
+  const handleCollegeAdminLogout = () => {
+    const collegeObj = loggedCollegeAdmin || activePortalCollege;
+    setLoggedCollegeAdmin(null);
+    if (collegeObj) {
+      setActivePortalCollege(collegeObj);
+      setViewMode('college_portal');
+      saveActiveSession({ viewMode: 'college_portal', college: collegeObj });
+    } else {
+      handleBackToLanding();
+    }
+  };
+
+  // Super Admin Logout -> Redirect to Main PharmDVerse Website
+  const handleSuperAdminLogout = () => {
+    logoutSuperAdmin();
+    clearActiveSession();
+    handleBackToLanding();
   };
 
   const handleCollegeAdminLoginSuccess = (college) => {
     setLoggedCollegeAdmin(college);
+    setActivePortalCollege(college);
     setViewMode('college_admin');
     setCollegeAdminLoginOpen(false);
+    saveActiveSession({ viewMode: 'college_admin', college, user: college });
   };
 
   const handlePreceptorLoginSuccess = (preceptor) => {
+    const collegeObj = preceptor.colleges || activePortalCollege;
     setLoggedPreceptor(preceptor);
+    if (collegeObj) setActivePortalCollege(collegeObj);
     setViewMode('preceptor_portal');
     setPreceptorLoginOpen(false);
+    saveActiveSession({ viewMode: 'preceptor_portal', college: collegeObj, user: preceptor });
   };
 
   const handleStudentLoginSuccess = (student) => {
+    const collegeObj = student.colleges || activePortalCollege;
     setLoggedStudent(student);
+    if (collegeObj) setActivePortalCollege(collegeObj);
     setViewMode('student_portal');
     setStudentLoginOpen(false);
+    saveActiveSession({ viewMode: 'student_portal', college: collegeObj, user: student });
   };
 
   return (
@@ -132,14 +215,14 @@ export default function App() {
         {/* 1. FULL PAGE SUPER ADMIN DASHBOARD VIEW */}
         {viewMode === 'admin' ? (
           <SuperAdminDashboard
-            onExitToLanding={handleBackToLanding}
+            onExitToLanding={handleSuperAdminLogout}
           />
         ) : viewMode === 'college_admin' && loggedCollegeAdmin ? (
           
           /* 2. FULL PAGE COLLEGE ADMIN MODULE VIEW */
           <CollegeAdminLayout
             college={loggedCollegeAdmin}
-            onLogout={handleBackToLanding}
+            onLogout={handleCollegeAdminLogout}
           />
 
         ) : viewMode === 'preceptor_portal' && loggedPreceptor ? (
@@ -147,7 +230,7 @@ export default function App() {
           /* 3. FULL PAGE PRECEPTOR PORTAL VIEW */
           <PreceptorLayout
             preceptor={loggedPreceptor}
-            onLogout={handleBackToLanding}
+            onLogout={handlePreceptorLogout}
           />
 
         ) : viewMode === 'student_portal' && loggedStudent ? (
@@ -155,7 +238,7 @@ export default function App() {
           /* 4. FULL PAGE STUDENT PORTAL VIEW */
           <StudentLayout
             student={loggedStudent}
-            onLogout={handleBackToLanding}
+            onLogout={handleStudentLogout}
           />
 
         ) : viewMode === 'college_portal' && activePortalCollege ? (

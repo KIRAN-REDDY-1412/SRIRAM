@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, User, KeyRound, Eye, EyeOff, Save, CheckCircle2, AlertTriangle, Upload, Trash2, RefreshCw, Award } from 'lucide-react';
 import { updateCollegeProfileAndSubscriptionInSupabase, uploadCollegeLogoToSupabaseStorage, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
+import { saveActiveSession } from '../../services/authService';
 
 export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpdated }) => {
   const [currentCollege, setCurrentCollege] = useState(initialCollege);
@@ -171,6 +172,7 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
     if (res.success && res.college) {
       const updatedCollegeRecord = res.college;
       setCurrentCollege(updatedCollegeRecord);
+      saveActiveSession({ viewMode: 'college_admin', college: updatedCollegeRecord, user: updatedCollegeRecord });
 
       // BROADCAST LIVE SYNCHRONIZATION EVENT TO ALL LAYOUTS, PREVIEWS & BRANDING MODULES
       window.dispatchEvent(new CustomEvent('pharmdverse_college_updated', { detail: updatedCollegeRecord }));

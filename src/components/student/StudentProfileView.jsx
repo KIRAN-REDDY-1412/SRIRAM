@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserCheck, GraduationCap, Calendar, Phone, Mail, ShieldCheck } from 'lucide-react';
 import { ChangePasswordSection } from '../common/ChangePasswordSection';
+import { saveActiveSession } from '../../services/authService';
 
 export const StudentProfileView = ({ student, onLogout, forcePasswordReset = false }) => {
   const [studentState, setStudentState] = useState(student);
@@ -130,6 +131,7 @@ export const StudentProfileView = ({ student, onLogout, forcePasswordReset = fal
             onLogout={onLogout}
             onSuccess={(updatedStudent) => {
               setStudentState(updatedStudent);
+              saveActiveSession({ viewMode: 'student_portal', college: updatedStudent.colleges || studentState.colleges, user: updatedStudent });
             }}
           />
         </div>

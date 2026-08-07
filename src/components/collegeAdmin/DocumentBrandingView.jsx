@@ -746,6 +746,56 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
           </div>
 
+          {/* SECTION 8: DOCUMENT COLOR PALETTE & THEME */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              Section 8: Document Color Palette & Theme
+            </h3>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Primary Heading Color</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.primary_color || '#0f172a'} onChange={(e) => handleChange('primary_color', e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0 bg-transparent" />
+                  <input type="text" value={settings.primary_color || '#0f172a'} onChange={(e) => handleChange('primary_color', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-mono text-[11px] uppercase font-bold text-slate-900 dark:text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Secondary Subheading</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.secondary_color || '#0284c7'} onChange={(e) => handleChange('secondary_color', e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0 bg-transparent" />
+                  <input type="text" value={settings.secondary_color || '#0284c7'} onChange={(e) => handleChange('secondary_color', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-mono text-[11px] uppercase font-bold text-slate-900 dark:text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Table Header Bg</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.table_header_color || '#f1f5f9'} onChange={(e) => handleChange('table_header_color', e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0 bg-transparent" />
+                  <input type="text" value={settings.table_header_color || '#f1f5f9'} onChange={(e) => handleChange('table_header_color', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-mono text-[11px] uppercase font-bold text-slate-900 dark:text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Border Color</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.border_color || '#0f172a'} onChange={(e) => handleChange('border_color', e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0 bg-transparent" />
+                  <input type="text" value={settings.border_color || '#0f172a'} onChange={(e) => handleChange('border_color', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-mono text-[11px] uppercase font-bold text-slate-900 dark:text-white" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Body Text Color</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={settings.text_color || '#0f172a'} onChange={(e) => handleChange('text_color', e.target.value)} className="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer p-0 bg-transparent" />
+                  <input type="text" value={settings.text_color || '#0f172a'} onChange={(e) => handleChange('text_color', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-mono text-[11px] uppercase font-bold text-slate-900 dark:text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* RIGHT COLUMN: INSTANT PERMANENT REAL-TIME LIVE PREVIEW PANEL */}

@@ -96,8 +96,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         backgroundColor: '#ffffff'
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF('p', 'mm', branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4');
+      const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
+      const pdf = new jsPDF(isLandscape ? 'l' : 'p', 'mm', branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pdfWidth;

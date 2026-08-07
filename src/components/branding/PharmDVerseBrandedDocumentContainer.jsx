@@ -107,9 +107,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   return (
     <div
-      className={`bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 ${
+      className={`bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
         isLandscape 
-          ? 'w-full max-w-5xl mx-auto aspect-[297/210]' 
+          ? 'w-full max-w-5xl mx-auto min-h-[210mm] aspect-[297/210]' 
           : 'w-full max-w-3xl mx-auto min-h-[297mm]'
       } ${
         zebraStriping ? '[&_tbody_tr:nth-child(even)]:bg-slate-100/70' : '[&_tbody_tr]:bg-white'
@@ -193,54 +193,76 @@ export const PharmDVerseBrandedDocumentContainer = ({
       )}
 
       {/* DOCUMENT CONTENT LAYER */}
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 flex-1 flex flex-col justify-between space-y-6">
         
-        {/* COMMON BRANDING HEADER - DISPLAYED ON ALL PAGES IF REPEAT HEADER IS ON, OR ONLY ON PAGE 1 IF OFF */}
-        {shouldShowDocumentHeader && (
-          <PharmDVerseDocumentHeader
-            college={college}
-            branding={branding}
-            documentTitle={documentTitle}
-            caseId={caseId}
-          />
-        )}
+        <div className="space-y-6 flex-1">
+          {/* COMMON BRANDING HEADER - DISPLAYED ON ALL PAGES IF REPEAT HEADER IS ON, OR ONLY ON PAGE 1 IF OFF */}
+          {shouldShowDocumentHeader && (
+            <PharmDVerseDocumentHeader
+              college={college}
+              branding={branding}
+              documentTitle={documentTitle}
+              caseId={caseId}
+            />
+          )}
 
-        {/* CLINICAL DOCUMENT BODY CHILDREN */}
-        {children}
+          {/* CLINICAL DOCUMENT BODY CHILDREN */}
+          {children}
+        </div>
 
-        {/* SIGNATURES SECTION */}
-        {shouldDisplaySignatures && (showStudentSig || showPreceptorSig) && (
-          <div className="pt-8 flex justify-between items-center text-xs font-bold font-serif border-t" style={{ borderColor: borderCol }}>
-            {showStudentSig ? (
-              <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>
-                Student Signature
-                <span className="block text-[10px] font-mono font-normal" style={{ color: secondaryColor }}>
-                  {student?.full_name} ({student?.roll_number})
-                </span>
-                <span className="block text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</span>
+        {/* BOTTOM CONTAINER FOR SIGNATURES & FOOTER */}
+        <div className="space-y-4 pt-4 mt-auto break-inside-avoid print:break-inside-avoid">
+          
+          {/* SIGNATURES SECTION - ALWAYS FIXED AT BOTTOM OF FINAL PAGE */}
+          {shouldDisplaySignatures && (showStudentSig || showPreceptorSig) && (
+            <div className="pt-4 border-t break-inside-avoid print:break-inside-avoid" style={{ borderColor: borderCol }}>
+              <div className="flex justify-between items-end text-xs gap-8">
+                
+                {/* STUDENT SIGNATURE */}
+                {showStudentSig ? (
+                  <div className="w-56 space-y-1">
+                    <div className="border-b border-dashed mb-2 pb-6 text-center text-slate-300 text-[10px] font-sans" style={{ borderColor: borderCol }}>
+                      (Student Signature Area)
+                    </div>
+                    <div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: primaryColor }}>
+                      Student Signature
+                    </div>
+                    <div className="font-bold text-[11px]">{student?.full_name || 'Student Candidate'}</div>
+                    <div className="text-[10px] font-mono text-slate-600">Roll No: {student?.roll_number || 'N/A'}</div>
+                    <div className="text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</div>
+                  </div>
+                ) : <div className="w-56" />}
+
+                {/* PRECEPTOR SIGNATURE */}
+                {showPreceptorSig ? (
+                  <div className="w-56 text-right space-y-1">
+                    <div className="border-b border-dashed mb-2 pb-6 text-center text-slate-300 text-[10px] font-sans" style={{ borderColor: borderCol }}>
+                      (Preceptor Signature & Seal)
+                    </div>
+                    <div className="font-bold uppercase tracking-wider text-[11px]" style={{ color: primaryColor }}>
+                      Preceptor Signature
+                    </div>
+                    <div className="font-bold text-[11px]">{preceptorName || preceptor?.full_name || 'Assigned Faculty Preceptor'}</div>
+                    <div className="text-[10px] text-slate-600">Designation: Faculty Preceptor</div>
+                    <div className="text-[10px] text-slate-600">Department: Dept. of Pharmacy Practice</div>
+                    <div className="text-[9px] font-mono text-slate-400">Approval Date: {currentDateTimeStr}</div>
+                  </div>
+                ) : <div className="w-56" />}
+
               </div>
-            ) : <div className="w-48" />}
+            </div>
+          )}
 
-            {showPreceptorSig ? (
-              <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>
-                Preceptor Signature
-                <span className="block text-[10px] font-mono font-normal" style={{ color: secondaryColor }}>
-                  {preceptorName || 'Assigned Faculty Preceptor'}
-                </span>
-                <span className="block text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</span>
-              </div>
-            ) : <div className="w-48" />}
-          </div>
-        )}
+          {/* FOOTER */}
+          {shouldShowDocumentFooter && (
+            <div className="flex justify-between items-center pt-3 border-t text-[10px] font-mono" style={{ borderColor: borderCol, color: secondaryColor }}>
+              <span>{footerLeft} {showDateTime ? `• ${currentDateTimeStr}` : ''}</span>
+              <span>{footerCenter}</span>
+              <span>{showPageNum ? `Page ${pageNumber}` : ''}</span>
+            </div>
+          )}
 
-        {/* FOOTER */}
-        {shouldShowDocumentFooter && (
-          <div className="flex justify-between items-center pt-4 border-t text-[10px] font-mono" style={{ borderColor: borderCol, color: secondaryColor }}>
-            <span>{footerLeft} {showDateTime ? `• ${currentDateTimeStr}` : ''}</span>
-            <span>{footerCenter}</span>
-            <span>{showPageNum ? `Page ${pageNumber}` : ''}</span>
-          </div>
-        )}
+        </div>
 
       </div>
 

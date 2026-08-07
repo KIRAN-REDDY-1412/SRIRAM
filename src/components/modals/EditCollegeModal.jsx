@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { useColleges } from '../../context/CollegeContext';
-import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, Upload, Loader2, CheckCircle2, KeyRound, Eye, EyeOff, Lock } from 'lucide-react';
+import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, Upload, Loader2, CheckCircle2, KeyRound, Eye, EyeOff, Lock, Globe } from 'lucide-react';
 
 export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, isFullPage = false }) => {
   const { uploadCollegeLogo, activeColleges } = useColleges();

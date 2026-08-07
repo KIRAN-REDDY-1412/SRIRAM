@@ -4,6 +4,7 @@ import { CollegeProvider } from './context/CollegeContext';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { Footer } from './components/Footer';
+import { supabase } from './lib/supabaseClient';
 
 // Config & Hooks
 import { APP_CONFIG } from './config/appConfig';
@@ -48,6 +49,31 @@ export default function App() {
   const [loggedCollegeAdmin, setLoggedCollegeAdmin] = useState(null);
   const [loggedPreceptor, setLoggedPreceptor] = useState(null);
   const [loggedStudent, setLoggedStudent] = useState(null);
+
+  // Set custom RLS headers on supabase client based on logged-in user
+  useEffect(() => {
+    if (loggedStudent) {
+      supabase.rest.headers.set('x-student-id', loggedStudent.id);
+    } else {
+      supabase.rest.headers.delete('x-student-id');
+    }
+  }, [loggedStudent]);
+
+  useEffect(() => {
+    if (loggedPreceptor) {
+      supabase.rest.headers.set('x-preceptor-id', loggedPreceptor.id);
+    } else {
+      supabase.rest.headers.delete('x-preceptor-id');
+    }
+  }, [loggedPreceptor]);
+
+  useEffect(() => {
+    if (loggedCollegeAdmin) {
+      supabase.rest.headers.set('x-college-id', loggedCollegeAdmin.id);
+    } else {
+      supabase.rest.headers.delete('x-college-id');
+    }
+  }, [loggedCollegeAdmin]);
 
   // Check active admin session on initial load
   useEffect(() => {

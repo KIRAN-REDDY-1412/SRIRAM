@@ -311,7 +311,7 @@ export const PreceptorListView = ({ college, onAddNew }) => {
           onClose={() => setIsViewModalOpen(false)}
           title="Clinical Preceptor Profile"
           subtitle={`Details for ${selectedPreceptor.full_name}`}
-          maxWidth="max-w-md"
+          maxWidth="max-w-2xl"
         >
           <div className="space-y-4 text-xs">
             <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
@@ -335,20 +335,20 @@ export const PreceptorListView = ({ college, onAddNew }) => {
               </div>
             </div>
 
-            <div className="space-y-2.5 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Department:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">{selectedPreceptor.department}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Qualification:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedPreceptor.qualification}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Mobile Number:</span>
                 <span className="font-mono text-slate-800 dark:text-slate-200">{selectedPreceptor.mobile_number}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">Email (User ID):</span>
                 <span className="font-mono text-slate-800 dark:text-slate-200">{selectedPreceptor.email}</span>
               </div>

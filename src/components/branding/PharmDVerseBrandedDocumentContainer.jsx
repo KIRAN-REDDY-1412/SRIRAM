@@ -84,8 +84,10 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   return (
     <div
-      className={`bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break ${
-        isLandscape ? 'max-w-5xl mx-auto' : 'max-w-3xl mx-auto'
+      className={`bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 ${
+        isLandscape 
+          ? 'w-full max-w-5xl mx-auto aspect-[297/210]' 
+          : 'w-full max-w-3xl mx-auto min-h-[297mm]'
       } ${
         zebraStriping ? '[&_tbody_tr:nth-child(even)]:bg-slate-100/70' : '[&_tbody_tr]:bg-white'
       } ${

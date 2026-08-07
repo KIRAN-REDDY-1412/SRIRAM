@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Palette, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info } from 'lucide-react';
+import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info } from 'lucide-react';
 import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -40,6 +40,183 @@ const DEFAULT_SETTINGS = {
   repeat_table_header: true,
   show_student_signature: true,
   show_preceptor_signature: true
+};
+
+const SampleTwoPageDocument = ({ college, settings }) => {
+  return (
+    <div className="space-y-6">
+      {/* PAGE 1 OF 2 */}
+      <PharmDVerseBrandedDocumentContainer
+        college={college}
+        branding={settings}
+        documentTitle="Patient Profile Documentation"
+        caseId="AMRMCP-2026-000001"
+        student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
+        preceptorName="Dr. Preceptor"
+        pageNumber="1 of 2"
+        showSignatures={false}
+      >
+        <div className="space-y-4 text-xs">
+          {/* Section 1: Patient Demographics */}
+          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-2">
+            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
+              1. Patient Demographics & Profile
+            </strong>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+              <div>Patient Name: <span className="font-bold">John Doe</span></div>
+              <div>Age / Gender: <span className="font-bold">45 yrs / Male</span></div>
+              <div>IP / OP No: <span className="font-bold font-mono">IP-98765</span></div>
+              <div>Ward / Unit: <span>Male Medical Ward (Unit-3)</span></div>
+              <div>Date of Admission: <span className="font-mono font-bold">01/08/2026</span></div>
+              <div>Attending Physician: <span>Dr. A. Sharma, M.D.</span></div>
+            </div>
+            <div className="pt-1 text-[11px] border-t branded-border space-y-1">
+              <div><strong>Chief Complaints:</strong> High grade fever, breathlessness, and cough with rusty sputum for 3 days.</div>
+              <div><strong>Past History:</strong> Hypertension (5 yrs), T2DM (3 yrs). Known Allergy: Penicillin (Skin Rash).</div>
+              <div><strong>Provisional Diagnosis:</strong> Severe Community Acquired Pneumonia (CAP) with Uncontrolled T2DM.</div>
+            </div>
+          </div>
+
+          {/* Section 2: Laboratory Investigations */}
+          <div className="space-y-1 text-xs">
+            <strong className="block font-extrabold uppercase text-[11px] border-b pb-1 branded-heading branded-border">
+              2. Key Laboratory Investigations
+            </strong>
+            <table className="w-full text-left border border-collapse text-[10px] branded-border">
+              <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                <tr>
+                  <th className="p-1.5 border-r branded-border">Investigation Parameter</th>
+                  <th className="p-1.5 border-r branded-border">Observed Value</th>
+                  <th className="p-1.5 border-r branded-border">Reference Range</th>
+                  <th className="p-1.5">Clinical Inference</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y branded-border">
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Hemoglobin (Hb %)</td>
+                  <td className="p-1.5 border-r font-mono font-bold branded-border">12.4 gm%</td>
+                  <td className="p-1.5 border-r branded-border">11 - 16.5 gm%</td>
+                  <td className="p-1.5 font-bold" style={{ color: settings?.secondary_color || '#0284c7' }}>Normal Range</td>
+                </tr>
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Total WBC Count</td>
+                  <td className="p-1.5 border-r font-mono font-bold text-rose-600 branded-border">14,800 /mm³</td>
+                  <td className="p-1.5 border-r branded-border">4000 - 10000 /mm³</td>
+                  <td className="p-1.5 text-rose-600 font-bold">Leukocytosis (Infection)</td>
+                </tr>
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Serum Creatinine</td>
+                  <td className="p-1.5 border-r font-mono font-bold branded-border">1.1 mg/dL</td>
+                  <td className="p-1.5 border-r branded-border">0.6 - 1.2 mg/dL</td>
+                  <td className="p-1.5 font-bold" style={{ color: settings?.secondary_color || '#0284c7' }}>Normal Renal Function</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 border-r font-bold branded-border">Random Blood Sugar (RBS)</td>
+                  <td className="p-1.5 border-r font-mono font-bold text-amber-600 branded-border">240 mg/dL</td>
+                  <td className="p-1.5 border-r branded-border">70 - 140 mg/dL</td>
+                  <td className="p-1.5 text-amber-600 font-bold">Hyperglycemia</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Section 3: Prescribed Medications */}
+          <div className="space-y-1 text-xs">
+            <strong className="block font-extrabold uppercase text-[11px] border-b pb-1 branded-heading branded-border">
+              3. Prescribed Pharmacotherapy Log
+            </strong>
+            <table className="w-full text-left border border-collapse text-[10px] branded-border">
+              <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                <tr>
+                  <th className="p-1.5 border-r branded-border">Brand & Generic Name</th>
+                  <th className="p-1.5 border-r branded-border">Dose & Route</th>
+                  <th className="p-1.5 border-r branded-border">Frequency</th>
+                  <th className="p-1.5">Indication</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y branded-border">
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Inj. Ceftriaxone 1g (Cefzone)</td>
+                  <td className="p-1.5 border-r branded-border">1 g IV</td>
+                  <td className="p-1.5 border-r font-mono branded-border">BD (Q12H)</td>
+                  <td className="p-1.5">Pneumonia Management</td>
+                </tr>
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Tab. Azithromycin 500mg (Azithral)</td>
+                  <td className="p-1.5 border-r branded-border">500 mg PO</td>
+                  <td className="p-1.5 border-r font-mono branded-border">OD (Q24H)</td>
+                  <td className="p-1.5">Atypical Antibiotic Cover</td>
+                </tr>
+                <tr className="border-b branded-border">
+                  <td className="p-1.5 border-r font-bold branded-border">Tab. Metformin 500mg (Glycomet)</td>
+                  <td className="p-1.5 border-r branded-border">500 mg PO</td>
+                  <td className="p-1.5 border-r font-mono branded-border">BD (Q12H)</td>
+                  <td className="p-1.5">Glycemic Control</td>
+                </tr>
+                <tr>
+                  <td className="p-1.5 border-r font-bold branded-border">Tab. Paracetamol 650mg (Dolo)</td>
+                  <td className="p-1.5 border-r branded-border">650 mg PO</td>
+                  <td className="p-1.5 border-r font-mono branded-border">TID SOS</td>
+                  <td className="p-1.5">Antipyretic / Analgesic</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </PharmDVerseBrandedDocumentContainer>
+
+      {/* PAGE 2 OF 2 */}
+      <PharmDVerseBrandedDocumentContainer
+        college={college}
+        branding={settings}
+        documentTitle="Clinical Case Logbook Record"
+        caseId="AMRMCP-2026-000001"
+        student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
+        preceptorName="Dr. Preceptor"
+        pageNumber="2 of 2"
+        isLastPage={true}
+        showSignatures={true}
+      >
+        <div className="space-y-4 text-xs">
+          {/* Section 4: Patient Counselling Record */}
+          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
+            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
+              4. Patient Counselling Record
+            </strong>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div>Date: <span className="font-mono font-bold">04/08/2026</span></div>
+              <div>Mode: <span>Oral & Leaflet</span></div>
+              <div className="col-span-2">Focus: <span>Antibiotic regimen compliance, blood glucose monitoring, and hydration.</span></div>
+              <div className="col-span-2">Barriers & Action: <span>Mild language barrier resolved using pictorial dosage schedule.</span></div>
+            </div>
+          </div>
+
+          {/* Section 5: Pharmacist Intervention Log */}
+          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
+            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
+              5. Clinical Pharmacist Intervention
+            </strong>
+            <div className="text-[11px] space-y-1">
+              <div><strong>Problem Identified:</strong> Patient allergic to Penicillins; verified non-cross-reactivity with Ceftriaxone.</div>
+              <div><strong>Recommendation:</strong> Spaced administration of oral antidiabetic drug relative to antibiotic IV infusion.</div>
+              <div><strong>Physician Acceptance:</strong> Discussed with Dr. A. Sharma; recommendation accepted and recorded.</div>
+            </div>
+          </div>
+
+          {/* Section 6: Adverse Drug Reaction Log */}
+          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
+            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
+              6. Adverse Drug Reaction (ADR) Monitoring
+            </strong>
+            <div className="text-[11px] space-y-1">
+              <div><strong>Reaction Title:</strong> Mild gastric irritation post Metformin ingestion.</div>
+              <div><strong>Causality Rating:</strong> Possible (Naranjo Algorithm Score: 4). Advice: Take after food.</div>
+            </div>
+          </div>
+        </div>
+      </PharmDVerseBrandedDocumentContainer>
+    </div>
+  );
 };
 
 export const DocumentBrandingView = ({ college: initialCollege }) => {
@@ -406,252 +583,43 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
           </div>
 
-          {/* SECTIONS 5, 6, 7: PAGE SETUP, MARGINS, TYPOGRAPHY, COLORS */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
-            {/* SECTION 5: PAGE SETUP & MARGINS */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                Page & Margins
-              </h4>
-
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Paper Size</label>
-                  <select value={settings.paper_size} onChange={(e) => handleChange('paper_size', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
-                    <option value="A4">A4</option>
-                    <option value="Letter">Letter</option>
-                  </select>
+          {/* RIGHT COLUMN: INSTANT REAL-TIME LIVE PREVIEW PANEL */}
+          {showLivePreviewPanel && (
+            <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
+              <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-2 text-xs font-extrabold">
+                  <MonitorPlay className="w-4 h-4 text-emerald-400" />
+                  <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
                 </div>
+                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
+                  REAL-TIME 2-PAGE LIVE
+                </span>
+              </div>
 
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Orientation</label>
-                  <select value={settings.orientation} onChange={(e) => handleChange('orientation', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
-                    <option value="Portrait">Portrait</option>
-                    <option value="Landscape">Landscape</option>
-                  </select>
-                </div>
-
-                <div className="pt-1 grid grid-cols-2 gap-1.5 text-[10px]">
-                  <div>
-                    <label className="block text-slate-400">Margin Top</label>
-                    <input type="text" value={settings.margin_top} onChange={(e) => handleChange('margin_top', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400">Margin Bottom</label>
-                    <input type="text" value={settings.margin_bottom} onChange={(e) => handleChange('margin_bottom', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400">Margin Left</label>
-                    <input type="text" value={settings.margin_left} onChange={(e) => handleChange('margin_left', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400">Margin Right</label>
-                    <input type="text" value={settings.margin_right} onChange={(e) => handleChange('margin_right', e.target.value)} className="w-full h-7 px-1.5 rounded border border-slate-200 font-mono" />
-                  </div>
-                </div>
+              <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
+                <SampleTwoPageDocument college={college} settings={settings} />
               </div>
             </div>
-
-            {/* SECTION 6: TYPOGRAPHY & FONT SIZES */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <Type className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Typography
-              </h4>
-
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Font Family</label>
-                  <select value={settings.font_family} onChange={(e) => handleChange('font_family', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold">
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Inter">Inter (Sans-serif)</option>
-                    <option value="Roboto">Roboto</option>
-                    <option value="Georgia">Georgia</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1 text-[10px]">
-                  <div>
-                    <label className="block text-slate-400">Title Pt</label>
-                    <input type="text" value={settings.title_font_size} onChange={(e) => handleChange('title_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400">Heading Pt</label>
-                    <input type="text" value={settings.heading_font_size} onChange={(e) => handleChange('heading_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400">Body Pt</label>
-                    <input type="text" value={settings.body_font_size} onChange={(e) => handleChange('body_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 font-mono" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 7: COLORS AUDIT */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <Palette className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                Colors
-              </h4>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400">Primary</label>
-                  <input type="color" value={settings.primary_color} onChange={(e) => handleChange('primary_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400">Secondary</label>
-                  <input type="color" value={settings.secondary_color} onChange={(e) => handleChange('secondary_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400">Header Bg</label>
-                  <input type="color" value={settings.table_header_color} onChange={(e) => handleChange('table_header_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400">Borders</label>
-                  <input type="color" value={settings.border_color} onChange={(e) => handleChange('border_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400">Text Color</label>
-                  <input type="color" value={settings.text_color} onChange={(e) => handleChange('text_color', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0" />
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* SECTION 8 & 9: TABLE SETTINGS & SIGNATURES */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              Section 8 & 9: Signatures & Table Layout
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div onClick={() => handleToggle('show_student_signature')} className={`p-2.5 rounded-xl border cursor-pointer flex justify-between items-center ${settings.show_student_signature ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 font-bold' : 'bg-slate-50 dark:bg-slate-800 border-slate-200'}`}>
-                <span>Student Sig</span>
-                <span className="text-[10px]">{settings.show_student_signature ? 'SHOW' : 'HIDE'}</span>
-              </div>
-
-              <div onClick={() => handleToggle('show_preceptor_signature')} className={`p-2.5 rounded-xl border cursor-pointer flex justify-between items-center ${settings.show_preceptor_signature ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 font-bold' : 'bg-slate-50 dark:bg-slate-800 border-slate-200'}`}>
-                <span>Preceptor Sig</span>
-                <span className="text-[10px]">{settings.show_preceptor_signature ? 'SHOW' : 'HIDE'}</span>
-              </div>
-
-              <div onClick={() => handleToggle('zebra_striping')} className={`p-2.5 rounded-xl border cursor-pointer flex justify-between items-center ${settings.zebra_striping ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-300 font-bold' : 'bg-slate-50 dark:bg-slate-800 border-slate-200'}`}>
-                <span>Zebra Striping</span>
-                <span className="text-[10px]">{settings.zebra_striping ? 'ON' : 'OFF'}</span>
-              </div>
-
-              <div onClick={() => handleToggle('repeat_table_header')} className={`p-2.5 rounded-xl border cursor-pointer flex justify-between items-center ${settings.repeat_table_header ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-300 font-bold' : 'bg-slate-50 dark:bg-slate-800 border-slate-200'}`}>
-                <span>Repeat Header</span>
-                <span className="text-[10px]">{settings.repeat_table_header ? 'ON' : 'OFF'}</span>
-              </div>
-            </div>
-          </div>
+          )}
 
         </div>
 
-        {/* RIGHT COLUMN: INSTANT REAL-TIME LIVE PREVIEW PANEL */}
-        {showLivePreviewPanel && (
-          <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
-            <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
-              <div className="flex items-center gap-2 text-xs font-extrabold">
-                <MonitorPlay className="w-4 h-4 text-emerald-400" />
-                <span>Live Interactive PDF Preview</span>
-              </div>
-              <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
-                REAL-TIME LIVE
-              </span>
+        {/* PREVIEW FULL PAGE MODAL */}
+        {isPreviewModalOpen && (
+          <ModalWrapper
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            title={`Full ${settings.paper_size} (${settings.orientation}) Centralized Document Branding Preview`}
+            subtitle={`Exact rendering across all PharmDVerse clinical documentation modules (${settings.paper_size} - ${settings.orientation})`}
+            maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
+          >
+            <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
+              <SampleTwoPageDocument college={college} settings={settings} />
             </div>
-
-            <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
-              <PharmDVerseBrandedDocumentContainer
-                college={college}
-                branding={settings}
-                documentTitle="Patient Profile Documentation"
-                caseId="AMRMCP-2026-000001"
-                student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
-                preceptorName="Dr. Preceptor"
-                pageNumber="1 of 1"
-              >
-                <div className="space-y-2 border p-3 bg-slate-50/20 font-bold text-xs branded-border">
-                  <strong className="block border-b pb-1 uppercase branded-heading branded-border">Sample Patient Information</strong>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>Patient Name: <span className="underline">John Doe</span></div>
-                    <div>Age / Gender: <span className="underline">45 yrs / Male</span></div>
-                    <div>IP No: <span className="font-mono underline">IP-98765</span></div>
-                    <div>BMI: <span className="font-mono underline">24.2 kg/m²</span></div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  <strong className="block uppercase font-bold text-xs border-b pb-1 branded-heading branded-border">
-                    Sample Prescribed Drugs:
-                  </strong>
-                  <table className="w-full text-left border border-collapse text-[11px] branded-border">
-                    <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
-                      <tr>
-                        <th className="p-1 border-r branded-border">Brand</th>
-                        <th className="p-1 border-r branded-border">Generic</th>
-                        <th className="p-1">Dose</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y font-serif branded-border">
-                      <tr className="border-b branded-border">
-                        <td className="p-1 border-r font-bold branded-border">Augmentin 625mg</td>
-                        <td className="p-1 border-r branded-border">Amoxicillin + Clavulanic Acid</td>
-                        <td className="p-1 font-mono">1 Tab BD</td>
-                      </tr>
-                      <tr>
-                        <td className="p-1 border-r font-bold branded-border">Paracetamol 650mg</td>
-                        <td className="p-1 border-r branded-border">Acetaminophen</td>
-                        <td className="p-1 font-mono">1 Tab TID</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </PharmDVerseBrandedDocumentContainer>
-            </div>
-          </div>
+          </ModalWrapper>
         )}
 
       </div>
-
-      {/* PREVIEW FULL A4 MODAL */}
-      {isPreviewModalOpen && (
-        <ModalWrapper
-          isOpen={isPreviewModalOpen}
-          onClose={() => setIsPreviewModalOpen(false)}
-          title="Full A4 Centralized Document Branding Preview"
-          subtitle="Exact rendering across all PharmDVerse clinical documentation modules"
-          maxWidth="max-w-4xl"
-        >
-          <div className="p-4 bg-slate-100 dark:bg-slate-950">
-            <PharmDVerseBrandedDocumentContainer
-              college={college}
-              branding={settings}
-              documentTitle="Patient Profile Documentation"
-              caseId="AMRMCP-2026-000001"
-              student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
-              preceptorName="Dr. Preceptor"
-              pageNumber="1 of 1"
-            >
-              <div className="space-y-3 text-xs">
-                <div className="p-3 border bg-slate-50 font-bold branded-border">
-                  <strong className="branded-heading">Full A4 Page Layout Test</strong>
-                  <p className="font-normal italic text-slate-600 mt-1">
-                    This preview uses your real-time configured font family ({settings.font_family}), orientation ({settings.orientation}), opacity ({settings.watermark_opacity}%), header toggles, signature settings, and footer branding.
-                  </p>
-                </div>
-              </div>
-            </PharmDVerseBrandedDocumentContainer>
-          </div>
-        </ModalWrapper>
-      )}
-
     </div>
   );
 };

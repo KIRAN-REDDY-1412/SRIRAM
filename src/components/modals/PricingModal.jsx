@@ -1,101 +1,73 @@
 import React from 'react';
 import { ModalWrapper } from './ModalWrapper';
-import { pricingPlans } from '../../data/pricingData';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { Sparkles, Building2, ShieldCheck, Clock, Layers } from 'lucide-react';
 
-export const PricingModal = ({ isOpen, onClose, onSelectPlanToRegister }) => {
+export const PricingModal = ({ isOpen, onClose }) => {
   return (
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="PharmDVerse Institutional Pricing"
-      subtitle="Transparent annual licensing tailored for pharmacy colleges and institutions"
-      maxWidth="max-w-5xl"
+      title="Institutional Pricing"
+      subtitle="Our subscription plans are currently being finalized. We are designing flexible licensing plans suitable for pharmacy colleges and institutions."
+      maxWidth="max-w-2xl"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-2">
-        {pricingPlans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`relative flex flex-col justify-between p-6 rounded-2xl border ${
-              plan.isPopular
-                ? 'border-emerald-500/80 dark:border-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20 shadow-lg ring-1 ring-emerald-500/30'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60'
-            } transition-all duration-200 hover:shadow-xl`}
-          >
-            {plan.isPopular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[11px] font-semibold uppercase tracking-wider rounded-full shadow-md">
-                {plan.badge}
-              </span>
-            )}
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h4>
-                {!plan.isPopular && (
-                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
-                    {plan.badge}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 min-h-[32px]">
-                {plan.tagline}
-              </p>
-
-              {/* Price & Student Limit */}
-              <div className="py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 mb-5 border border-slate-100 dark:border-slate-800">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{plan.price}</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">{plan.period}</span>
-                </div>
-                <div className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  {plan.studentLimit}
-                </div>
-              </div>
-
-              {/* Feature List */}
-              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 mb-6">
-                {plan.features.map((feat, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* CTA Button */}
-            <button
-              onClick={() => {
-                onClose();
-                onSelectPlanToRegister(plan.name);
-              }}
-              className={`w-full py-3 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm ${
-                plan.isPopular
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 shadow-md'
-                  : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white'
-              }`}
-            >
-              <span>{plan.ctaText}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+      <div className="py-8 px-4 sm:px-8 text-center space-y-6">
+        
+        {/* ILLUSTRATIVE ICON CONTAINER */}
+        <div className="relative w-20 h-20 mx-auto flex items-center justify-center rounded-3xl bg-gradient-to-tr from-emerald-500/20 via-teal-500/20 to-indigo-500/20 border border-emerald-500/30 dark:border-emerald-400/30 shadow-lg">
+          <Building2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+          <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="mt-4 p-4 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <p className="text-sky-800 dark:text-sky-300">
-          Need a custom deployment for multi-state university networks or hospital attachments?
-        </p>
-        <button
-          onClick={() => {
-            onClose();
-            onSelectPlanToRegister('Enterprise Custom');
-          }}
-          className="whitespace-nowrap px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors"
-        >
-          Contact Enterprise Sales
-        </button>
+        {/* MAIN COMING SOON HEADING & MESSAGE */}
+        <div className="space-y-2 max-w-lg mx-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Pricing Plans Coming Soon 🚀</span>
+          </span>
+
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            Official Subscription Plans Underway
+          </h3>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+            Official subscription plans, features, and licensing options will be announced soon. Stay tuned for updates as we finalize tailored packages for pharmacy colleges.
+          </p>
+        </div>
+
+        {/* KEY HIGHLIGHTS PREVIEW */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block text-xs font-bold text-slate-900 dark:text-white">Institutional Licensing</strong>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Tailored annual tiers for pharmacy colleges of all sizes.</span>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3">
+            <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block text-xs font-bold text-slate-900 dark:text-white">Full Feature Access</strong>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Includes all 5 clinical modules and custom branding controls.</span>
+            </div>
+          </div>
+        </div>
+
+        {/* DISABLED ACTION BUTTON */}
+        <div className="pt-2">
+          <button
+            type="button"
+            disabled
+            className="w-full sm:w-auto px-8 h-12 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-extrabold text-xs cursor-not-allowed border border-slate-300 dark:border-slate-700 opacity-80 flex items-center justify-center gap-2 mx-auto"
+          >
+            <Clock className="w-4 h-4 text-slate-400" />
+            <span>Pricing Available Soon</span>
+          </button>
+        </div>
+
       </div>
     </ModalWrapper>
   );

@@ -75,6 +75,26 @@ export default function App() {
     }
   }, [loggedCollegeAdmin]);
 
+  // Helper to normalize college object fields (handling both snake_case from DB and camelCase from frontend)
+  const normalizeCollege = (raw) => {
+    if (!raw) return null;
+    return {
+      ...raw,
+      name: raw.name || raw.college_name || 'Pharmacy College',
+      code: raw.code || raw.college_code || 'CLG',
+      description: raw.description || raw.college_description || '',
+      logoUrl: raw.logoUrl || raw.college_logo_url || '',
+      logoBg: raw.logoBg || 'from-emerald-500 to-teal-600',
+      initials: raw.initials || (raw.name || raw.college_name || 'CLG').substring(0, 3).toUpperCase(),
+      city: raw.city || '',
+      state: raw.state || '',
+      district: raw.district || '',
+      websiteUrl: raw.websiteUrl || raw.website_url || `https://${(raw.code || raw.college_code || 'clg').toLowerCase()}.pharmdverse.com`,
+      pciApprovalNo: raw.pciApprovalNo || raw.pci_approval_no || 'Verified',
+      status: raw.status || 'Active'
+    };
+  };
+
   // RESTORE ACTIVE SESSION ON BROWSER REFRESH (F5 / RELOAD)
   useEffect(() => {
     const session = getActiveSession();
@@ -87,22 +107,23 @@ export default function App() {
           clearActiveSession();
         }
       } else if (session.viewMode === 'college_admin' && (session.user || session.college)) {
-        const collegeObj = session.college || session.user;
+        const collegeObj = normalizeCollege(session.college || session.user);
         setLoggedCollegeAdmin(session.user || session.college);
         setActivePortalCollege(collegeObj);
         setViewMode('college_admin');
       } else if (session.viewMode === 'preceptor_portal' && session.user) {
         setLoggedPreceptor(session.user);
-        const collegeObj = session.user.colleges || session.college;
+        const collegeObj = normalizeCollege(session.user.colleges || session.college);
         if (collegeObj) setActivePortalCollege(collegeObj);
         setViewMode('preceptor_portal');
       } else if (session.viewMode === 'student_portal' && session.user) {
         setLoggedStudent(session.user);
-        const collegeObj = session.user.colleges || session.college;
+        const collegeObj = normalizeCollege(session.user.colleges || session.college);
         if (collegeObj) setActivePortalCollege(collegeObj);
         setViewMode('student_portal');
       } else if (session.viewMode === 'college_portal' && session.college) {
-        setActivePortalCollege(session.college);
+        const collegeObj = normalizeCollege(session.college);
+        setActivePortalCollege(collegeObj);
         setViewMode('college_portal');
       }
     }
@@ -119,10 +140,11 @@ export default function App() {
 
   // Open Full-Page College Portal Landing Page
   const handleOpenPortal = (college) => {
-    setActivePortalCollege(college);
+    const normalized = normalizeCollege(college);
+    setActivePortalCollege(normalized);
     setViewMode('college_portal');
     setAllCollegesOpen(false);
-    saveActiveSession({ viewMode: 'college_portal', college });
+    saveActiveSession({ viewMode: 'college_portal', college: normalized });
   };
 
   // Back to Main Public PharmDVerse Website
@@ -138,7 +160,7 @@ export default function App() {
 
   // Student Logout -> Redirect to Student's College Landing Page
   const handleStudentLogout = () => {
-    const collegeObj = loggedStudent?.colleges || activePortalCollege;
+    const collegeObj = normalizeCollege(loggedStudent?.colleges || activePortalCollege);
     setLoggedStudent(null);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
@@ -151,7 +173,7 @@ export default function App() {
 
   // Preceptor Logout -> Redirect to Preceptor's College Landing Page
   const handlePreceptorLogout = () => {
-    const collegeObj = loggedPreceptor?.colleges || activePortalCollege;
+    const collegeObj = normalizeCollege(loggedPreceptor?.colleges || activePortalCollege);
     setLoggedPreceptor(null);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
@@ -164,7 +186,7 @@ export default function App() {
 
   // College Admin Logout -> Redirect to College Landing Page
   const handleCollegeAdminLogout = () => {
-    const collegeObj = loggedCollegeAdmin || activePortalCollege;
+    const collegeObj = normalizeCollege(loggedCollegeAdmin || activePortalCollege);
     setLoggedCollegeAdmin(null);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
@@ -183,15 +205,16 @@ export default function App() {
   };
 
   const handleCollegeAdminLoginSuccess = (college) => {
+    const normalized = normalizeCollege(college);
     setLoggedCollegeAdmin(college);
-    setActivePortalCollege(college);
+    setActivePortalCollege(normalized);
     setViewMode('college_admin');
     setCollegeAdminLoginOpen(false);
-    saveActiveSession({ viewMode: 'college_admin', college, user: college });
+    saveActiveSession({ viewMode: 'college_admin', college: normalized, user: college });
   };
 
   const handlePreceptorLoginSuccess = (preceptor) => {
-    const collegeObj = preceptor.colleges || activePortalCollege;
+    const collegeObj = normalizeCollege(preceptor.colleges || activePortalCollege);
     setLoggedPreceptor(preceptor);
     if (collegeObj) setActivePortalCollege(collegeObj);
     setViewMode('preceptor_portal');
@@ -200,7 +223,7 @@ export default function App() {
   };
 
   const handleStudentLoginSuccess = (student) => {
-    const collegeObj = student.colleges || activePortalCollege;
+    const collegeObj = normalizeCollege(student.colleges || activePortalCollege);
     setLoggedStudent(student);
     if (collegeObj) setActivePortalCollege(collegeObj);
     setViewMode('student_portal');

@@ -2,16 +2,31 @@ import React, { useEffect } from 'react';
 import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin, onOpenPreceptorLogin, onOpenStudentLogin }) => {
+export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpenAdminLogin, onOpenPreceptorLogin, onOpenStudentLogin }) => {
   const { isDark } = useTheme();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [college]);
+  }, [rawCollege]);
 
-  if (!college) return null;
+  if (!rawCollege) return null;
 
-  const baseUrl = college.portalUrl || `https://${(college.code || 'clg').toLowerCase()}.pharmdverse.com`;
+  const college = {
+    ...rawCollege,
+    name: rawCollege.name || rawCollege.college_name || 'Pharmacy College',
+    code: rawCollege.code || rawCollege.college_code || 'CLG',
+    description: rawCollege.description || rawCollege.college_description || '',
+    logoUrl: rawCollege.logoUrl || rawCollege.college_logo_url || '',
+    logoBg: rawCollege.logoBg || 'from-emerald-500 to-teal-600',
+    initials: rawCollege.initials || (rawCollege.name || rawCollege.college_name || 'CLG').substring(0, 3).toUpperCase(),
+    city: rawCollege.city || '',
+    state: rawCollege.state || '',
+    district: rawCollege.district || '',
+    websiteUrl: rawCollege.websiteUrl || rawCollege.website_url || `https://${(rawCollege.code || rawCollege.college_code || 'clg').toLowerCase()}.pharmdverse.com`,
+    status: rawCollege.status || 'Active'
+  };
+
+  const baseUrl = college.websiteUrl || `https://${(college.code || 'clg').toLowerCase()}.pharmdverse.com`;
   const locationText = [college.city, college.district, college.state].filter(Boolean).join(', ');
 
   const logins = [

@@ -1,8 +1,11 @@
+import React, { useState, useEffect } from 'react';
+import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 
 export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpenAdminLogin, onOpenPreceptorLogin, onOpenStudentLogin }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [showLogoModal, setShowLogoModal] = React.useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -96,7 +96,8 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
       c.ward_unit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.ip_op_type?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
+    const caseStatus = c.overall_case_status || c.status || 'Draft';
+    const matchesStatus = statusFilter === 'All' || caseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -240,15 +241,15 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status:</span>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-            {['All', 'Draft', 'Submitted'].map((st) => (
+          <div className="flex flex-wrap items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            {['All', 'Draft', 'Submitted', 'Under Review', 'Returned', 'Approved'].map((st) => (
               <button
                 key={st}
                 onClick={() => {
                   setStatusFilter(st);
                   setCurrentPage(1);
                 }}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                   statusFilter === st
                     ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

@@ -51,6 +51,7 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -131,15 +132,19 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
     }
 
     if (formData.newPassword || formData.confirmNewPassword) {
+      const pwdErrs = {};
       if (formData.newPassword.length < 8) {
-        setErrorMsg('New Password must be at least 8 characters long.');
-        return;
+        pwdErrs.newPassword = '❌ Password must contain at least 8 characters.';
       }
       if (formData.newPassword !== formData.confirmNewPassword) {
-        setErrorMsg('New Password and Confirm Password do not match.');
+        pwdErrs.confirmNewPassword = '❌ Passwords do not match.';
+      }
+      if (Object.keys(pwdErrs).length > 0) {
+        setFieldErrors(pwdErrs);
         return;
       }
     }
+    setFieldErrors({});
 
     setSaving(true);
     const updatePayload = {
@@ -430,9 +435,13 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
                   type={showPassword ? 'text' : 'password'}
                   name="newPassword"
                   value={formData.newPassword}
-                  onChange={handleChange}
+                  onChange={(e) => { handleChange(e); setFieldErrors(prev => ({ ...prev, newPassword: '' })); }}
                   placeholder="Leave blank to keep current password"
-                  className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                  className={`w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                    fieldErrors.newPassword
+                      ? 'border-rose-500 focus:ring-rose-500/50'
+                      : 'border-slate-200 dark:border-slate-800 focus:ring-indigo-500/50'
+                  }`}
                 />
                 <button
                   type="button"
@@ -442,6 +451,9 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {fieldErrors.newPassword && (
+                <p className="text-[10px] text-rose-600 mt-1 font-semibold pl-1">{fieldErrors.newPassword}</p>
+              )}
             </div>
 
             <div>
@@ -453,9 +465,13 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
                   type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmNewPassword"
                   value={formData.confirmNewPassword}
-                  onChange={handleChange}
+                  onChange={(e) => { handleChange(e); setFieldErrors(prev => ({ ...prev, confirmNewPassword: '' })); }}
                   placeholder="Confirm new password"
-                  className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                  className={`w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                    fieldErrors.confirmNewPassword
+                      ? 'border-rose-500 focus:ring-rose-500/50'
+                      : 'border-slate-200 dark:border-slate-800 focus:ring-indigo-500/50'
+                  }`}
                 />
                 <button
                   type="button"
@@ -465,6 +481,9 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {fieldErrors.confirmNewPassword && (
+                <p className="text-[10px] text-rose-600 mt-1 font-semibold pl-1">{fieldErrors.confirmNewPassword}</p>
+              )}
             </div>
           </div>
         </div>

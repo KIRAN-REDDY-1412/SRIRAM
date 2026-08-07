@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { hashPassword } from '../../services/supabaseService';
 import { Eye, EyeOff, ShieldCheck, Key, Lock, AlertTriangle } from 'lucide-react';
 
-export function ChangePasswordSection({ user, userType, isForceReset = false, onSuccess }) {
+export function ChangePasswordSection({ user, userType, isForceReset = false, onSuccess, onLogout }) {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -127,13 +127,20 @@ export function ChangePasswordSection({ user, userType, isForceReset = false, on
           performed_by: user.id // Logged user performed it themselves
         });
 
-      setToastMsg('✅ Password changed successfully.');
+      setToastMsg('✅ Password changed successfully. Redirecting to login...');
       setOldPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
 
       if (onSuccess) {
         onSuccess(updatedUser);
+      }
+
+      // Force logout after showing success toast
+      if (onLogout) {
+        setTimeout(() => {
+          onLogout();
+        }, 2000);
       }
     } catch (err) {
       setToastMsg(`❌ Error: ${err.message}`);

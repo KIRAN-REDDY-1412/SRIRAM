@@ -13,7 +13,7 @@ import { PharmacistInterventionFormView } from '../pharmacistIntervention/Pharma
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { NotificationsView } from '../common/NotificationsView';
-import { ChangePasswordSection } from '../common/ChangePasswordSection';
+
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const StudentLayout = ({ student, onLogout }) => {
@@ -39,7 +39,16 @@ export const StudentLayout = ({ student, onLogout }) => {
     return () => clearInterval(interval);
   }, [student?.id, activeTab]);
 
+  // Force Password Reset: auto-navigate to profile tab and block other navigation
+  useEffect(() => {
+    if (forcePasswordReset) {
+      setActiveTab('profile');
+    }
+  }, [forcePasswordReset]);
+
   const handleNavigate = (tab) => {
+    // Block navigation if force password reset is active
+    if (forcePasswordReset && tab !== 'profile') return;
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -122,7 +131,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 activeTab === 'dashboard'
                   ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              } ${forcePasswordReset ? 'pointer-events-none opacity-40' : ''}`}
             >
               <LayoutDashboard className="w-4 h-4 shrink-0" />
               <span>Dashboard</span>
@@ -141,7 +150,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                     activeTab === 'add-new-case'
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  } ${forcePasswordReset ? 'pointer-events-none opacity-40' : ''}`}
                 >
                   <FilePlus2 className="w-4 h-4 shrink-0" />
                   <span>Add New Case</span>
@@ -153,7 +162,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                     activeTab === 'my-cases' || activeTab === 'patient-profile' || activeTab === 'patient-counselling' || activeTab === 'pharmacist-intervention' || activeTab === 'drug-info-request' || activeTab === 'adr-documentation'
                       ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                       : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  } ${forcePasswordReset ? 'pointer-events-none opacity-40' : ''}`}
                 >
                   <FolderKanban className="w-4 h-4 shrink-0" />
                   <span>My Clinical Cases</span>
@@ -168,7 +177,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 activeTab === 'my-preceptor'
                   ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              } ${forcePasswordReset ? 'pointer-events-none opacity-40' : ''}`}
             >
               <Stethoscope className="w-4 h-4 shrink-0" />
               <span>My Preceptor</span>
@@ -181,7 +190,7 @@ export const StudentLayout = ({ student, onLogout }) => {
                 activeTab === 'notifications'
                   ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              } ${forcePasswordReset ? 'pointer-events-none opacity-40' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <Bell className="w-4 h-4 shrink-0" />
@@ -278,26 +287,7 @@ export const StudentLayout = ({ student, onLogout }) => {
           </div>
         </header>
 
-        {/* FORCE PASSWORD RESET SCREEN */}
-        {forcePasswordReset ? (
-          <main className="flex-1 p-4 sm:p-8 flex items-center justify-center">
-            <div className="w-full max-w-md space-y-4">
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block font-bold mb-1">Password Reset Required</strong>
-                  Your college administrator has reset your password. You must set a new secure password before you can access the portal.
-                </div>
-              </div>
-              <ChangePasswordSection
-                user={student}
-                userType="Student"
-                isForceReset={true}
-                onSuccess={() => setForcePasswordReset(false)}
-              />
-            </div>
-          </main>
-        ) : (
+        {/* VIEW ROUTER */}
         <main className="flex-1 p-4 sm:p-8">
           {activeTab === 'dashboard' && (
             <StudentDashboardView student={student} onNavigate={handleNavigate} />
@@ -385,10 +375,9 @@ export const StudentLayout = ({ student, onLogout }) => {
           )}
 
           {activeTab === 'profile' && (
-            <StudentProfileView student={student} />
+            <StudentProfileView student={student} onLogout={onLogout} forcePasswordReset={forcePasswordReset} />
           )}
         </main>
-        )}
         {/* FOOTER */}
         <footer className="py-4 px-6 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-center text-xs text-slate-500 dark:text-slate-400">
           <p>© 2026 PharmDVerse Cloud. Student Module for {student?.full_name}. All rights reserved.</p>

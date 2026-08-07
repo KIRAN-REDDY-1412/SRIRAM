@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserCheck, GraduationCap, Calendar, Phone, Mail, ShieldCheck } from 'lucide-react';
 import { ChangePasswordSection } from '../common/ChangePasswordSection';
 
-export const StudentProfileView = ({ student }) => {
+export const StudentProfileView = ({ student, onLogout, forcePasswordReset = false }) => {
   const [studentState, setStudentState] = useState(student);
   if (!studentState) return null;
 
@@ -113,10 +113,21 @@ export const StudentProfileView = ({ student }) => {
           <span className="font-mono font-bold text-slate-700 dark:text-slate-300">Status: {studentState.status}</span>
         </div>
 
-        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+          {forcePasswordReset && (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold mb-1">Password Reset Required</strong>
+                Your college administrator has reset your password. You must set a new secure password before you can access the portal.
+              </div>
+            </div>
+          )}
           <ChangePasswordSection
             user={studentState}
             userType="Student"
+            isForceReset={forcePasswordReset}
+            onLogout={onLogout}
             onSuccess={(updatedStudent) => {
               setStudentState(updatedStudent);
             }}

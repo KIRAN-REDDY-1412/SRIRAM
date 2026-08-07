@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { hashPassword } from '../../services/supabaseService';
-import { Eye, EyeOff, ShieldCheck, Key, RefreshCw, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, RefreshCw, Copy, Check, AlertTriangle } from 'lucide-react';
 
 export function SecurityManagementSection({ user, userType, collegeAdminId, onUpdateUser }) {
-  const [showChangeForm, setShowChangeForm] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -34,22 +30,7 @@ export function SecurityManagementSection({ user, userType, collegeAdminId, onUp
     }
   }, [toastMsg]);
 
-  // Password Strength Evaluator
-  const getPasswordStrength = (pwd) => {
-    if (!pwd) return { label: 'Empty', color: 'bg-slate-200 dark:bg-slate-800 text-slate-400', width: 'w-0' };
-    if (pwd.length < 8) return { label: 'Too Short', color: 'bg-rose-500 text-rose-500', width: 'w-1/4' };
-    
-    let score = 0;
-    if (/[a-zA-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^a-zA-Z0-9]/.test(pwd)) score++;
 
-    if (score === 1) return { label: 'Weak', color: 'bg-rose-500 text-rose-500', width: 'w-1/3' };
-    if (score === 2) return { label: 'Medium', color: 'bg-amber-500 text-amber-500', width: 'w-2/3' };
-    return { label: 'Strong', color: 'bg-emerald-500 text-emerald-500', width: 'w-full' };
-  };
-
-  const strength = getPasswordStrength(newPassword);
 
   // Handle Toggle Force Password Reset
   const handleToggleForceReset = async () => {
@@ -78,74 +59,7 @@ export function SecurityManagementSection({ user, userType, collegeAdminId, onUp
     }
   };
 
-  // Handle Change Password
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    
-    const errs = {};
-    if (!newPassword) {
-      errs.newPassword = '❌ Password is required.';
-    } else if (newPassword.length < 8) {
-      errs.newPassword = '❌ Password must contain at least 8 characters.';
-    }
 
-    if (!confirmNewPassword) {
-      errs.confirmNewPassword = '❌ Please confirm the password.';
-    } else if (newPassword !== confirmNewPassword) {
-      errs.confirmNewPassword = '❌ Passwords do not match.';
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const table = userType === 'Student' ? 'students' : 'preceptors';
-      const newHash = await hashPassword(newPassword);
-
-      // Update Database
-      const { data, error } = await supabase
-        .from(table)
-        .update({
-          password_hash: newHash,
-          password_changed_at: new Date().toISOString(),
-          failed_login_attempts: 0
-        })
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        setToastMsg(`❌ Database Error: ${error.message}`);
-        setSaving(false);
-        return;
-      }
-
-      // Record Audit Log
-      await supabase
-        .from('password_audit_logs')
-        .insert({
-          user_id: user.id,
-          user_type: userType,
-          action: 'Password Changed',
-          performed_by: collegeAdminId
-        });
-
-      setToastMsg('✅ Password updated successfully.');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setShowChangeForm(false);
-      
-      if (onUpdateUser) onUpdateUser(data);
-    } catch (err) {
-      setToastMsg(`❌ Error updating password: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Handle Reset Password (Generate Temporary Password)
   const handleResetPassword = async () => {
@@ -280,133 +194,18 @@ export function SecurityManagementSection({ user, userType, collegeAdminId, onUp
         </div>
       </div>
 
-      {/* Main Buttons Actions */}
-      {!showChangeForm && (
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setShowResetConfirm(true)}
-            disabled={saving}
-            className="h-[40px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold flex items-center justify-center gap-2 transition-all"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Reset Password</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setShowChangeForm(true)}
-            disabled={saving}
-            className="h-[40px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-sm shadow-indigo-600/10"
-          >
-            <Key className="w-4 h-4" />
-            <span>Change Password</span>
-          </button>
-        </div>
-      )}
-
-      {/* Manual Change Password Form */}
-      {showChangeForm && (
-        <form onSubmit={handleChangePassword} className="p-4 rounded-2xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/10 dark:bg-indigo-950/10 space-y-4 animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-indigo-100/50 dark:border-indigo-950 pb-2">
-            <h5 className="font-bold text-slate-800 dark:text-slate-200">Manually Set New Password</h5>
-            <button
-              type="button"
-              onClick={() => {
-                setShowChangeForm(false);
-                setErrors({});
-                setNewPassword('');
-                setConfirmNewPassword('');
-              }}
-              className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {/* New Password */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-400 mb-1">
-              New Password * (Min 8 chars)
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className={`w-full h-[38px] pl-3 pr-9 text-xs rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none transition-all ${
-                  errors.newPassword 
-                    ? 'border-rose-500 focus:ring-1 focus:ring-rose-500' 
-                    : 'border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-indigo-500'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="p-1 text-slate-400 hover:text-slate-600 absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-            {errors.newPassword && (
-              <p className="text-[10px] text-rose-600 mt-1 font-semibold pl-1">{errors.newPassword}</p>
-            )}
-          </div>
-
-          {/* Confirm New Password */}
-          <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-400 mb-1">
-              Confirm New Password *
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className={`w-full h-[38px] pl-3 pr-9 text-xs rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none transition-all ${
-                  errors.confirmNewPassword 
-                    ? 'border-rose-500 focus:ring-1 focus:ring-rose-500' 
-                    : 'border-slate-200 dark:border-slate-800 focus:ring-1 focus:ring-indigo-500'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="p-1 text-slate-400 hover:text-slate-600 absolute right-2 top-1/2 -translate-y-1/2 transition-colors"
-              >
-                {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-            {errors.confirmNewPassword && (
-              <p className="text-[10px] text-rose-600 mt-1 font-semibold pl-1">{errors.confirmNewPassword}</p>
-            )}
-          </div>
-
-          {/* Strength Indicator */}
-          {newPassword && (
-            <div className="space-y-1 pt-1">
-              <div className="flex items-center justify-between text-[9px] font-bold">
-                <span className="text-slate-400">Password Strength:</span>
-                <span className={strength.color.replace('bg-', 'text-')}>{strength.label}</span>
-              </div>
-              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full transition-all duration-300 ${strength.color} ${strength.width}`} />
-              </div>
-            </div>
-          )}
-
-          {/* Submit Change Button */}
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full h-[38px] rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-          >
-            {saving ? 'Updating...' : 'Save New Password'}
-          </button>
-        </form>
-      )}
+      {/* Reset Password Action */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowResetConfirm(true)}
+          disabled={saving}
+          className="w-full h-[40px] rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 hover:bg-rose-50 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold flex items-center justify-center gap-2 transition-all"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span>Reset Password</span>
+        </button>
+      </div>
 
       {/* SUCCESS TOAST MESSAGE */}
       {toastMsg && (

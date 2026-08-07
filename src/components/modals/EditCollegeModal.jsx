@@ -34,6 +34,8 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [toastMessage, setToastMessage] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadSuccess, setLogoUploadSuccess] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -113,53 +115,130 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidationError('');
+    setErrors({});
 
-    // 1. Mandatory Principal Email
+    const errorsList = {};
+
+    // 1. Field validation
+    if (!formData.collegeName || !formData.collegeName.trim()) {
+      errorsList.collegeName = '❌ This field is required.';
+    }
+    if (!formData.collegeCode || !formData.collegeCode.trim()) {
+      errorsList.collegeCode = '❌ This field is required.';
+    }
+    if (!formData.city || !formData.city.trim()) {
+      errorsList.city = '❌ This field is required.';
+    }
+    if (!formData.state || !formData.state.trim()) {
+      errorsList.state = '❌ This field is required.';
+    }
+    if (!formData.principalName || !formData.principalName.trim()) {
+      errorsList.principalName = '❌ This field is required.';
+    }
+    if (!formData.principalMobile || !formData.principalMobile.trim()) {
+      errorsList.principalMobile = '❌ This field is required.';
+    }
+
+    // Email validation
     if (!formData.principalEmail || !formData.principalEmail.trim()) {
-      setValidationError('Principal Email Address is required and will be used as College Admin User ID.');
-      return;
+      errorsList.principalEmail = '❌ This field is required.';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.principalEmail.trim())) {
+        errorsList.principalEmail = '❌ Please enter a valid email address.';
+      } else {
+        // Unique Check - ONLY run if the email field was modified!
+        const originalEmail = college.principalEmail || college.principal_email || college.email || '';
+        if (formData.principalEmail.trim().toLowerCase() !== originalEmail.trim().toLowerCase()) {
+          const existing = activeColleges.find(
+            c => c.id !== college?.id && (
+              c.adminUsername?.toLowerCase() === formData.principalEmail.trim().toLowerCase() || 
+              c.principalEmail?.toLowerCase() === formData.principalEmail.trim().toLowerCase() || 
+              c.college_admin_username?.toLowerCase() === formData.principalEmail.trim().toLowerCase()
+            )
+          );
+          if (existing) {
+            errorsList.principalEmail = `❌ User ID is already assigned to another college (${existing.name}).`;
+          }
+        }
+      }
     }
 
-    // 2. Check User ID Uniqueness across existing active colleges (excluding current college)
-    const existingCollegeWithSameEmail = activeColleges.find(
-      c => c.id !== college?.id && (c.adminUsername?.toLowerCase() === formData.principalEmail.trim().toLowerCase() || c.principalEmail?.toLowerCase() === formData.principalEmail.trim().toLowerCase())
-    );
-
-    if (existingCollegeWithSameEmail) {
-      setValidationError(`User ID '${formData.principalEmail}' is already assigned to another college (${existingCollegeWithSameEmail.name}). User ID must be unique.`);
-      return;
-    }
-
-    // 3. Password Validation if password entered or updating credentials
+    // Password validation - only run if user typed a password
     if (formData.adminPassword || formData.confirmAdminPassword) {
       if (formData.adminPassword.length < 8) {
-        setValidationError('College Admin Password must be at least 8 characters long.');
-        return;
+        errorsList.adminPassword = '❌ Password must be at least 8 characters long.';
       }
-
       if (formData.adminPassword !== formData.confirmAdminPassword) {
-        setValidationError('Password and Confirm Password do not match. Please verify both fields.');
-        return;
+        errorsList.confirmAdminPassword = '❌ Password and Confirm Password do not match.';
       }
     }
+
+    // If there are validation errors, set state, auto scroll & focus, and return
+    if (Object.keys(errorsList).length > 0) {
+      setErrors(errorsList);
+      
+      // Auto Scroll & Focus to first error
+      const firstErrorField = Object.keys(errorsList)[0];
+      setTimeout(() => {
+        const element = document.querySelector(`[name="${firstErrorField}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.focus();
+        }
+      }, 50);
+      return;
+    }
+
+    // 2. Modified fields save check
+    // We only save modified fields. Unchanged fields are not validated or sent unnecessarily.
+    // Also merge unchanged fields to prevent overwriting with null/blank values.
+    const finalData = { ...formData };
+    
+    // Fill unchanged fields from college object if they are missing or empty
+    const checkAndRestore = (key, val, originalVal) => {
+      if (val === undefined || val === null || val === '') {
+        finalData[key] = originalVal || '';
+      }
+    };
+
+    checkAndRestore('collegeName', formData.collegeName, college.name || college.collegeName || college.college_name);
+    checkAndRestore('collegeCode', formData.collegeCode, college.code || college.collegeCode || college.college_code);
+    checkAndRestore('collegeLogoUrl', formData.collegeLogoUrl, college.logoUrl || college.college_logo_url);
+    checkAndRestore('collegeDescription', formData.collegeDescription, college.description || college.college_description);
+    checkAndRestore('logoBg', formData.logoBg, college.logoBg || college.college_logo);
+    checkAndRestore('address', formData.address, college.address);
+    checkAndRestore('city', formData.city, college.city);
+    checkAndRestore('district', formData.district, college.district);
+    checkAndRestore('state', formData.state, college.state);
+    checkAndRestore('pinCode', formData.pinCode, college.pinCode || college.pincode);
+    checkAndRestore('universityAffiliation', formData.universityAffiliation, college.universityAffiliation || college.university_affiliation);
+    checkAndRestore('pciApprovalNo', formData.pciApprovalNo, college.pciApprovalNo || college.pci_approval_number);
+    checkAndRestore('principalName', formData.principalName, college.principalName || college.principal_name || college.contactName || college.contact_person);
+    checkAndRestore('principalMobile', formData.principalMobile, college.principalMobile || college.principal_mobile || college.mobileNumber || college.mobile_number);
+    checkAndRestore('principalEmail', formData.principalEmail, college.principalEmail || college.principal_email || college.email);
 
     setSaving(true);
     try {
-      const res = await onSave(college ? college.id : null, formData);
+      const res = await onSave(college ? college.id : null, finalData);
       setSaving(false);
 
       if (res && res.error) {
-        setValidationError(res.error);
+        // Unexpected system-level error banner
+        setValidationError(`❌ Unable to save changes. Please try again later. Details: ${res.error}`);
       } else {
+        // Show success toast notification
+        setToastMessage('✅ College Profile updated successfully.');
         setSavedSuccess(true);
         setTimeout(() => {
+          setToastMessage('');
           setSavedSuccess(false);
           if (onClose) onClose();
-        }, 500);
+        }, 3000);
       }
     } catch (err) {
       setSaving(false);
-      setValidationError(err.message || 'Failed to save college profile.');
+      setValidationError('❌ Unable to save changes. Please try again later.');
     }
   };
 
@@ -307,8 +386,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.collegeName}
               onChange={handleChange}
               placeholder="Enter college name"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.collegeName 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.collegeName && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.collegeName}
+              </p>
+            )}
           </div>
 
           <div>
@@ -322,8 +410,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.collegeCode}
               onChange={handleChange}
               placeholder="Enter college code"
-              className="w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.collegeCode 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.collegeCode && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.collegeCode}
+              </p>
+            )}
           </div>
         </div>
 
@@ -384,8 +481,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.city}
               onChange={handleChange}
               placeholder="Enter city"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.city 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.city && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.city}
+              </p>
+            )}
           </div>
 
           <div>
@@ -413,8 +519,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.state}
               onChange={handleChange}
               placeholder="Enter state"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.state 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.state && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.state}
+              </p>
+            )}
           </div>
 
           <div>
@@ -452,8 +567,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.principalName}
               onChange={handleChange}
               placeholder="Enter principal name"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.principalName 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.principalName && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.principalName}
+              </p>
+            )}
           </div>
 
           <div>
@@ -467,8 +591,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.principalMobile}
               onChange={handleChange}
               placeholder="Enter mobile number"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.principalMobile 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.principalMobile && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.principalMobile}
+              </p>
+            )}
           </div>
 
           <div>
@@ -482,8 +615,17 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               value={formData.principalEmail}
               onChange={handleChange}
               placeholder="e.g. principal@amrcp.edu.in"
-              className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+              className={`w-full h-[46px] px-3.5 text-xs rounded-xl border bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                errors.principalEmail 
+                  ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                  : 'border-slate-200 dark:border-slate-800 focus:ring-emerald-500/50'
+              }`}
             />
+            {errors.principalEmail && (
+              <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                {errors.principalEmail}
+              </p>
+            )}
           </div>
         </div>
 
@@ -532,7 +674,11 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                     value={formData.adminPassword}
                     onChange={handleChange}
                     placeholder="Enter admin password (min 8 chars)"
-                    className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                    className={`w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                      errors.adminPassword 
+                        ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                        : 'border-slate-200 dark:border-slate-800 focus:ring-indigo-500/50'
+                    }`}
                   />
                   <button
                     type="button"
@@ -542,6 +688,11 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {errors.adminPassword && (
+                  <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                    {errors.adminPassword}
+                  </p>
+                )}
               </div>
 
               {/* Confirm Password */}
@@ -556,7 +707,11 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                     value={formData.confirmAdminPassword}
                     onChange={handleChange}
                     placeholder="Confirm admin password"
-                    className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+                    className={`w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                      errors.confirmAdminPassword 
+                        ? 'border-rose-500 ring-2 ring-rose-500/10 focus:ring-rose-500/50' 
+                        : 'border-slate-200 dark:border-slate-800 focus:ring-indigo-500/50'
+                    }`}
                   />
                   <button
                     type="button"
@@ -566,6 +721,11 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {errors.confirmAdminPassword && (
+                  <p className="text-[11px] text-rose-600 mt-1 font-semibold pl-1">
+                    {errors.confirmAdminPassword}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -779,18 +939,40 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
   );
 
   if (isFullPage) {
-    return formContent;
+    return (
+      <>
+        {formContent}
+        {toastMessage && (
+          <div className="fixed top-6 right-6 z-50 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl border border-emerald-500/30 flex items-center gap-3 animate-slideIn">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              ✓
+            </div>
+            <div className="text-xs font-bold pr-2">{toastMessage}</div>
+          </div>
+        )}
+      </>
+    );
   }
 
   return (
-    <ModalWrapper
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Edit College Profile"
-      subtitle={`Update details & Subscription Plan for ${college?.name || 'College'}`}
-      maxWidth="max-w-4xl"
-    >
-      {formContent}
-    </ModalWrapper>
+    <>
+      <ModalWrapper
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Edit College Profile"
+        subtitle={`Update details & Subscription Plan for ${college?.name || 'College'}`}
+        maxWidth="max-w-4xl"
+      >
+        {formContent}
+      </ModalWrapper>
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 p-4 bg-slate-900 text-white rounded-2xl shadow-2xl border border-emerald-500/30 flex items-center gap-3 animate-slideIn">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            ✓
+          </div>
+          <div className="text-xs font-bold pr-2">{toastMessage}</div>
+        </div>
+      )}
+    </>
   );
 };

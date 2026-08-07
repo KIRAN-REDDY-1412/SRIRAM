@@ -4,12 +4,14 @@ import { authenticateSuperAdmin } from '../../services/authService';
 import { 
   ShieldAlert, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle 
 } from 'lucide-react';
+import { LogoPreviewModal } from './LogoPreviewModal';
 
 export const SuperAdminModal = ({ isOpen, onClose, onLoginSuccess }) => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
   
   const [loginErrors, setLoginErrors] = useState({});
   const [authError, setAuthError] = useState('');
@@ -52,29 +54,36 @@ export const SuperAdminModal = ({ isOpen, onClose, onLoginSuccess }) => {
   };
 
   return (
-    <ModalWrapper
-      isOpen={isOpen}
-      onClose={onClose}
-      maxWidth="max-w-[480px] w-[90vw] md:w-[480px]"
-      rounded="rounded-3xl"
-      hideDefaultHeader={true}
-    >
-      <div className="space-y-6 animate-fadeIn">
-        
-        {/* Header Icon & Title */}
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-700 to-emerald-500 flex items-center justify-center text-white mx-auto shadow-xl shadow-blue-600/25 transform -rotate-2">
-            <ShieldAlert className="w-7 h-7 stroke-[2.2]" />
+    <>
+      <ModalWrapper
+        isOpen={isOpen}
+        onClose={onClose}
+        maxWidth="max-w-[480px] w-[90vw] md:w-[480px]"
+        rounded="rounded-3xl"
+        hideDefaultHeader={true}
+      >
+        <div className="space-y-6 animate-fadeIn p-6 sm:p-8 relative">
+          
+          {/* Header Icon & Title */}
+          <div className="text-center space-y-2">
+            <div className="flex justify-center pb-1">
+              <img
+                src="/pharmdverse-logo.png"
+                alt="PharmDVerse Logo"
+                className="w-12 h-12 object-contain cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => setShowLogoModal(true)}
+                title="Click to view official logo"
+              />
+            </div>
+
+            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight pt-1">
+              Super Admin Login
+            </h3>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Authorized Central Governance Access
+            </p>
           </div>
-
-          <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight pt-1">
-            Super Admin Login
-          </h3>
-
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Authorized Central Governance Access
-          </p>
-        </div>
 
         {/* General Authentication Failure Alert */}
         {authError && (
@@ -207,5 +216,7 @@ export const SuperAdminModal = ({ isOpen, onClose, onLoginSuccess }) => {
         </form>
       </div>
     </ModalWrapper>
+    <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
+    </>
   );
 };

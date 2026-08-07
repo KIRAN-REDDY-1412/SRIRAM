@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
-import { Building2, Stethoscope, UserCheck, ShieldCheck, ExternalLink, ArrowLeft, MapPin, CheckCircle2, Globe, LogIn, Sun, Moon } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
+import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 
 export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpenAdminLogin, onOpenPreceptorLogin, onOpenStudentLogin }) => {
   const { isDark, toggleTheme } = useTheme();
+  const [showLogoModal, setShowLogoModal] = React.useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -66,30 +65,31 @@ export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpen
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans flex flex-col justify-between transition-colors duration-300">
-      
-      {/* 1. TOP HEADER NAVIGATION */}
-      <header className="h-16 px-4 sm:px-8 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 backdrop-blur-md flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBackToLanding}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-bold"
-            title="Back to Landing Page"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Back to All Colleges</span>
-          </button>
+    <>
+      <div className="min-h-screen bg-slate-50 dark:bg-[#080d1a] text-slate-900 dark:text-slate-100 font-sans flex flex-col justify-between transition-colors duration-300">
+        
+        {/* 1. TOP HEADER NAVIGATION */}
+        <header className="h-16 px-4 sm:px-8 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 backdrop-blur-md flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBackToLanding}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-bold"
+              title="Back to Landing Page"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to All Colleges</span>
+            </button>
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
 
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="PharmDVerse" className="w-6 h-6 object-contain" />
-            <span className="font-extrabold text-xs text-slate-900 dark:text-white">
-              PharmD<span className="text-emerald-600 dark:text-emerald-400">Verse</span>
-              <span className="text-[10px] text-slate-400 font-normal ml-1 hidden md:inline">Cloud Gateway</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <img src="/pharmdverse-logo.png" alt="PharmDVerse" className="w-6 h-6 object-contain cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowLogoModal(true)} title="Click to view official logo" />
+              <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                PharmD<span className="text-emerald-600 dark:text-emerald-400">Verse</span>
+                <span className="text-[10px] text-slate-400 font-normal ml-1 hidden md:inline">Cloud Gateway</span>
+              </span>
+            </div>
           </div>
-        </div>
 
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -271,5 +271,7 @@ export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpen
       </footer>
 
     </div>
+    <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
+    </>
   );
 };

@@ -3,12 +3,15 @@ import { ModalWrapper } from './ModalWrapper';
 import { authenticatePreceptorInSupabase } from '../../services/supabaseService';
 import { Stethoscope, KeyRound, Eye, EyeOff, LogIn, AlertTriangle, Loader2 } from 'lucide-react';
 
+import { LogoPreviewModal } from './LogoPreviewModal';
+
 export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -34,14 +37,25 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
   };
 
   return (
-    <ModalWrapper
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Preceptor Portal Login"
-      subtitle={`Hospital Doctor & Evaluator Login for ${initialCollege?.name || 'Pharmacy College'}`}
-      maxWidth="max-w-md"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      <ModalWrapper
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Preceptor Portal Login"
+        subtitle={`Hospital Doctor & Evaluator Login for ${initialCollege?.name || 'Pharmacy College'}`}
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          <div className="flex items-center justify-center pb-1">
+            <img
+              src="/pharmdverse-logo.png"
+              alt="PharmDVerse Logo"
+              className="w-10 h-10 object-contain cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => setShowLogoModal(true)}
+              title="Click to view official logo"
+            />
+          </div>
         
         {errorMsg && (
           <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2 shadow-xs">
@@ -117,5 +131,7 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
 
       </form>
     </ModalWrapper>
+    <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
+    </>
   );
 };

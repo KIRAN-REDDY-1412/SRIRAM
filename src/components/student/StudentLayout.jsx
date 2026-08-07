@@ -14,6 +14,7 @@ import { DrugInformationFormView } from '../drugInformationRequest/DrugInformati
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { NotificationsView } from '../common/NotificationsView';
 import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
@@ -26,6 +27,7 @@ export const StudentLayout = ({ student, onLogout }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [forcePasswordReset, setForcePasswordReset] = useState(student?.force_password_reset || false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
 
   const loadUnreadCount = async () => {
     if (!student?.id) return;
@@ -269,7 +271,13 @@ export const StudentLayout = ({ student, onLogout }) => {
             </button>
 
             <div className="flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <img
+                src="/pharmdverse-logo.png"
+                alt="PharmDVerse Logo"
+                className="w-6 h-6 object-contain cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => setShowLogoModal(true)}
+                title="Click to view official logo"
+              />
               <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
                 {student?.colleges?.college_name || 'Pharmacy College'} <span className="text-slate-400 font-normal text-xs hidden sm:inline">| Student Portal</span>
               </h1>
@@ -389,6 +397,8 @@ export const StudentLayout = ({ student, onLogout }) => {
         onConfirmLeave={onLogout}
         leaveButtonText="Go to College Landing Page"
       />
+
+      <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
 
     </div>
   );

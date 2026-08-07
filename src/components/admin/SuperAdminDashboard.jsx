@@ -12,11 +12,13 @@ import {
 } from 'lucide-react';
 
 import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
 export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const { isDark, toggleTheme } = useTheme();
   const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('requests');
+  const [showLogoModal, setShowLogoModal] = useState(false);
   const { 
     pendingRequests, 
     activeColleges, 
@@ -179,7 +181,13 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           {/* Sidebar Brand Header */}
           <div className="h-16 px-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
             <div className={`flex items-center gap-3 overflow-hidden ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
-              <img src="/logo.png" alt="PharmDVerse" className="w-8 h-8 object-contain shrink-0" />
+              <img
+                src="/pharmdverse-logo.png"
+                alt="PharmDVerse Logo"
+                className="w-8 h-8 object-contain shrink-0 cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => setShowLogoModal(true)}
+                title="Click to view official logo"
+              />
               {!sidebarCollapsed && (
                 <div className="flex flex-col">
                   <span className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
@@ -1027,6 +1035,8 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
         }}
         leaveButtonText="Go to Main Landing Page"
       />
+
+      <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />
 
     </div>
   );

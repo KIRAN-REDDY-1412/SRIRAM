@@ -1168,76 +1168,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
             <Save className="w-4 h-4" />
             <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
         </div>
-      )}
-
-      {/* PDF PREVIEW MODAL */}
-      {isPreviewOpen && (
-        <PatientProfilePDFPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          clinicalCase={clinicalCase}
-          student={student}
-          profile={{
-            patient_name: patientName,
-            patient_initials: patientName,
-            age,
-            gender,
-            ip_no: ipNo,
-            ip_op_number: ipNo,
-            height,
-            height_cm: height,
-            weight,
-            weight_kg: weight,
-            bmi,
-            ward,
-            ward_unit: ward,
-            department,
-            doa,
-            date_of_admission: doa,
-            doc,
-            date_of_collection: doc,
-            dod,
-            date_of_discharge: dod,
-            physician,
-            attending_physician: physician,
-            chief_complaints: chiefComplaints,
-            past_medical_history: pastMedicalHistory,
-            past_medication_history: pastMedicationHistory,
-            family_history: familyHistory,
-            smoker_pack_day: smokerPackDay,
-            smoker_duration: smokerDuration,
-            alcoholic_amount_day: alcoholicAmountDay,
-            alcoholic_duration: alcoholicDuration,
-            allergy_food: allergyFood,
-            allergy_drugs: allergyDrugs,
-            allergies: allergyDrugs || allergyFood ? `Food: ${allergyFood || 'None'}, Drugs: ${allergyDrugs || 'None'}` : 'None',
-            marital_status: maritalStatus,
-            cyanosis,
-            icterus,
-            pallor,
-            cvs,
-            gi,
-            rs,
-            cns,
-            provisional_diagnosis: provisionalDiagnosis,
-            vital_signs: vitalSigns,
-            other_investigations: otherInvestigations,
-            final_diagnosis: finalDiagnosis,
-            discharge_summary: dischargeSummary
-          }}
-          labInvestigations={labInvestigations}
-          prescribedDrugs={prescribedDrugs}
-        />
       )}
 
     </div>

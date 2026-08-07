@@ -1377,70 +1377,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
             <Save className="w-4 h-4" />
             <span>{existingReportId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
         </div>
-      )}
-
-      {/* PDF PREVIEW MODAL */}
-      {isPreviewOpen && (
-        <ADRReportPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          clinicalCase={clinicalCase}
-          student={student}
-          report={{
-            adr_number: adrNumber,
-            reporting_date: reportingDate,
-            assigned_preceptor_name: assignedPreceptorName,
-            patient_initials: patientInitials,
-            hospital_reg_number: hospitalRegNumber,
-            age,
-            gender,
-            weight,
-            department,
-            ward,
-            primary_diagnosis: primaryDiagnosis,
-            reaction_title: reactionTitle,
-            reaction_category: reactionCategorySelect === 'Other' ? reactionCategoryOther : reactionCategorySelect,
-            reaction_description: reactionDescription,
-            reaction_started_at: reactionStartedAt,
-            reaction_ended_at: reactionEndedAt,
-            reaction_duration: reactionDuration,
-            clinical_management_provided: clinicalManagementProvided,
-            current_patient_condition: currentPatientCondition,
-            drug_allergy_history: drugAllergyHistory,
-            previous_adr_history: previousAdrHistory,
-            relevant_medical_conditions: relevantMedicalConditions,
-            pregnancy_lactation_status: pregnancyLactationStatus,
-            renal_status: renalStatus,
-            hepatic_status: hepaticStatus,
-            lifestyle_factors: lifestyleFactors,
-            additional_clinical_notes: additionalClinicalNotes,
-            reaction_severity: reactionSeverity,
-            reaction_seriousness: reactionSeriousness,
-            patient_outcome: patientOutcome,
-            action_taken_on_suspected_drug: actionTakenOnSuspectedDrug,
-            rechallenge_information: rechallengeInformation,
-            dechallenge_information: dechallengeInformation,
-            initial_causality_opinion: initialCausalityOpinion,
-            clinical_remarks: clinicalRemarks,
-            student_remarks: studentRemarks,
-            preceptor_review: preceptorReview,
-            faculty_comments: facultyComments,
-            approval_status: approvalStatus
-          }}
-          suspectedMeds={suspectedMeds}
-          concomitantMeds={concomitantMeds}
-          attachments={attachments}
-        />
       )}
 
     </div>

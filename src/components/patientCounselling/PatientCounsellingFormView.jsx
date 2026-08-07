@@ -682,59 +682,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
             <Save className="w-4 h-4" />
             <span>{existingCounsellingId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
         </div>
-      )}
-
-      {/* PDF PREVIEW MODAL */}
-      {isPreviewOpen && (
-        <PatientCounsellingPDFPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          clinicalCase={clinicalCase}
-          student={student}
-          counsellingData={{
-            patient_name: patientName,
-            counselling_date: counsellingDate,
-            counselling_time: formattedTimeDisplay,
-            patient_type: patientType,
-            ip_op_number: ipOpNumber,
-            unit_ward: unitWard,
-            ward_bed: unitWard,
-            department: clinicalCase?.department || '',
-            age,
-            sex,
-            allergies,
-            specific_background_collected: specificBackgroundCollected,
-            disease_counselled: diseaseCounselled,
-            disease_condition: diseaseCounselled,
-            medications_counselled: medicationsCounselled,
-            points_covered: pointsCovered,
-            counselling_points_covered: pointsCovered,
-            major_barriers_involved: majorBarriersInvolved,
-            barrier_details: barrierDetails,
-            barriers_identified: barrierDetails,
-            barrier_overcome: barrierOvercome,
-            time_taken: timeTaken,
-            duration_minutes: timeTaken,
-            counselling_provided_to: counsellingProvidedTo,
-            provided_to: counsellingProvidedTo,
-            representative_reasons: representativeReasons,
-            representative_other_reason: representativeOtherReason,
-            counselling_aids_used: counsellingAidsUsed,
-            counselling_material_provided: counsellingMaterialProvided,
-            educational_materials_used: counsellingMaterialProvided,
-            understanding_ascertained: understandingAscertained
-          }}
-        />
       )}
 
     </div>

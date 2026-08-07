@@ -792,47 +792,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
             <Save className="w-4 h-4" />
             <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
         </div>
-      )}
-
-      {/* PDF PREVIEW MODAL */}
-      {isPreviewOpen && (
-        <DrugInformationPDFPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          clinicalCase={clinicalCase}
-          student={student}
-          dirData={{
-            request_date: requestDate,
-            request_time: requestTime,
-            enquirer_name: enquirerSelect === 'Other' ? enquirerNameOther : enquirerSelect,
-            designation,
-            phone_no: phoneNo,
-            unit_ward: unitWard,
-            professional_status: professionalStatus,
-            answer_needed: timeframeNeeded,
-            details_of_enquiry: detailsOfEnquiry,
-            question_category: questionCategorySelect === 'Other' ? questionCategoryOther : questionCategorySelect,
-            age,
-            sex,
-            weight_kg: weightKg,
-            allergies,
-            current_medical_problem: currentDiagnosis,
-            answer_given_timeframe: timeframeNeeded,
-            mode_of_reply: 'Written',
-            information_provided: informationProvided,
-            references: references
-          }}
-        />
       )}
 
     </div>

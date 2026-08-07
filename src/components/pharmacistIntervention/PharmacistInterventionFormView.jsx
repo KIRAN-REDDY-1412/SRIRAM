@@ -871,53 +871,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
             <Save className="w-4 h-4" />
             <span>{existingInterventionId ? 'Update Draft' : 'Save Draft'}</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="h-[46px] px-5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-2 transition-colors"
-          >
-            <Eye className="w-4 h-4 text-indigo-500" />
-            <span>Preview Form PDF</span>
-          </button>
         </div>
-      )}
-
-      {/* PDF PREVIEW MODAL */}
-      {isPreviewOpen && (
-        <PharmacistInterventionPDFPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          clinicalCase={clinicalCase}
-          student={student}
-          interventionData={{
-            patient_name: patientName,
-            age,
-            sex,
-            date_of_intervention: dateOfIntervention,
-            ip_op_no: ipOpNo,
-            ward,
-            present_diagnosis: presentDiagnosis,
-            prescription_details: prescriptionDetails.filter(d => d.drug_name || d.dose_frequency),
-            prescription_problems: prescriptionProblems,
-            prescription_problem_other: prescriptionProblemOther,
-            description_of_problem: descriptionOfProblem,
-            action_taken: actionTaken,
-            action_taken_other: actionTakenOther,
-            recommendations: recommendations,
-            recommendation_other: recommendationOther,
-            background_info_collected: backgroundInfoCollected,
-            discussed_with_physician: discussedWithPhysician,
-            suggestions_appropriate_time: suggestionsAppropriateTime,
-            accepted,
-            changed,
-            reasons_if_no: reasonsIfNo,
-            significance_of_intervention: significanceOfIntervention,
-            outcome,
-            references_text: referencesText,
-            follow_up: followUp
-          }}
-        />
       )}
 
     </div>

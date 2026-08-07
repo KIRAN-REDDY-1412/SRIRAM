@@ -136,9 +136,11 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   };
 
   const handleSaveProfile = async (collegeId, formData) => {
-    await updateCollegeProfile(collegeId, formData);
-    setActiveTab('active');
-    setEditingCollege(null);
+    const res = await updateCollegeProfile(collegeId, formData);
+    if (res && res.success && res.college) {
+      setEditingCollege(res.college);
+    }
+    return res;
   };
 
   const handleConfirmSingleDelete = async () => {

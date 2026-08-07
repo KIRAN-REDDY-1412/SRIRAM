@@ -167,10 +167,10 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     // Password validation - only run if user typed a password
     if (formData.adminPassword || formData.confirmAdminPassword) {
       if (formData.adminPassword.length < 8) {
-        errorsList.adminPassword = '❌ Password must be at least 8 characters long.';
+        errorsList.adminPassword = '❌ Password must contain at least 8 characters.';
       }
       if (formData.adminPassword !== formData.confirmAdminPassword) {
-        errorsList.confirmAdminPassword = '❌ Password and Confirm Password do not match.';
+        errorsList.confirmAdminPassword = '❌ Passwords do not match.';
       }
     }
 
@@ -227,14 +227,30 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         // Unexpected system-level error banner
         setValidationError(`❌ Unable to save changes. Please try again later. Details: ${res.error}`);
       } else {
+        // Determine whether a password was updated
+        const passwordUpdated = Boolean(formData.adminPassword);
+        
         // Show success toast notification
-        setToastMessage('✅ College Profile updated successfully.');
+        if (passwordUpdated) {
+          setToastMessage('✅ College Admin password updated successfully.');
+        } else {
+          setToastMessage('✅ College Profile updated successfully.');
+        }
+
+        // Reset password fields and validation messages
+        setFormData(prev => ({
+          ...prev,
+          adminPassword: '',
+          confirmAdminPassword: ''
+        }));
+        setErrors({});
+
         setSavedSuccess(true);
         setTimeout(() => {
           setToastMessage('');
           setSavedSuccess(false);
-          if (onClose) onClose();
-        }, 3000);
+          // Do NOT call onClose() here to keep the user on the same page.
+        }, 4000);
       }
     } catch (err) {
       setSaving(false);
@@ -891,7 +907,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
             className="h-[48px] px-7 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? 'Saving Profile...' : savedSuccess ? 'Profile Saved Successfully!' : 'Save College Profile'}</span>
+            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
 

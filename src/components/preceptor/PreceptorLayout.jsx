@@ -208,17 +208,10 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Preceptor Gateway</span>
+              <span>Preceptor Workspace</span>
             </span>
-
-            <button
-              onClick={onLogout}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white text-xs font-semibold transition-colors"
-            >
-              Exit Portal
-            </button>
           </div>
         </header>
 

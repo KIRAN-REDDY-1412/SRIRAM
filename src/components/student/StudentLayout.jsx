@@ -275,17 +275,10 @@ export const StudentLayout = ({ student, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Student Gateway</span>
+              <span>Student Workspace</span>
             </span>
-
-            <button
-              onClick={onLogout}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-600 text-white text-xs font-semibold transition-colors"
-            >
-              Exit Portal
-            </button>
           </div>
         </header>
 

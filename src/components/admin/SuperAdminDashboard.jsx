@@ -378,11 +378,9 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
             </button>
 
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-                SA
-              </div>
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 hidden md:inline">
-                Super Admin
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Super Admin Workspace</span>
               </span>
             </div>
           </div>
@@ -405,7 +403,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                       <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      Super Admin Governance Portal
+                      Super Admin Workspace
                     </span>
                     <span className="text-xs text-blue-700 dark:text-blue-400 font-mono font-bold">Role: Global Admin</span>
                   </div>

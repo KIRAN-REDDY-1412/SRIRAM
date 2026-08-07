@@ -1258,6 +1258,42 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
       hospital_logo_url: profileData.hospitalLogoUrl || null,
       is_autonomous: Boolean(profileData.isAutonomous),
       status: profileData.subscriptionStatus === 'Active' ? 'Active' : 'Inactive',
+      
+      // Accreditations
+      naac_enabled: Boolean(profileData.naacEnabled),
+      naac_grade: profileData.naacGrade || null,
+      naac_valid_until: profileData.naacValidUntil || null,
+      naac_logo_url: profileData.naacLogoUrl || null,
+      
+      nba_enabled: Boolean(profileData.nbaEnabled),
+      nba_programs: profileData.nbaPrograms || [],
+      nba_valid_until: profileData.nbaValidUntil || null,
+      nba_logo_url: profileData.nbaLogoUrl || null,
+      
+      pci_enabled: Boolean(profileData.pciEnabled),
+      pci_logo_url: profileData.pciLogoUrl || null,
+      
+      aicte_enabled: Boolean(profileData.aicteEnabled),
+      aicte_logo_url: profileData.aicteLogoUrl || null,
+      
+      nirf_enabled: Boolean(profileData.nirfEnabled),
+      nirf_rank: profileData.nirfRank ? parseInt(profileData.nirfRank, 10) : null,
+      nirf_year: profileData.nirfYear ? parseInt(profileData.nirfYear, 10) : null,
+      
+      // Portal Visibility
+      show_naac_on_portal: Boolean(profileData.showNaacOnPortal),
+      show_nba_on_portal: Boolean(profileData.showNbaOnPortal),
+      show_pci_on_portal: Boolean(profileData.showPciOnPortal),
+      show_aicte_on_portal: Boolean(profileData.showAicteOnPortal),
+      show_nirf_on_portal: Boolean(profileData.showNirfOnPortal),
+      
+      show_logo_on_portal: Boolean(profileData.showLogoOnPortal),
+      show_name_on_portal: Boolean(profileData.showNameOnPortal),
+      show_description_on_portal: Boolean(profileData.showDescriptionOnPortal),
+      show_autonomous_on_portal: Boolean(profileData.showAutonomousOnPortal),
+      show_website_on_portal: Boolean(profileData.showWebsiteOnPortal),
+      show_address_on_portal: Boolean(profileData.showAddressOnPortal),
+      
       updated_at: new Date().toISOString()
     };
 

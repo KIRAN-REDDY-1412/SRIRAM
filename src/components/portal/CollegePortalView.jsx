@@ -100,16 +100,18 @@ export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin, 
           <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
             
             {/* Logo Image or Initials Placeholder */}
-            {college.logoUrl ? (
-              <img
-                src={college.logoUrl}
-                alt={college.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain bg-white p-2 border border-white/30 shadow-xl shrink-0"
-              />
-            ) : (
-              <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-xl shadow-xl border border-white/20 shrink-0`}>
-                {college.initials}
-              </div>
+            {(college.show_logo_on_portal ?? true) && (
+              college.logoUrl || college.college_logo_url ? (
+                <img
+                  src={college.logoUrl || college.college_logo_url}
+                  alt={college.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain bg-white p-2 border border-white/30 shadow-xl shrink-0"
+                />
+              ) : (
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${college.logoBg || college.college_logo || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-xl shadow-xl border border-white/20 shrink-0`}>
+                  {college.initials || (college.name ? college.name.substring(0, 2).toUpperCase() : 'CL')}
+                </div>
+              )
             )}
 
             <div className="space-y-3 flex-1 min-w-0">
@@ -120,34 +122,101 @@ export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin, 
                 </span>
 
                 <span className="text-xs text-slate-300 font-mono">
-                  Code: {college.code}
+                  Code: {college.code || college.college_code}
                 </span>
               </div>
 
               {/* SINGLE CLEAN COLLEGE NAME */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
-                {college.name}
-              </h1>
+              {(college.show_name_on_portal ?? true) && (
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                  {college.name || college.college_name}
+                </h1>
+              )}
+
+              {/* Accreditation Badges Row below College Name */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                {/* Autonomous Badge */}
+                {(college.is_autonomous || college.isAutonomous) && (college.show_autonomous_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                    Autonomous
+                  </span>
+                )}
+
+                {/* NAAC Badge */}
+                {college.naac_enabled && (college.show_naac_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold flex items-center gap-1.5">
+                    {college.naac_logo_url ? (
+                      <img src={college.naac_logo_url} alt="NAAC" className="h-4 object-contain rounded-xs bg-white/10 p-0.5" />
+                    ) : null}
+                    <span>NAAC {college.naac_grade || 'Accredited'}</span>
+                  </span>
+                )}
+
+                {/* NBA Badge */}
+                {college.nba_enabled && (college.show_nba_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold flex items-center gap-1.5">
+                    {college.nba_logo_url ? (
+                      <img src={college.nba_logo_url} alt="NBA" className="h-4 object-contain rounded-xs bg-white/10 p-0.5" />
+                    ) : null}
+                    <span>NBA Accredited {(college.nba_programs || []).length > 0 ? `(${college.nba_programs.join(', ')})` : ''}</span>
+                  </span>
+                )}
+
+                {/* PCI Badge */}
+                {college.pci_enabled && (college.show_pci_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-teal-500/25 text-teal-300 border border-teal-500/30 text-[10px] font-bold flex items-center gap-1.5">
+                    {college.pci_logo_url ? (
+                      <img src={college.pci_logo_url} alt="PCI" className="h-4 object-contain rounded-xs bg-white/10 p-0.5" />
+                    ) : null}
+                    <span>PCI Approved</span>
+                  </span>
+                )}
+
+                {/* AICTE Badge */}
+                {college.aicte_enabled && (college.show_aicte_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-blue-500/25 text-blue-300 border border-blue-500/30 text-[10px] font-bold flex items-center gap-1.5">
+                    {college.aicte_logo_url ? (
+                      <img src={college.aicte_logo_url} alt="AICTE" className="h-4 object-contain rounded-xs bg-white/10 p-0.5" />
+                    ) : null}
+                    <span>AICTE Approved</span>
+                  </span>
+                )}
+
+                {/* NIRF Badge */}
+                {college.nirf_enabled && (college.show_nirf_on_portal ?? true) && (
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                    NIRF {college.nirf_year || ''} Rank {college.nirf_rank || ''}
+                  </span>
+                )}
+              </div>
 
               {/* Dynamic College Description */}
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal max-w-3xl">
-                {college.description ? college.description : 'No college description available.'}
-              </p>
+              {(college.show_description_on_portal ?? true) && (
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal max-w-3xl">
+                  {college.description || college.college_description || 'No college description available.'}
+                </p>
+              )}
 
-              {/* Location Badge */}
-              <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-300 font-medium">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{locationText}</span>
+              {/* Location & Website Badge */}
+              {((college.show_address_on_portal ?? true) || (college.show_website_on_portal ?? true)) && (
+                <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-300 font-medium">
+                  {(college.show_address_on_portal ?? true) && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>{locationText}</span>
+                    </div>
+                  )}
+
+                  {(college.show_address_on_portal ?? true) && (college.show_website_on_portal ?? true) && <span>•</span>}
+
+                  {(college.show_website_on_portal ?? true) && (
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-4 h-4 text-teal-400 shrink-0" />
+                      <span className="font-mono text-emerald-300">{baseUrl}</span>
+                    </div>
+                  )}
                 </div>
-
-                <span>•</span>
-
-                <div className="flex items-center gap-1.5">
-                  <Globe className="w-4 h-4 text-teal-400 shrink-0" />
-                  <span className="font-mono text-emerald-300">{baseUrl}</span>
-                </div>
-              </div>
+              )}
             </div>
 
           </div>

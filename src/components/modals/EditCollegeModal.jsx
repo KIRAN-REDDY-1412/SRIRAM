@@ -28,7 +28,38 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     subscriptionStartDate: new Date().toISOString().split('T')[0],
     subscriptionExpiryDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
     maxStudentsAllowed: 600,
-    subscriptionStatus: 'Active'
+    subscriptionStatus: 'Active',
+    
+    // Accreditations
+    isAutonomous: false,
+    naacEnabled: false,
+    naacGrade: 'A',
+    naacValidUntil: '',
+    naacLogoUrl: '',
+    nbaEnabled: false,
+    nbaPrograms: [],
+    nbaValidUntil: '',
+    nbaLogoUrl: '',
+    pciEnabled: false,
+    pciLogoUrl: '',
+    aicteEnabled: false,
+    aicteLogoUrl: '',
+    nirfEnabled: false,
+    nirfRank: '',
+    nirfYear: new Date().getFullYear(),
+    
+    // Visibility
+    showLogoOnPortal: true,
+    showNameOnPortal: true,
+    showDescriptionOnPortal: true,
+    showAutonomousOnPortal: true,
+    showNaacOnPortal: true,
+    showNbaOnPortal: true,
+    showPciOnPortal: true,
+    showAicteOnPortal: true,
+    showNirfOnPortal: true,
+    showWebsiteOnPortal: true,
+    showAddressOnPortal: true
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -65,7 +96,38 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         subscriptionStartDate: college.subscriptionStartDate || new Date().toISOString().split('T')[0],
         subscriptionExpiryDate: college.subscriptionExpiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
         maxStudentsAllowed: college.maxStudentsAllowed || 600,
-        subscriptionStatus: college.subscriptionStatus || 'Active'
+        subscriptionStatus: college.subscriptionStatus || 'Active',
+        
+        // Accreditations from Supabase
+        isAutonomous: college.is_autonomous ?? false,
+        naacEnabled: college.naac_enabled ?? false,
+        naacGrade: college.naac_grade || 'A',
+        naacValidUntil: college.naac_valid_until || '',
+        naacLogoUrl: college.naac_logo_url || '',
+        nbaEnabled: college.nba_enabled ?? false,
+        nbaPrograms: college.nba_programs || [],
+        nbaValidUntil: college.nba_valid_until || '',
+        nbaLogoUrl: college.nba_logo_url || '',
+        pciEnabled: college.pci_enabled ?? false,
+        pciLogoUrl: college.pci_logo_url || '',
+        aicteEnabled: college.aicte_enabled ?? false,
+        aicteLogoUrl: college.aicte_logo_url || '',
+        nirfEnabled: college.nirf_enabled ?? false,
+        nirfRank: college.nirf_rank || '',
+        nirfYear: college.nirf_year || new Date().getFullYear(),
+        
+        // Visibility
+        showLogoOnPortal: college.show_logo_on_portal ?? true,
+        showNameOnPortal: college.show_name_on_portal ?? true,
+        showDescriptionOnPortal: college.show_description_on_portal ?? true,
+        showAutonomousOnPortal: college.show_autonomous_on_portal ?? true,
+        showNaacOnPortal: college.show_naac_on_portal ?? true,
+        showNbaOnPortal: college.show_nba_on_portal ?? true,
+        showPciOnPortal: college.show_pci_on_portal ?? true,
+        showAicteOnPortal: college.show_aicte_on_portal ?? true,
+        showNirfOnPortal: college.show_nirf_on_portal ?? true,
+        showWebsiteOnPortal: college.show_website_on_portal ?? true,
+        showAddressOnPortal: college.show_address_on_portal ?? true
       });
       setValidationError('');
     }
@@ -78,6 +140,42 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setValidationError('');
+  };
+
+  const handleToggle = (name) => {
+    setFormData(prev => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const handleNbaProgramToggle = (program) => {
+    setFormData(prev => {
+      const current = prev.nbaPrograms || [];
+      const updated = current.includes(program)
+        ? current.filter(p => p !== program)
+        : [...current, program];
+      return { ...prev, nbaPrograms: updated };
+    });
+  };
+
+  const handleAccreditationLogoUpload = async (e, fieldName) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload a valid image file (JPG, PNG, WEBP, or SVG).');
+      return;
+    }
+
+    try {
+      const res = await uploadCollegeLogo(file);
+      if (res.success && res.url) {
+        setFormData(prev => ({ ...prev, [fieldName]: res.url }));
+      } else {
+        alert('Upload failed: ' + (res.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    }
   };
 
   const handleLogoFileChange = async (e) => {
@@ -588,14 +686,14 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              University Affiliation
+              University Affiliation / Affiliated University Name
             </label>
             <input
               type="text"
               name="universityAffiliation"
               value={formData.universityAffiliation}
               onChange={handleChange}
-              placeholder="Enter university affiliation"
+              placeholder="e.g. Jawaharlal Nehru Technological University"
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -613,6 +711,363 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
               className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
             />
           </div>
+        </div>
+      </div>
+
+      {/* SECTION 5.5: ACCREDITATIONS & RECOGNITION (NEW) */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+            <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Accreditations & Recognition
+          </h4>
+        </div>
+
+        {/* AUTONOMOUS STATUS */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <strong className="text-xs font-extrabold text-slate-800 dark:text-white block">Autonomous Institution</strong>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">Mark college as an Autonomous institution.</span>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.isAutonomous}
+              onChange={() => handleToggle('isAutonomous')}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        {/* NAAC ACCREDITATION */}
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <strong className="text-xs font-bold text-slate-800 dark:text-white">NAAC Accreditation</strong>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.naacEnabled}
+                onChange={() => handleToggle('naacEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {formData.naacEnabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 animate-fadeIn">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NAAC Grade</label>
+                <select
+                  name="naacGrade"
+                  value={formData.naacGrade}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                >
+                  <option value="A++">A++</option>
+                  <option value="A+">A+</option>
+                  <option value="A">A</option>
+                  <option value="B++">B++</option>
+                  <option value="B+">B+</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NAAC Valid Until</label>
+                <input
+                  type="date"
+                  name="naacValidUntil"
+                  value={formData.naacValidUntil}
+                  onChange={handleChange}
+                  className="w-full h-10 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NAAC Logo (JPG/PNG/SVG)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/svg+xml"
+                    onChange={(e) => handleAccreditationLogoUpload(e, 'naacLogoUrl')}
+                    className="hidden"
+                    id="naac-logo-upload"
+                  />
+                  <label
+                    htmlFor="naac-logo-upload"
+                    className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Logo</span>
+                  </label>
+                  {formData.naacLogoUrl && (
+                    <span className="text-[10px] text-emerald-600 font-bold truncate max-w-[100px]" title={formData.naacLogoUrl}>
+                      Uploaded!
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* NBA ACCREDITATION */}
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <strong className="text-xs font-bold text-slate-800 dark:text-white">NBA Accreditation</strong>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.nbaEnabled}
+                onChange={() => handleToggle('nbaEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {formData.nbaEnabled && (
+            <div className="space-y-4 pt-2 animate-fadeIn">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NBA Valid Until</label>
+                  <input
+                    type="date"
+                    name="nbaValidUntil"
+                    value={formData.nbaValidUntil}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NBA Logo</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/svg+xml"
+                      onChange={(e) => handleAccreditationLogoUpload(e, 'nbaLogoUrl')}
+                      className="hidden"
+                      id="nba-logo-upload"
+                    />
+                    <label
+                      htmlFor="nba-logo-upload"
+                      className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Logo</span>
+                    </label>
+                    {formData.nbaLogoUrl && (
+                      <span className="text-[10px] text-emerald-600 font-bold truncate max-w-[100px]" title={formData.nbaLogoUrl}>
+                        Uploaded!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Accredited Programs</label>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {['B.Pharm', 'Pharm.D', 'M.Pharm'].map((prog) => (
+                    <label key={prog} className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(formData.nbaPrograms || []).includes(prog)}
+                        onChange={() => handleNbaProgramToggle(prog)}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                      />
+                      <span>{prog}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* PCI APPROVAL */}
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <strong className="text-xs font-bold text-slate-800 dark:text-white">PCI Approval</strong>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.pciEnabled}
+                onChange={() => handleToggle('pciEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {formData.pciEnabled && (
+            <div className="pt-2 animate-fadeIn">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">PCI Logo (Optional)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/svg+xml"
+                  onChange={(e) => handleAccreditationLogoUpload(e, 'pciLogoUrl')}
+                  className="hidden"
+                  id="pci-logo-upload"
+                />
+                <label
+                  htmlFor="pci-logo-upload"
+                  className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Logo</span>
+                </label>
+                {formData.pciLogoUrl && (
+                  <span className="text-[10px] text-emerald-600 font-bold truncate max-w-[100px]" title={formData.pciLogoUrl}>
+                    Uploaded!
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* AICTE APPROVAL */}
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <strong className="text-xs font-bold text-slate-800 dark:text-white">AICTE Approval</strong>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.aicteEnabled}
+                onChange={() => handleToggle('aicteEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {formData.aicteEnabled && (
+            <div className="pt-2 animate-fadeIn">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">AICTE Logo (Optional)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/svg+xml"
+                  onChange={(e) => handleAccreditationLogoUpload(e, 'aicteLogoUrl')}
+                  className="hidden"
+                  id="aicte-logo-upload"
+                />
+                <label
+                  htmlFor="aicte-logo-upload"
+                  className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Logo</span>
+                </label>
+                {formData.aicteLogoUrl && (
+                  <span className="text-[10px] text-emerald-600 font-bold truncate max-w-[100px]" title={formData.aicteLogoUrl}>
+                    Uploaded!
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* NIRF RANKING */}
+        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <strong className="text-xs font-bold text-slate-800 dark:text-white">NIRF Ranking</strong>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.nirfEnabled}
+                onChange={() => handleToggle('nirfEnabled')}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-350 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-650 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {formData.nirfEnabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 animate-fadeIn">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NIRF Ranking Position</label>
+                <input
+                  type="number"
+                  name="nirfRank"
+                  value={formData.nirfRank}
+                  onChange={handleChange}
+                  placeholder="e.g. 85"
+                  className="w-full h-10 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">NIRF Ranking Year</label>
+                <input
+                  type="number"
+                  name="nirfYear"
+                  value={formData.nirfYear}
+                  onChange={handleChange}
+                  placeholder="e.g. 2026"
+                  className="w-full h-10 px-3 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 5.6: PORTAL VISIBILITY (NEW) */}
+      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <Eye className="w-4 h-4 text-indigo-650 dark:text-indigo-400" />
+          Portal Visibility Settings
+        </h4>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+          Control which items are visible on the Live College Portal and Preview.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2">
+          {/* Toggles */}
+          {[
+            { key: 'showLogoOnPortal', label: 'Show College Logo' },
+            { key: 'showNameOnPortal', label: 'Show College Name' },
+            { key: 'showDescriptionOnPortal', label: 'Show College Description' },
+            { key: 'showAutonomousOnPortal', label: 'Show Autonomous Badge' },
+            { key: 'showNaacOnPortal', label: 'Show NAAC Badge' },
+            { key: 'showNbaOnPortal', label: 'Show NBA Badge' },
+            { key: 'showPciOnPortal', label: 'Show PCI Badge' },
+            { key: 'showAicteOnPortal', label: 'Show AICTE Badge' },
+            { key: 'showNirfOnPortal', label: 'Show NIRF Badge' },
+            { key: 'showWebsiteOnPortal', label: 'Show Website URL' },
+            { key: 'showAddressOnPortal', label: 'Show Campus Address' },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-150 dark:border-slate-800">
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{item.label}</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData[item.key]}
+                  onChange={() => handleToggle(item.key)}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all dark:border-slate-650 peer-checked:bg-indigo-650"></div>
+              </label>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -778,8 +1233,159 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
     </form>
   );
 
+  const locationText = [formData.city, formData.district, formData.state].filter(Boolean).join(', ');
+  const previewBaseUrl = formData.universityAffiliation 
+    ? formData.universityAffiliation 
+    : `https://${(formData.collegeCode || 'clg').toLowerCase()}.pharmdverse.com`;
+
+  const previewPanel = (
+    <div className="space-y-4 lg:sticky lg:top-6">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          Live College Portal Preview
+        </h4>
+        <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold uppercase">
+          Real-Time
+        </span>
+      </div>
+
+      {/* College Portal Hero Banner Preview */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-xl border border-slate-700/60 transition-all duration-300">
+        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="flex flex-col items-start gap-4 relative z-10">
+          
+          {/* Logo Preview */}
+          {formData.showLogoOnPortal && (
+            formData.collegeLogoUrl ? (
+              <img
+                src={formData.collegeLogoUrl}
+                alt="Logo"
+                className="w-16 h-16 rounded-xl object-contain bg-white p-1.5 border border-white/20 shadow-md"
+              />
+            ) : (
+              <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${formData.logoBg} flex items-center justify-center text-white font-extrabold text-sm shadow-md border border-white/10`}>
+                {formData.collegeName ? formData.collegeName.substring(0, 3).toUpperCase() : 'CLG'}
+              </div>
+            )
+          )}
+
+          <div className="space-y-2 w-full">
+            {/* Status / Code Badge */}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Active Portal
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">Code: {formData.collegeCode || 'CLG'}</span>
+            </div>
+
+            {/* College Name */}
+            {formData.showNameOnPortal && (
+              <h3 className="text-lg font-black text-white leading-snug tracking-tight">
+                {formData.collegeName || 'Pharmacy College Name'}
+              </h3>
+            )}
+
+            {/* Accreditation Badges Row below College Name */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {/* Autonomous Badge */}
+              {formData.isAutonomous && formData.showAutonomousOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[9px] font-bold uppercase tracking-wider">
+                  Autonomous
+                </span>
+              )}
+
+              {/* NAAC Badge */}
+              {formData.naacEnabled && formData.showNaacOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-[9px] font-bold flex items-center gap-1">
+                  {formData.naacLogoUrl ? (
+                    <img src={formData.naacLogoUrl} alt="NAAC" className="h-3.5 object-contain rounded-xs" />
+                  ) : null}
+                  <span>NAAC {formData.naacGrade || 'A+'}</span>
+                </span>
+              )}
+
+              {/* NBA Badge */}
+              {formData.nbaEnabled && formData.showNbaOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-[9px] font-bold flex items-center gap-1">
+                  {formData.nbaLogoUrl ? (
+                    <img src={formData.nbaLogoUrl} alt="NBA" className="h-3.5 object-contain rounded-xs" />
+                  ) : null}
+                  <span>NBA Accredited {(formData.nbaPrograms || []).length > 0 ? `(${formData.nbaPrograms.join(', ')})` : ''}</span>
+                </span>
+              )}
+
+              {/* PCI Badge */}
+              {formData.pciEnabled && formData.showPciOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-teal-500/25 text-teal-300 border border-teal-500/30 text-[9px] font-bold flex items-center gap-1">
+                  {formData.pciLogoUrl ? (
+                    <img src={formData.pciLogoUrl} alt="PCI" className="h-3.5 object-contain rounded-xs" />
+                  ) : null}
+                  <span>PCI Approved</span>
+                </span>
+              )}
+
+              {/* AICTE Badge */}
+              {formData.aicteEnabled && formData.showAicteOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-blue-500/25 text-blue-300 border border-blue-500/30 text-[9px] font-bold flex items-center gap-1">
+                  {formData.aicteLogoUrl ? (
+                    <img src={formData.aicteLogoUrl} alt="AICTE" className="h-3.5 object-contain" />
+                  ) : null}
+                  <span>AICTE Approved</span>
+                </span>
+              )}
+
+              {/* NIRF Badge */}
+              {formData.nirfEnabled && formData.showNirfOnPortal && (
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[9px] font-bold">
+                  NIRF {formData.nirfYear || '2026'} Rank {formData.nirfRank || '1'}
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            {formData.showDescriptionOnPortal && (
+              <p className="text-xs text-slate-300 leading-relaxed pt-1.5 font-normal">
+                {formData.collegeDescription || 'No college description available.'}
+              </p>
+            )}
+
+            {/* Location & Website URL */}
+            {(formData.showAddressOnPortal || formData.showWebsiteOnPortal) && (
+              <div className="pt-2 border-t border-white/10 flex flex-col gap-1 text-[11px] text-slate-400 font-medium">
+                {formData.showAddressOnPortal && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{locationText || 'College Campus Address'}</span>
+                  </div>
+                )}
+                {formData.showWebsiteOnPortal && (
+                  <div className="flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                    <span className="font-mono text-emerald-300 truncate">{previewBaseUrl}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isFullPage) {
-    return formContent;
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="lg:col-span-7">
+          {formContent}
+        </div>
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-xs">
+          {previewPanel}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -788,9 +1394,16 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
       onClose={onClose}
       title="Edit College Profile"
       subtitle={`Update details & Subscription Plan for ${college?.name || 'College'}`}
-      maxWidth="max-w-4xl"
+      maxWidth="max-w-7xl"
     >
-      {formContent}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="lg:col-span-7">
+          {formContent}
+        </div>
+        <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-xs">
+          {previewPanel}
+        </div>
+      </div>
     </ModalWrapper>
   );
 };

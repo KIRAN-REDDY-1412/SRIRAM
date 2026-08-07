@@ -13,13 +13,13 @@ export function useWorkspaceHistory(initialTab = 'dashboard') {
   const pushTab = (newTab) => {
     if (newTab === activeTab) return;
     tabHistory.current.push(newTab);
-    window.history.pushState({ tab: newTab }, '');
+    window.history.pushState({ workspaceTab: newTab }, '');
     setActiveTab(newTab);
   };
 
   useEffect(() => {
-    // Replace initial state with root tab
-    window.history.replaceState({ tab: initialTab }, '');
+    // Push initial guard state to intercept browser back button
+    window.history.pushState({ workspaceTab: initialTab }, '');
 
     const handlePopState = (e) => {
       if (tabHistory.current.length > 1) {
@@ -29,11 +29,11 @@ export function useWorkspaceHistory(initialTab = 'dashboard') {
       } else {
         // We are on root tab (dashboard)
         if (showLeaveModalRef.current) {
-          // Final press on back button while modal is open -> Exit to browser history!
           setShowLeaveModal(false);
           window.history.back();
         } else {
-          window.history.pushState({ tab: initialTab, modalOpen: true }, '');
+          // Re-push state so page is not popped off immediately while modal displays
+          window.history.pushState({ workspaceTab: initialTab, modal: true }, '');
           setShowLeaveModal(true);
         }
       }

@@ -13,10 +13,12 @@ import { AssignmentListView } from './AssignmentListView';
 import { DocumentBrandingView } from './DocumentBrandingView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 import { ClinicalCaseManagementView } from './ClinicalCaseManagementView';
+import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
 export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'document-branding' | 'profile'
+  const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('dashboard');
   const [collegeAdminCaseFilter, setCollegeAdminCaseFilter] = useState('All');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [college, setCollege] = useState(initialCollege);
@@ -51,7 +53,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
 
   const handleNavigate = (tab, filter = 'All') => {
     setCollegeAdminCaseFilter(filter);
-    setActiveTab(tab);
+    pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -334,6 +336,13 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
         </footer>
 
       </div>
+
+      <LeaveWorkspaceModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onConfirmLeave={onLogout}
+        leaveButtonText="Go to College Landing Page"
+      />
 
     </div>
   );

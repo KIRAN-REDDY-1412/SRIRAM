@@ -13,12 +13,14 @@ import { PharmacistInterventionFormView } from '../pharmacistIntervention/Pharma
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { NotificationsView } from '../common/NotificationsView';
+import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); 
+  const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('dashboard');
   const [caseFilter, setCaseFilter] = useState('All');
   const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -51,7 +53,7 @@ export const StudentLayout = ({ student, onLogout }) => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
     setCaseFilter(filter);
-    setActiveTab(tab);
+    pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     loadUnreadCount();
@@ -380,6 +382,13 @@ export const StudentLayout = ({ student, onLogout }) => {
         </footer>
 
       </div>
+
+      <LeaveWorkspaceModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onConfirmLeave={onLogout}
+        leaveButtonText="Go to College Landing Page"
+      />
 
     </div>
   );

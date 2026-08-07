@@ -7,12 +7,14 @@ import { PreceptorAssignedStudentsView } from './PreceptorAssignedStudentsView';
 import { PreceptorCaseReviewView } from './PreceptorCaseReviewView';
 import { PreceptorProfileView } from './PreceptorProfileView';
 import { NotificationsView } from '../common/NotificationsView';
+import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const PreceptorLayout = ({ preceptor, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('dashboard'); 
+  const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('dashboard');
   const [preceptorCaseFilter, setPreceptorCaseFilter] = useState('All');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -43,7 +45,7 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
     setPreceptorCaseFilter(filter);
-    setActiveTab(tab);
+    pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     loadUnreadCount();
@@ -265,6 +267,13 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
         </footer>
 
       </div>
+
+      <LeaveWorkspaceModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onConfirmLeave={onLogout}
+        leaveButtonText="Go to College Landing Page"
+      />
 
     </div>
   );

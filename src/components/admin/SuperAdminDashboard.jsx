@@ -11,8 +11,12 @@ import {
   Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square, Loader2, MessageSquare
 } from 'lucide-react';
 
+import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
+
 export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const { isDark, toggleTheme } = useTheme();
+  const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('requests');
   const { 
     pendingRequests, 
     activeColleges, 
@@ -27,7 +31,6 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
 
   // Sidebar & View States
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('requests'); // 'requests' | 'active' | 'inactive' | 'expired' | 'edit_profile'
   const [editingCollege, setEditingCollege] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [approvingId, setApprovingId] = useState(null);
@@ -211,7 +214,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                 {/* 1. Registration Requests */}
                 <button
                   onClick={() => {
-                    setActiveTab('requests');
+                    pushTab('requests');
                     setEditingCollege(null);
                     clearSelection();
                   }}
@@ -238,7 +241,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                 {/* 2. Active Colleges */}
                 <button
                   onClick={() => {
-                    setActiveTab('active');
+                    pushTab('active');
                     setEditingCollege(null);
                     clearSelection();
                   }}
@@ -263,7 +266,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                 {/* 3. Inactive Colleges */}
                 <button
                   onClick={() => {
-                    setActiveTab('inactive');
+                    pushTab('inactive');
                     setEditingCollege(null);
                     clearSelection();
                   }}
@@ -283,7 +286,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                 {/* 4. Expired Subscriptions */}
                 <button
                   onClick={() => {
-                    setActiveTab('expired');
+                    pushTab('expired');
                     setEditingCollege(null);
                     clearSelection();
                   }}
@@ -1014,6 +1017,16 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           </div>
         </ModalWrapper>
       )}
+
+      <LeaveWorkspaceModal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        onConfirmLeave={() => {
+          logoutSuperAdmin();
+          onExitToLanding();
+        }}
+        leaveButtonText="Go to Main Landing Page"
+      />
 
     </div>
   );

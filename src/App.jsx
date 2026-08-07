@@ -156,12 +156,15 @@ export default function App() {
     setLoggedStudent(null);
     logoutSuperAdmin();
     clearActiveSession();
+    window.history.replaceState(null, '', window.location.pathname);
   };
 
   // Student Logout -> Redirect to Student's College Landing Page
   const handleStudentLogout = () => {
     const collegeObj = normalizeCollege(loggedStudent?.colleges || activePortalCollege);
     setLoggedStudent(null);
+    clearActiveSession();
+    window.history.replaceState(null, '', window.location.pathname);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
       setViewMode('college_portal');
@@ -175,6 +178,8 @@ export default function App() {
   const handlePreceptorLogout = () => {
     const collegeObj = normalizeCollege(loggedPreceptor?.colleges || activePortalCollege);
     setLoggedPreceptor(null);
+    clearActiveSession();
+    window.history.replaceState(null, '', window.location.pathname);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
       setViewMode('college_portal');
@@ -188,6 +193,8 @@ export default function App() {
   const handleCollegeAdminLogout = () => {
     const collegeObj = normalizeCollege(loggedCollegeAdmin || activePortalCollege);
     setLoggedCollegeAdmin(null);
+    clearActiveSession();
+    window.history.replaceState(null, '', window.location.pathname);
     if (collegeObj) {
       setActivePortalCollege(collegeObj);
       setViewMode('college_portal');
@@ -201,6 +208,7 @@ export default function App() {
   const handleSuperAdminLogout = () => {
     logoutSuperAdmin();
     clearActiveSession();
+    window.history.replaceState(null, '', window.location.pathname);
     handleBackToLanding();
   };
 

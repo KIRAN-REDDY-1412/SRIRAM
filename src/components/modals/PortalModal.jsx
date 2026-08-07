@@ -136,7 +136,7 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
         <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-[11px] text-slate-600 dark:text-slate-400 flex items-center justify-between border border-slate-200/50 dark:border-slate-800">
           <span className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            Single Sign-On (SSO) Enabled for {college.code}
+            SSL Encryption Enabled
           </span>
           <a
             href={baseUrl}

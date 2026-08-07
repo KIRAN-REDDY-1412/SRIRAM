@@ -236,7 +236,7 @@ export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpen
           </div>
         </div>
 
-        {/* SECURITY & SSO NOTICE BAR */}
+        {/* SECURITY NOTICE BAR */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -244,10 +244,10 @@ export const CollegePortalView = ({ college: rawCollege, onBackToLanding, onOpen
             </div>
             <div>
               <strong className="block font-bold text-slate-900 dark:text-white">
-                Single Sign-On (SSO) & SSL Encryption Enabled
+                SSL Encryption Enabled
               </strong>
               <span className="text-slate-500 dark:text-slate-400">
-                All login gateways are secured with 256-bit encryption for {college.code}.
+                All portal communications are secured using HTTPS with industry-standard SSL/TLS encryption.
               </span>
             </div>
           </div>

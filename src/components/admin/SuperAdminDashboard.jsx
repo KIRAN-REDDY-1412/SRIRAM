@@ -7,7 +7,7 @@ import { logoutSuperAdmin } from '../../services/authService';
 
 import { 
   Building2, CheckCircle2, Clock, XCircle, Edit3, 
-  ExternalLink, Search, AlertTriangle,
+  ExternalLink, Search, AlertTriangle, ShieldCheck,
   Sun, Moon, ChevronLeft, ChevronRight, LogOut, ArrowLeft, Trash2, CheckSquare, Square, Loader2, MessageSquare
 } from 'lucide-react';
 
@@ -391,6 +391,50 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
         {/* Dashboard Main View Container */}
         <main className="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
           
+          {/* SUPER ADMIN WELCOME CARD */}
+          {activeTab !== 'edit_profile' && (
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-blue-50/70 dark:from-[#0f172a] dark:via-slate-900 dark:to-blue-950/40 text-slate-900 dark:text-white relative overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800">
+              <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-blue-400/60 p-0.5 shrink-0">
+                  SA
+                </div>
+
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      Super Admin Governance Portal
+                    </span>
+                    <span className="text-xs text-blue-700 dark:text-blue-400 font-mono font-bold">Role: Global Admin</span>
+                  </div>
+
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    Welcome, Super Admin
+                  </h1>
+
+                  <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">System Scope: </span>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold">PharmDVerse Governance & Onboarding</strong>
+                    </div>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Active Portals: </span>
+                      <strong className="text-blue-700 dark:text-blue-400 font-bold">{activeColleges.length} Live Colleges</strong>
+                    </div>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Pending Requests: </span>
+                      <strong className="text-amber-600 dark:text-amber-400 font-bold">{pendingRequests.length} Applications</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* FLOATING BULK DELETE BAR (FOR ACTIVE COLLEGES ONLY) */}
           {selectedIds.length > 0 && activeTab !== 'requests' && activeTab !== 'edit_profile' && (
             <div className="p-4 rounded-2xl bg-slate-900 text-white dark:bg-slate-800 border border-slate-700 shadow-xl flex items-center justify-between animate-fadeIn sticky top-20 z-20">

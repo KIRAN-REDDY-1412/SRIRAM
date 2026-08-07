@@ -94,8 +94,8 @@ export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin, 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10">
         
         {/* COLLEGE BRANDING HERO BANNER */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-2xl border border-slate-700/60">
-          <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-emerald-50/70 dark:from-[#0f172a] dark:via-slate-900 dark:to-emerald-950/40 text-slate-900 dark:text-white relative overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800">
+          <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
             
@@ -104,40 +104,40 @@ export const CollegePortalView = ({ college, onBackToLanding, onOpenAdminLogin, 
               <img
                 src={college.logoUrl}
                 alt={college.name}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain bg-white p-2 border border-white/30 shadow-xl shrink-0"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-contain bg-white p-2 border-2 border-emerald-400/60 shadow-md shrink-0"
               />
             ) : (
-              <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-xl shadow-xl border border-white/20 shrink-0`}>
+              <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-500 to-teal-600'} flex items-center justify-center text-white font-extrabold text-xl shadow-md border-2 border-emerald-400/60 shrink-0`}>
                 {college.initials}
               </div>
             )}
 
             <div className="space-y-3 flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   {college.status || 'Active'} Login Portal
                 </span>
 
-                <span className="text-xs text-slate-300 font-mono">
+                <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono font-bold">
                   Code: {college.code}
                 </span>
               </div>
 
               {/* SINGLE CLEAN COLLEGE NAME */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                 {college.name}
               </h1>
 
               {/* Dynamic College Description */}
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal max-w-3xl">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-normal max-w-3xl">
                 {college.description ? college.description : 'No college description available.'}
               </p>
 
               {/* Location Badge */}
-              <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-300 font-medium">
+              <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
                 <div className="flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>{locationText}</span>
                 </div>
 

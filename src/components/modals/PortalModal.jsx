@@ -48,8 +48,8 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
     >
       <div className="space-y-4">
         {/* Dynamic College Branding Banner Card (No hardcoded values) */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white relative overflow-hidden shadow-lg border border-slate-700/60">
-          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-emerald-50/70 dark:from-[#0f172a] dark:via-slate-900 dark:to-emerald-950/40 text-slate-900 dark:text-white relative overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800">
+          <div className="absolute right-0 top-0 translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
           
           <div className="flex items-start gap-4 relative z-10">
             {/* Dynamic College Logo or Placeholder */}
@@ -57,22 +57,22 @@ export const PortalModal = ({ isOpen, onClose, college }) => {
               <img
                 src={college.logoUrl}
                 alt={college.name}
-                className="w-14 h-14 rounded-2xl object-contain bg-white p-1 border border-white/30 shadow-md shrink-0"
+                className="w-14 h-14 rounded-2xl object-contain bg-white p-1 border-2 border-emerald-400/60 shadow-md shrink-0"
               />
             ) : (
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-600 to-teal-700'} flex items-center justify-center text-white font-extrabold text-base shadow-md border border-white/20 shrink-0`}>
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${college.logoBg || 'from-emerald-500 to-teal-600'} flex items-center justify-center text-white font-extrabold text-base shadow-md border-2 border-emerald-400/60 shrink-0`}>
                 {college.initials}
               </div>
             )}
 
             <div className="space-y-1.5 flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-base font-extrabold text-white leading-snug tracking-tight truncate">
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug tracking-tight truncate">
                   {college.name}
                 </h4>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {college.status || 'Active'}
                 </span>
               </div>

@@ -8,8 +8,29 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [caseId, setCaseId] = useState('');
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
 
-  const configuredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || 'Lalitha Super Specialities Hospital';
-  const hospitalOptions = Array.from(new Set([configuredHospital, 'Lalitha Super Specialities Hospital'])).filter(Boolean);
+  const rawConfiguredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || 'Lalitha Super Specialities Hospital';
+  
+  const getUniqueHospitals = (hospitalsList) => {
+    const seen = new Set();
+    const result = [];
+    hospitalsList.forEach((h) => {
+      if (!h) return;
+      const normalized = h
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/superspecialities/g, 'super specialities')
+        .replace(/super specialty/g, 'super specialities')
+        .replace(/superspecialty/g, 'super specialities');
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        result.push(h.trim());
+      }
+    });
+    return result;
+  };
+
+  const hospitalOptions = getUniqueHospitals([rawConfiguredHospital, 'Lalitha Super Specialities Hospital']);
 
   // Form Input States
   const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || 'Lalitha Super Specialities Hospital');

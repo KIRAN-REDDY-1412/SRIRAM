@@ -215,13 +215,17 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
 
     let result = await performSave(activePayload);
 
-    // Dynamic Schema Fallback: If a column is missing in Supabase schema cache, strip missing column and retry
-    if (result.error && result.error.message && result.error.message.includes('Could not find the')) {
+    // Dynamic Schema Fallback: Iteratively strip any columns missing in Supabase schema cache and retry until save succeeds
+    let attempts = 0;
+    while (result.error && result.error.message && result.error.message.includes('Could not find the') && attempts < 10) {
+      attempts++;
       const match = result.error.message.match(/Could not find the '([^']+)' column/);
       if (match && match[1]) {
         const missingCol = match[1];
         delete activePayload[missingCol];
         result = await performSave(activePayload);
+      } else {
+        break;
       }
     }
 

@@ -17,6 +17,7 @@ import { ClinicalCaseManagementView } from './ClinicalCaseManagementView';
 export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'preceptors-list' | 'add-preceptor' | 'students-list' | 'add-student' | 'assignments-list' | 'assign-students' | 'document-branding' | 'profile'
+  const [collegeAdminCaseFilter, setCollegeAdminCaseFilter] = useState('All');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [college, setCollege] = useState(initialCollege);
 
@@ -48,7 +49,8 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
     loadFreshCollege();
   }, [initialCollege?.id]);
 
-  const handleNavigate = (tab) => {
+  const handleNavigate = (tab, filter = 'All') => {
+    setCollegeAdminCaseFilter(filter);
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -318,7 +320,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
           )}
 
           {activeTab === 'clinical-cases' && (
-            <ClinicalCaseManagementView college={college} />
+            <ClinicalCaseManagementView college={college} initialFilter={collegeAdminCaseFilter} />
           )}
 
           {activeTab === 'document-branding' && (

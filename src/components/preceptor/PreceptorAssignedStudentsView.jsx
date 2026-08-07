@@ -4,7 +4,7 @@ import { fetchPreceptorAssignedStudentsFromSupabase } from '../../services/supab
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PreceptorStudentCasesView } from './PreceptorStudentCasesView';
 
-export const PreceptorAssignedStudentsView = ({ preceptor }) => {
+export const PreceptorAssignedStudentsView = ({ preceptor, initialFilter = 'All' }) => {
   const [assignedRecords, setAssignedRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +42,7 @@ export const PreceptorAssignedStudentsView = ({ preceptor }) => {
       <PreceptorStudentCasesView
         student={selectedStudentForCases}
         preceptor={preceptor}
+        initialFilter={initialFilter}
         onBack={() => setSelectedStudentForCases(null)}
       />
     );

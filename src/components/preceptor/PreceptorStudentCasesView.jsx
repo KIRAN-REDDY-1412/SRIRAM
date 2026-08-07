@@ -4,7 +4,7 @@ import { fetchStudentCasesForPreceptorFromSupabase, fetchCaseModuleStatusesMapFr
 import { PreceptorReviewCaseView } from './PreceptorReviewCaseView';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
-export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
+export const PreceptorStudentCasesView = ({ student, preceptor, initialFilter = 'All', onBack }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
@@ -12,7 +12,13 @@ export const PreceptorStudentCasesView = ({ student, preceptor, onBack }) => {
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState(initialFilter || 'All');
+
+  useEffect(() => {
+    if (initialFilter) {
+      setStatusFilter(initialFilter);
+    }
+  }, [initialFilter]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);

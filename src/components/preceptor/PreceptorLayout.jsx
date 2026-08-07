@@ -12,6 +12,7 @@ import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supaba
 export const PreceptorLayout = ({ preceptor, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard'); 
+  const [preceptorCaseFilter, setPreceptorCaseFilter] = useState('All');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [forcePasswordReset, setForcePasswordReset] = useState(preceptor?.force_password_reset || false);
@@ -37,9 +38,10 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
     }
   }, [forcePasswordReset]);
 
-  const handleNavigate = (tab) => {
+  const handleNavigate = (tab, filter = 'All') => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
+    setPreceptorCaseFilter(filter);
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,7 +229,7 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
           )}
 
           {activeTab === 'assigned-students' && (
-            <PreceptorAssignedStudentsView preceptor={preceptor} />
+            <PreceptorAssignedStudentsView preceptor={preceptor} initialFilter={preceptorCaseFilter} />
           )}
 
           {activeTab === 'notifications' && (

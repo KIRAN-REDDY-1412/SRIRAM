@@ -1743,6 +1743,70 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
   }
 };
 
+export const fetchAllCollegeClinicalCasesFromSupabase = async (collegeId) => {
+  try {
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select(`
+        *,
+        students!fk_clinical_cases_student(*),
+        preceptors!fk_clinical_cases_preceptor(*)
+      `)
+      .eq('college_id', collegeId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      const { data: simpleData } = await supabase
+        .from('clinical_cases')
+        .select('*')
+        .eq('college_id', collegeId)
+        .order('created_at', { ascending: false });
+
+      return { success: true, data: simpleData || [] };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
+  }
+};
+
+export const fetchAllPreceptorCasesFromSupabase = async (preceptorId) => {
+  try {
+    const { data: assignments } = await supabase
+      .from('student_preceptor_assignments')
+      .select('student_id')
+      .eq('preceptor_id', preceptorId)
+      .eq('status', 'Active');
+
+    const studentIds = (assignments || []).map(a => a.student_id);
+    if (!studentIds.length) return { success: true, data: [] };
+
+    const { data, error } = await supabase
+      .from('clinical_cases')
+      .select(`
+        *,
+        students!fk_clinical_cases_student(*)
+      `)
+      .in('student_id', studentIds)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      const { data: simpleData } = await supabase
+        .from('clinical_cases')
+        .select('*')
+        .in('student_id', studentIds)
+        .order('created_at', { ascending: false });
+
+      return { success: true, data: simpleData || [] };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
+  }
+};
+
 export const fetchCollegeClinicalCasesFromSupabase = async (collegeId) => {
   try {
     const { data, error } = await supabase

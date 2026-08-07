@@ -1,33 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { User, UserCheck, GraduationCap, Building2, Plus, ArrowRight, ShieldCheck, CheckCircle2, MapPin, Award, Layers, Sparkles } from 'lucide-react';
-import { fetchPreceptorsFromSupabase, fetchStudentsFromSupabase } from '../../services/supabaseService';
+import { User, UserCheck, GraduationCap, Building2, Plus, ArrowRight, ShieldCheck, CheckCircle2, MapPin, Award, Sparkles, FolderKanban, FileEdit, Send, FileSearch, RotateCcw, Loader2 } from 'lucide-react';
+import { fetchPreceptorsFromSupabase, fetchStudentsFromSupabase, fetchAllCollegeClinicalCasesFromSupabase } from '../../services/supabaseService';
 
 export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
   const [preceptorsCount, setPreceptorsCount] = useState(0);
   const [studentsCount, setStudentsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  const [cases, setCases] = useState([]);
+  const [loadingCases, setLoadingCases] = useState(true);
 
   useEffect(() => {
     const loadStats = async () => {
-      if (!college) return;
-      setLoading(true);
+      if (!college?.id) return;
+
+      setLoadingUsers(true);
       const [precRes, studRes] = await Promise.all([
         fetchPreceptorsFromSupabase(college.id),
         fetchStudentsFromSupabase(college.id)
       ]);
 
-      if (precRes.success) setPreceptorsCount(precRes.data.length);
-      if (studRes.success) setStudentsCount(studRes.data.length);
-      setLoading(false);
+      if (precRes.success) setPreceptorsCount((precRes.data || []).length);
+      if (studRes.success) setStudentsCount((studRes.data || []).length);
+      setLoadingUsers(false);
+
+      setLoadingCases(true);
+      const caseRes = await fetchAllCollegeClinicalCasesFromSupabase(college.id);
+      if (caseRes.success) {
+        setCases(caseRes.data || []);
+      }
+      setLoadingCases(false);
     };
 
     loadStats();
-  }, [college]);
+  }, [college?.id]);
 
-  const stats = [
+  // Compute real-time case status counts
+  const totalCount = cases.length;
+  const draftCount = cases.filter(c => (c.status === 'Draft' || c.overall_case_status === 'Draft')).length;
+  const submittedCount = cases.filter(c => (c.status === 'Submitted' || c.overall_case_status === 'Submitted')).length;
+  const underReviewCount = cases.filter(c => (c.status === 'Under Review' || c.overall_case_status === 'Under Review')).length;
+  const returnedCount = cases.filter(c => (c.status === 'Returned' || c.overall_case_status === 'Returned')).length;
+  const approvedCount = cases.filter(c => (c.status === 'Approved' || c.overall_case_status === 'Approved')).length;
+
+  const userStats = [
     {
       title: 'Total Preceptors',
-      value: loading ? '...' : preceptorsCount,
+      value: loadingUsers ? <Loader2 className="w-5 h-5 animate-spin text-indigo-400" /> : preceptorsCount,
       subtitle: 'Clinical Evaluators & Doctors',
       icon: User,
       color: 'text-indigo-600 dark:text-indigo-400',
@@ -36,30 +55,81 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
     },
     {
       title: 'Total Students',
-      value: loading ? '...' : studentsCount,
+      value: loadingUsers ? <Loader2 className="w-5 h-5 animate-spin text-emerald-400" /> : studentsCount,
       subtitle: 'Enrolled Pharm.D Candidates',
       icon: GraduationCap,
       color: 'text-emerald-600 dark:text-emerald-400',
       bg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-900',
       target: 'students-list'
+    }
+  ];
+
+  const summaryCards = [
+    {
+      id: 'all',
+      title: 'Total Clinical Cases',
+      count: totalCount,
+      filter: 'All',
+      icon: FolderKanban,
+      iconColor: 'text-slate-700 dark:text-slate-300',
+      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      borderLeft: 'border-l-slate-600',
+      description: 'Total clinical case documentations logged across all departments'
     },
     {
-      title: 'Active Batches',
-      value: '6 Batches',
-      subtitle: 'Y22 - Y27 Academic Batches',
-      icon: Layers,
-      color: 'text-cyan-600 dark:text-cyan-400',
-      bg: 'bg-cyan-50 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-900',
-      target: 'students-list'
+      id: 'draft',
+      title: 'Draft Cases',
+      count: draftCount,
+      filter: 'Draft',
+      icon: FileEdit,
+      iconColor: 'text-slate-600 dark:text-slate-400',
+      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      borderLeft: 'border-l-slate-400',
+      description: 'In-progress student drafts saved locally'
     },
     {
-      title: 'Portal Status',
-      value: college?.status || 'Active',
-      subtitle: `Code: ${college?.code}`,
-      icon: ShieldCheck,
-      color: 'text-teal-600 dark:text-teal-400',
-      bg: 'bg-teal-50 dark:bg-teal-950/60 border-teal-200 dark:border-teal-900',
-      target: 'profile'
+      id: 'submitted',
+      title: 'Submitted Cases',
+      count: submittedCount,
+      filter: 'Submitted',
+      icon: Send,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      borderLeft: 'border-l-blue-500',
+      description: 'Submitted cases awaiting preceptor evaluation'
+    },
+    {
+      id: 'under_review',
+      title: 'Under Review Cases',
+      count: underReviewCount,
+      filter: 'Under Review',
+      icon: FileSearch,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      borderLeft: 'border-l-amber-500',
+      description: 'Cases currently undergoing active preceptor review'
+    },
+    {
+      id: 'returned',
+      title: 'Returned Cases',
+      count: returnedCount,
+      filter: 'Returned',
+      icon: RotateCcw,
+      iconColor: 'text-rose-600 dark:text-rose-400',
+      badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+      borderLeft: 'border-l-rose-500',
+      description: 'Cases returned to students for required corrections'
+    },
+    {
+      id: 'approved',
+      title: 'Approved Cases',
+      count: approvedCount,
+      filter: 'Approved',
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      borderLeft: 'border-l-emerald-500',
+      description: 'Fully approved and verified clinical logbook entries'
     }
   ];
 
@@ -115,37 +185,89 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
         </div>
       </div>
 
-      {/* OVERVIEW METRICS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((st, i) => {
+      {/* TOP USER ACADEMIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {userStats.map((st, i) => {
           const IconComponent = st.icon;
           return (
             <div
               key={i}
               onClick={() => onNavigate(st.target)}
-              className={`p-5 rounded-3xl border shadow-xs hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between group ${st.bg}`}
+              className={`p-6 rounded-3xl border shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between group ${st.bg}`}
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-xs">
-                  <IconComponent className={`w-5 h-5 ${st.color}`} />
+                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-xs">
+                  <IconComponent className={`w-6 h-6 ${st.color}`} />
                 </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
               </div>
 
-              <div className="mt-4">
-                <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <div className="mt-5">
+                <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                   {st.value}
                 </span>
-                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1">
                   {st.title}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                   {st.subtitle}
                 </p>
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* CLINICAL CASE MANAGEMENT SUMMARY CARDS */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <FolderKanban className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>Institutional Clinical Case Workflow</span>
+          </h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Click card to manage cases</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {summaryCards.map((card) => {
+            const IconComp = card.icon;
+            return (
+              <div
+                key={card.id}
+                onClick={() => onNavigate('clinical-cases', card.filter)}
+                className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between group border-l-4 ${card.borderLeft}`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xs">
+                      <IconComp className={`w-5 h-5 ${card.iconColor}`} />
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${card.badgeBg}`}>
+                      {card.filter}
+                    </span>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {loadingCases ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : card.count}
+                    </div>
+                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {card.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-normal">
+                      {card.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                  <span>Manage Cases</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* QUICK ACTIONS SECTION */}
@@ -158,7 +280,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <button
             onClick={() => onNavigate('add-preceptor')}
-            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 text-left transition-all group"
+            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 text-left transition-all group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center mb-3 shadow-xs">
               <Plus className="w-5 h-5 stroke-[3]" />
@@ -173,7 +295,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
 
           <button
             onClick={() => onNavigate('preceptors-list')}
-            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-800 text-left transition-all group"
+            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-800 text-left transition-all group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center mb-3 shadow-xs">
               <User className="w-5 h-5" />
@@ -188,7 +310,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
 
           <button
             onClick={() => onNavigate('add-student')}
-            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-800 text-left transition-all group"
+            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-800 text-left transition-all group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center mb-3 shadow-xs">
               <Plus className="w-5 h-5 stroke-[3]" />
@@ -203,21 +325,20 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
 
           <button
             onClick={() => onNavigate('students-list')}
-            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-800 text-left transition-all group"
+            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-800 text-left transition-all group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center mb-3 shadow-xs">
               <GraduationCap className="w-5 h-5" />
             </div>
             <strong className="block text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400">
-              Students Directory
+              Student Directory
             </strong>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              Search candidates & logbooks
+              Manage candidate logbooks
             </span>
           </button>
         </div>
       </div>
-
     </div>
   );
 };

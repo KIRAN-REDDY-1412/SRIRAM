@@ -19,6 +19,7 @@ import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supaba
 export const StudentLayout = ({ student, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard'); 
+  const [caseFilter, setCaseFilter] = useState('All');
   const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -46,9 +47,10 @@ export const StudentLayout = ({ student, onLogout }) => {
     }
   }, [forcePasswordReset]);
 
-  const handleNavigate = (tab) => {
+  const handleNavigate = (tab, filter = 'All') => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
+    setCaseFilter(filter);
     setActiveTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -304,6 +306,7 @@ export const StudentLayout = ({ student, onLogout }) => {
           {activeTab === 'my-cases' && (
             <MyClinicalCasesView
               student={student}
+              initialFilter={caseFilter}
               onAddNew={() => handleNavigate('add-new-case')}
               onOpenPatientProfile={handleOpenPatientProfile}
               onOpenPatientCounselling={handleOpenPatientCounselling}

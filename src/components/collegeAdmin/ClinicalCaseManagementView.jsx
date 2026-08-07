@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, Search, Filter, Eye, Download, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, CheckCircle2, Clock, RotateCcw, Building2, User, GraduationCap } from 'lucide-react';
-import { fetchCollegeClinicalCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
+import { fetchAllCollegeClinicalCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
@@ -9,16 +9,22 @@ import { PharmacistInterventionFormView } from '../pharmacistIntervention/Pharma
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 
-export const ClinicalCaseManagementView = ({ college }) => {
+export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Approved');
+  const [statusFilter, setStatusFilter] = useState(initialFilter || 'All');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [hospitalFilter, setHospitalFilter] = useState('All');
+
+  useEffect(() => {
+    if (initialFilter) {
+      setStatusFilter(initialFilter);
+    }
+  }, [initialFilter]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +38,7 @@ export const ClinicalCaseManagementView = ({ college }) => {
   const loadCollegeCases = async () => {
     if (!college?.id) return;
     setLoading(true);
-    const res = await fetchCollegeClinicalCasesFromSupabase(college.id);
+    const res = await fetchAllCollegeClinicalCasesFromSupabase(college.id);
     if (res.success) {
       const fetchedCases = res.data || [];
       setCases(fetchedCases);

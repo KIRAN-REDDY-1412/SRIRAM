@@ -1,24 +1,112 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, GraduationCap, Stethoscope, ArrowRight, ShieldCheck } from 'lucide-react';
-import { fetchStudentAssignedPreceptorFromSupabase } from '../../services/supabaseService';
+import { UserCheck, Stethoscope, ArrowRight, ShieldCheck, FolderKanban, FileEdit, Send, FileSearch, RotateCcw, CheckCircle2, Loader2 } from 'lucide-react';
+import { fetchStudentAssignedPreceptorFromSupabase, fetchStudentCasesFromSupabase } from '../../services/supabaseService';
 
 export const StudentDashboardView = ({ student, onNavigate }) => {
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingPreceptor, setLoadingPreceptor] = useState(true);
+
+  const [cases, setCases] = useState([]);
+  const [loadingCases, setLoadingCases] = useState(true);
 
   useEffect(() => {
-    const loadPreceptor = async () => {
-      if (!student) return;
-      setLoading(true);
-      const res = await fetchStudentAssignedPreceptorFromSupabase(student.id);
-      if (res.success && res.data) {
-        setAssignedPreceptor(res.data);
+    const loadData = async () => {
+      if (!student?.id) return;
+      
+      setLoadingPreceptor(true);
+      const precRes = await fetchStudentAssignedPreceptorFromSupabase(student.id);
+      if (precRes.success && precRes.data) {
+        setAssignedPreceptor(precRes.data);
       }
-      setLoading(false);
+      setLoadingPreceptor(false);
+
+      setLoadingCases(true);
+      const caseRes = await fetchStudentCasesFromSupabase(student.id);
+      if (caseRes.success) {
+        setCases(caseRes.data || []);
+      }
+      setLoadingCases(false);
     };
 
-    loadPreceptor();
-  }, [student]);
+    loadData();
+  }, [student?.id]);
+
+  // Compute real-time case status counts
+  const totalCount = cases.length;
+  const draftCount = cases.filter(c => (c.status === 'Draft' || c.overall_case_status === 'Draft')).length;
+  const submittedCount = cases.filter(c => (c.status === 'Submitted' || c.overall_case_status === 'Submitted')).length;
+  const underReviewCount = cases.filter(c => (c.status === 'Under Review' || c.overall_case_status === 'Under Review')).length;
+  const returnedCount = cases.filter(c => (c.status === 'Returned' || c.overall_case_status === 'Returned')).length;
+  const approvedCount = cases.filter(c => (c.status === 'Approved' || c.overall_case_status === 'Approved')).length;
+
+  const summaryCards = [
+    {
+      id: 'all',
+      title: 'Total Clinical Cases',
+      count: totalCount,
+      filter: 'All',
+      icon: FolderKanban,
+      iconColor: 'text-slate-700 dark:text-slate-300',
+      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      borderLeft: 'border-l-slate-600',
+      description: 'All logged clinical cases across hospital rotations'
+    },
+    {
+      id: 'draft',
+      title: 'Draft Cases',
+      count: draftCount,
+      filter: 'Draft',
+      icon: FileEdit,
+      iconColor: 'text-slate-600 dark:text-slate-400',
+      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      borderLeft: 'border-l-slate-400',
+      description: 'Work-in-progress cases saved for completion'
+    },
+    {
+      id: 'submitted',
+      title: 'Submitted Cases',
+      count: submittedCount,
+      filter: 'Submitted',
+      icon: Send,
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      borderLeft: 'border-l-blue-500',
+      description: 'Submitted to preceptor for evaluation'
+    },
+    {
+      id: 'under_review',
+      title: 'Under Review Cases',
+      count: underReviewCount,
+      filter: 'Under Review',
+      icon: FileSearch,
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      borderLeft: 'border-l-amber-500',
+      description: 'Currently under active preceptor review'
+    },
+    {
+      id: 'returned',
+      title: 'Returned Cases',
+      count: returnedCount,
+      filter: 'Returned',
+      icon: RotateCcw,
+      iconColor: 'text-rose-600 dark:text-rose-400',
+      badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+      borderLeft: 'border-l-rose-500',
+      description: 'Returned with comments requiring revisions'
+    },
+    {
+      id: 'approved',
+      title: 'Approved Cases',
+      count: approvedCount,
+      filter: 'Approved',
+      icon: CheckCircle2,
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      borderLeft: 'border-l-emerald-500',
+      description: 'Verified and signed off by clinical preceptor'
+    }
+  ];
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
@@ -72,7 +160,7 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
         </div>
       </div>
 
-      {/* DASHBOARD CARDS */}
+      {/* TOP ACADEMIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* ASSIGNED PRECEPTOR CARD */}
         <div
@@ -88,7 +176,7 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
 
           <div className="mt-5">
             <span className="text-[11px] uppercase font-bold text-slate-400 block">Assigned Clinical Preceptor:</span>
-            {loading ? (
+            {loadingPreceptor ? (
               <p className="text-base font-bold text-slate-400 mt-1">Loading preceptor...</p>
             ) : assignedPreceptor ? (
               <div>
@@ -133,6 +221,58 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
               View your enrolled academic year, roll number, and contact details.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* CLINICAL WORKFLOW SUMMARY CARDS */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+            <FolderKanban className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>Clinical Case Workflow Overview</span>
+          </h2>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Click card to filter cases</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {summaryCards.map((card) => {
+            const IconComp = card.icon;
+            return (
+              <div
+                key={card.id}
+                onClick={() => onNavigate('my-cases', card.filter)}
+                className={`p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between group border-l-4 ${card.borderLeft}`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xs">
+                      <IconComp className={`w-5 h-5 ${card.iconColor}`} />
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${card.badgeBg}`}>
+                      {card.filter}
+                    </span>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {loadingCases ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : card.count}
+                    </div>
+                    <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      {card.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-normal">
+                      {card.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                  <span>View Cases</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

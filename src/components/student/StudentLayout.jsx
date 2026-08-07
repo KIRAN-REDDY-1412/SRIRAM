@@ -13,6 +13,7 @@ import { PharmacistInterventionFormView } from '../pharmacistIntervention/Pharma
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { NotificationsView } from '../common/NotificationsView';
+import { ChangePasswordSection } from '../common/ChangePasswordSection';
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const StudentLayout = ({ student, onLogout }) => {
@@ -21,6 +22,7 @@ export const StudentLayout = ({ student, onLogout }) => {
   const [selectedCaseForForm, setSelectedCaseForForm] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [forcePasswordReset, setForcePasswordReset] = useState(student?.force_password_reset || false);
 
   const loadUnreadCount = async () => {
     if (!student?.id) return;
@@ -276,7 +278,26 @@ export const StudentLayout = ({ student, onLogout }) => {
           </div>
         </header>
 
-        {/* VIEW ROUTER */}
+        {/* FORCE PASSWORD RESET SCREEN */}
+        {forcePasswordReset ? (
+          <main className="flex-1 p-4 sm:p-8 flex items-center justify-center">
+            <div className="w-full max-w-md space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold mb-1">Password Reset Required</strong>
+                  Your college administrator has reset your password. You must set a new secure password before you can access the portal.
+                </div>
+              </div>
+              <ChangePasswordSection
+                user={student}
+                userType="Student"
+                isForceReset={true}
+                onSuccess={() => setForcePasswordReset(false)}
+              />
+            </div>
+          </main>
+        ) : (
         <main className="flex-1 p-4 sm:p-8">
           {activeTab === 'dashboard' && (
             <StudentDashboardView student={student} onNavigate={handleNavigate} />
@@ -367,7 +388,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             <StudentProfileView student={student} />
           )}
         </main>
-
+        )}
         {/* FOOTER */}
         <footer className="py-4 px-6 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-center text-xs text-slate-500 dark:text-slate-400">
           <p>© 2026 PharmDVerse Cloud. Student Module for {student?.full_name}. All rights reserved.</p>

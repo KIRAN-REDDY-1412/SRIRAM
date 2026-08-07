@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Search, Filter, Plus, Edit3, Trash2, CheckCircle2, XCircle, Eye, Download, ChevronLeft, ChevronRight, Phone, Mail, Award, Briefcase, Building2, AlertTriangle, ShieldCheck, Loader2 } from 'lucide-react';
 import { fetchPreceptorsFromSupabase, updatePreceptorInSupabase, deletePreceptorFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
+import { SecurityManagementSection } from './SecurityManagementSection';
 
 export const PreceptorListView = ({ college, onAddNew }) => {
   const [preceptors, setPreceptors] = useState([]);
@@ -352,6 +353,16 @@ export const PreceptorListView = ({ college, onAddNew }) => {
                 <span className="font-mono text-slate-800 dark:text-slate-200">{selectedPreceptor.email}</span>
               </div>
             </div>
+
+            <SecurityManagementSection
+              user={selectedPreceptor}
+              userType="Preceptor"
+              collegeAdminId={college.id}
+              onUpdateUser={(updatedPreceptor) => {
+                setPreceptors(prev => prev.map(p => p.id === updatedPreceptor.id ? updatedPreceptor : p));
+                setSelectedPreceptor(updatedPreceptor);
+              }}
+            />
 
             <div className="flex justify-end pt-2">
               <button

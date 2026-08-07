@@ -820,7 +820,14 @@ export const authenticatePreceptorInSupabase = async (username, password) => {
 
     if (error || !preceptor) return { success: false, error: 'Invalid Username or Password' };
     if (preceptor.status !== 'Active') return { success: false, error: 'Your Preceptor account is currently Inactive. Contact College Admin.' };
-    if (preceptor.password_hash !== inputHash) return { success: false, error: 'Invalid Username or Password' };
+    if (preceptor.password_hash !== inputHash) {
+      // Increment failed login attempts
+      await supabase.from('preceptors').update({ failed_login_attempts: (preceptor.failed_login_attempts || 0) + 1 }).eq('id', preceptor.id);
+      return { success: false, error: 'Invalid Username or Password' };
+    }
+
+    // Successful login - update last_login_at and reset failed attempts
+    await supabase.from('preceptors').update({ last_login_at: new Date().toISOString(), failed_login_attempts: 0 }).eq('id', preceptor.id);
 
     return { success: true, preceptor };
   } catch (err) {
@@ -860,7 +867,14 @@ export const authenticateStudentInSupabase = async (username, password) => {
 
     if (error || !student) return { success: false, error: 'Invalid Username or Password' };
     if (student.status !== 'Active') return { success: false, error: 'Your Student account is currently Inactive. Contact College Admin.' };
-    if (student.password_hash !== inputHash) return { success: false, error: 'Invalid Username or Password' };
+    if (student.password_hash !== inputHash) {
+      // Increment failed login attempts
+      await supabase.from('students').update({ failed_login_attempts: (student.failed_login_attempts || 0) + 1 }).eq('id', student.id);
+      return { success: false, error: 'Invalid Username or Password' };
+    }
+
+    // Successful login - update last_login_at and reset failed attempts
+    await supabase.from('students').update({ last_login_at: new Date().toISOString(), failed_login_attempts: 0 }).eq('id', student.id);
 
     return { success: true, student };
   } catch (err) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserCheck, Search, Filter, Plus, Edit3, Trash2, CheckCircle2, XCircle, Eye, Download, ChevronLeft, ChevronRight, GraduationCap, Calendar, BookOpen, AlertTriangle, Loader2 } from 'lucide-react';
 import { fetchStudentsFromSupabase, updateStudentInSupabase, deleteStudentFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
+import { SecurityManagementSection } from './SecurityManagementSection';
 
 export const StudentListView = ({ college, onAddNew }) => {
   const [students, setStudents] = useState([]);
@@ -387,6 +388,16 @@ export const StudentListView = ({ college, onAddNew }) => {
                 <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{selectedStudent.username}</span>
               </div>
             </div>
+
+            <SecurityManagementSection
+              user={selectedStudent}
+              userType="Student"
+              collegeAdminId={college.id}
+              onUpdateUser={(updatedStudent) => {
+                setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+                setSelectedStudent(updatedStudent);
+              }}
+            />
 
             <div className="flex justify-end pt-2">
               <button

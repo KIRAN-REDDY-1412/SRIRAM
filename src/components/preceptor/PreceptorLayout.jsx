@@ -6,6 +6,7 @@ import { PreceptorDashboardView } from './PreceptorDashboardView';
 import { PreceptorAssignedStudentsView } from './PreceptorAssignedStudentsView';
 import { PreceptorProfileView } from './PreceptorProfileView';
 import { NotificationsView } from '../common/NotificationsView';
+import { ChangePasswordSection } from '../common/ChangePasswordSection';
 import { fetchUnreadNotificationsCountFromSupabase } from '../../services/supabaseService';
 
 export const PreceptorLayout = ({ preceptor, onLogout }) => {
@@ -13,6 +14,7 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard'); 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [forcePasswordReset, setForcePasswordReset] = useState(preceptor?.force_password_reset || false);
 
   const loadUnreadCount = async () => {
     if (!preceptor?.id) return;
@@ -209,7 +211,26 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
           </div>
         </header>
 
-        {/* VIEW ROUTER */}
+        {/* FORCE PASSWORD RESET SCREEN */}
+        {forcePasswordReset ? (
+          <main className="flex-1 p-4 sm:p-8 flex items-center justify-center">
+            <div className="w-full max-w-md space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="block font-bold mb-1">Password Reset Required</strong>
+                  Your college administrator has reset your password. You must set a new secure password before you can access the portal.
+                </div>
+              </div>
+              <ChangePasswordSection
+                user={preceptor}
+                userType="Preceptor"
+                isForceReset={true}
+                onSuccess={() => setForcePasswordReset(false)}
+              />
+            </div>
+          </main>
+        ) : (
         <main className="flex-1 p-4 sm:p-8">
           {activeTab === 'dashboard' && (
             <PreceptorDashboardView preceptor={preceptor} onNavigate={handleNavigate} />
@@ -234,6 +255,7 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
             <PreceptorProfileView preceptor={preceptor} />
           )}
         </main>
+        )}
 
         {/* FOOTER */}
         <footer className="py-4 px-6 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-center text-xs text-slate-500 dark:text-slate-400">

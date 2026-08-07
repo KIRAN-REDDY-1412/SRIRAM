@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserCheck, GraduationCap, Calendar, Phone, Mail, ShieldCheck } from 'lucide-react';
+import { ChangePasswordSection } from '../common/ChangePasswordSection';
 
 export const StudentProfileView = ({ student }) => {
-  if (!student) return null;
+  const [studentState, setStudentState] = useState(student);
+  if (!studentState) return null;
 
   return (
     <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
@@ -108,7 +110,17 @@ export const StudentProfileView = ({ student }) => {
 
         <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
           <span>🔒 Read-only profile view. To request changes, contact College Admin.</span>
-          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">Status: {student.status}</span>
+          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">Status: {studentState.status}</span>
+        </div>
+
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <ChangePasswordSection
+            user={studentState}
+            userType="Student"
+            onSuccess={(updatedStudent) => {
+              setStudentState(updatedStudent);
+            }}
+          />
         </div>
 
       </div>

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Phone, Mail, Award, Briefcase, Building2, ShieldCheck } from 'lucide-react';
+import { ChangePasswordSection } from '../common/ChangePasswordSection';
 
 export const PreceptorProfileView = ({ preceptor }) => {
-  if (!preceptor) return null;
+  const [preceptorState, setPreceptorState] = useState(preceptor);
+  if (!preceptorState) return null;
 
   return (
     <div className="space-y-6 animate-fadeIn max-w-3xl mx-auto">
@@ -93,7 +95,17 @@ export const PreceptorProfileView = ({ preceptor }) => {
 
         <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
           <span>🔒 Read-only profile view. To request changes, contact College Admin.</span>
-          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">Status: {preceptor.status}</span>
+          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">Status: {preceptorState.status}</span>
+        </div>
+
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+          <ChangePasswordSection
+            user={preceptorState}
+            userType="Preceptor"
+            onSuccess={(updatedPreceptor) => {
+              setPreceptorState(updatedPreceptor);
+            }}
+          />
         </div>
 
       </div>

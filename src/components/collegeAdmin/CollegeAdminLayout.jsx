@@ -249,14 +249,18 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2">
-              <img
-                src="/pharmdverse-logo.png"
-                alt="PharmDVerse Logo"
-                className="w-6 h-6 object-contain cursor-pointer hover:scale-105 transition-transform"
-                onClick={() => setShowLogoModal(true)}
-                title="Click to view official logo"
-              />
+            <div className="flex items-center gap-2.5">
+              {(college?.college_logo_url || college?.logoUrl) ? (
+                <img
+                  src={college?.college_logo_url || college?.logoUrl}
+                  alt={college?.college_name || college?.name || 'College Logo'}
+                  className="w-8 h-8 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white p-0.5 shrink-0 shadow-xs"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-xs border border-white/20">
+                  {(college?.college_name || college?.name || 'CLG').substring(0, 3).toUpperCase()}
+                </div>
+              )}
               <h1 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
                 {college?.college_name || college?.name} <span className="text-slate-400 font-normal text-xs hidden sm:inline">| College Admin Portal</span>
               </h1>

@@ -156,15 +156,8 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
       }));
     }
 
-    const isProfileCompleted = caseRecord.profile_completed || 
-      (caseStatusInfo?.profileStatus && 
-       caseStatusInfo.profileStatus !== 'Draft' && 
-       caseStatusInfo.profileStatus !== 'Not Started');
-
-    const isCounsellingCompleted = caseRecord.counselling_completed || 
-      (caseStatusInfo?.counsellingStatus && 
-       caseStatusInfo.counsellingStatus !== 'Draft' && 
-       caseStatusInfo.counsellingStatus !== 'Not Started');
+    const isProfileCompleted = !!caseStatusInfo?.profile_completed;
+    const isCounsellingCompleted = !!caseStatusInfo?.counselling_completed;
 
     if (!isProfileCompleted || !isCounsellingCompleted) {
       showActionNotify({

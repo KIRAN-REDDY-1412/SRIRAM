@@ -250,7 +250,15 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
 
     if (res.success) {
       setExistingCounsellingId(res.counselling.id);
-      setStatus(newStatus);
+      
+      // Sync completion flags strictly using backend response to avoid cached values
+      if (clinicalCase) {
+        clinicalCase.profile_completed = !!res.profile_completed;
+        clinicalCase.counselling_completed = !!res.counselling_completed;
+      }
+
+      setStatus(res.counselling_completed ? 'Completed' : 'Draft');
+      
       showBottomNotify({
         type: 'success',
         message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'

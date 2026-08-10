@@ -488,7 +488,15 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     ]);
 
     setSaving(false);
-    setProfileStatus(newStatus);
+    
+    // Sync completion flags strictly using backend response to avoid cached values
+    if (clinicalCase) {
+      clinicalCase.profile_completed = !!profRes.profile_completed;
+      clinicalCase.counselling_completed = !!profRes.counselling_completed;
+    }
+
+    setProfileStatus(profRes.profile_completed ? 'Completed' : 'Draft');
+    
     showBottomNotify({
       type: 'success',
       message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'

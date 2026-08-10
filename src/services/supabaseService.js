@@ -1545,18 +1545,37 @@ export const saveStudentFormSectionInSupabase = async ({
         ? { profile_completed: completed } 
         : { counselling_completed: completed };
 
-      // Update case completion status in clinical_cases table if columns exist
-      try {
-        await supabase
-          .from('clinical_cases')
-          .update(updateField)
-          .eq('id', caseId);
-      } catch (err) {
-        console.warn(`Could not update completion status for ${section_type} in clinical_cases table:`, err);
+      const { error: updateErr } = await supabase
+        .from('clinical_cases')
+        .update(updateField)
+        .eq('id', caseId);
+
+      if (updateErr) {
+        console.warn(`Could not update completion status for ${section_type} in clinical_cases table:`, updateErr.message);
       }
     }
 
-    return { success: true, completed, ...res };
+    // Refetch completion flags directly from backend to ensure single source of truth
+    const { data: updatedCase } = await supabase
+      .from('clinical_cases')
+      .select('profile_completed, counselling_completed')
+      .eq('id', payload.clinical_case_id)
+      .maybeSingle();
+
+    const profileCompleted = updatedCase && ('profile_completed' in updatedCase)
+      ? !!updatedCase.profile_completed
+      : (section_type === 'profile' ? (is_mandatory ? !!completion_status : false) : false);
+
+    const counsellingCompleted = updatedCase && ('counselling_completed' in updatedCase)
+      ? !!updatedCase.counselling_completed
+      : (section_type === 'counselling' ? (is_mandatory ? !!completion_status : false) : false);
+
+    return { 
+      success: true, 
+      profile_completed: profileCompleted,
+      counselling_completed: counsellingCompleted,
+      ...res 
+    };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -1566,7 +1585,8 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
   if (!caseIds || caseIds.length === 0) return { success: true, statusesMap: {} };
 
   try {
-    const [profilesRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
+    const [casesRes, profilesRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
+      supabase.from('clinical_cases').select('id, profile_completed, counselling_completed').in('id', caseIds),
       supabase.from('patient_profiles').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
       supabase.from('patient_counselling').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
       supabase.from('pharmacist_interventions').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
@@ -1574,6 +1594,7 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       supabase.from('adr_reports').select('id, clinical_case_id, approval_status').in('clinical_case_id', caseIds)
     ]);
 
+    const cases = casesRes.data || [];
     const profiles = profilesRes.data || [];
     const counselling = counsellingRes.data || [];
     const interventions = interventionRes.data || [];
@@ -1583,15 +1604,29 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
     const statusesMap = {};
 
     caseIds.forEach(id => {
+      const caseRecord = cases.find(item => item.id === id);
       const p = profiles.find(item => item.clinical_case_id === id);
       const c = counselling.find(item => item.clinical_case_id === id);
       const i = interventions.find(item => item.clinical_case_id === id);
       const d = dirs.find(item => item.clinical_case_id === id);
       const a = adrs.find(item => item.clinical_case_id === id);
 
+      const hasCompletedColumns = caseRecord && ('profile_completed' in caseRecord);
+      
+      let isProfileCompleted = false;
+      let isCounsellingCompleted = false;
+
+      if (hasCompletedColumns) {
+        isProfileCompleted = !!caseRecord.profile_completed;
+        isCounsellingCompleted = !!caseRecord.counselling_completed;
+      } else {
+        isProfileCompleted = p ? (p.status !== 'Draft') : false;
+        isCounsellingCompleted = c ? (c.status !== 'Draft') : false;
+      }
+
       statusesMap[id] = {
-        profileStatus: p ? (p.approval_status || p.status || 'Completed') : 'Not Started',
-        counsellingStatus: c ? (c.approval_status || c.status || 'Completed') : 'Not Started',
+        profileStatus: isProfileCompleted ? 'Completed' : 'Not Started',
+        counsellingStatus: isCounsellingCompleted ? 'Completed' : 'Not Started',
         interventionStatus: i ? (i.approval_status || i.status || 'Completed') : 'Not Added',
         dirStatus: d ? (d.status || 'Completed') : 'Not Added',
         adrStatus: a ? (a.approval_status || 'Completed') : 'Not Added',
@@ -1599,7 +1634,9 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
         hasCounselling: Boolean(c),
         hasIntervention: Boolean(i),
         hasDir: Boolean(d),
-        hasAdr: Boolean(a)
+        hasAdr: Boolean(a),
+        profile_completed: isProfileCompleted,
+        counselling_completed: isCounsellingCompleted
       };
     });
 

@@ -1617,8 +1617,12 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       let isCounsellingCompleted = false;
 
       if (hasCompletedColumns) {
-        isProfileCompleted = !!caseRecord.profile_completed;
-        isCounsellingCompleted = !!caseRecord.counselling_completed;
+        // Resolve completed if flag is true OR child record exists and is not draft (backward compatibility for older logs)
+        const isProfileRecordCompleted = p ? (p.status !== 'Draft') : false;
+        isProfileCompleted = !!caseRecord.profile_completed || isProfileRecordCompleted;
+
+        const isCounsellingRecordCompleted = c ? (c.status !== 'Draft') : false;
+        isCounsellingCompleted = !!caseRecord.counselling_completed || isCounsellingRecordCompleted;
       } else {
         isProfileCompleted = p ? (p.status !== 'Draft') : false;
         isCounsellingCompleted = c ? (c.status !== 'Draft') : false;

@@ -185,29 +185,23 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
     }
   };
 
-  const handleSaveCounselling = async (newStatus = 'Draft') => {
+  // Validate required fields for Counselling completion
+  const isCounsellingComplete = () => {
+    return (
+      diseaseCounselled.trim().length > 0 &&
+      medicationsCounselled.trim().length > 0 &&
+      (!majorBarriersInvolved || barrierDetails.trim().length > 0) &&
+      (counsellingProvidedTo !== 'Patient representative' || representativeReasons.length > 0 || representativeOtherReason.trim().length > 0)
+    );
+  };
+
+  const handleSaveCounselling = async () => {
     clearBottomNotify();
     const formattedTime = formatTo12Hour(counsellingTimeRaw);
 
-    // Strict Validation only on Submit
-    if (newStatus === 'Submitted') {
-      if (!diseaseCounselled.trim()) {
-        showBottomNotify({ type: 'error', message: '✖ Please enter Disease Counselled.' });
-        return;
-      }
-      if (!medicationsCounselled.trim()) {
-        showBottomNotify({ type: 'error', message: '✖ Please enter Medications Counselled.' });
-        return;
-      }
-      if (majorBarriersInvolved && !barrierDetails.trim()) {
-        showBottomNotify({ type: 'error', message: '✖ Please specify details of the barrier involved.' });
-        return;
-      }
-      if (counsellingProvidedTo === 'Patient representative' && representativeReasons.length === 0 && !representativeOtherReason.trim()) {
-        showBottomNotify({ type: 'error', message: '✖ Please select or enter a reason for patient representative.' });
-        return;
-      }
-    }
+    // Determine completion purely from field validation (not from which button was clicked)
+    const allRequiredFilled = isCounsellingComplete();
+    const saveStatus = allRequiredFilled ? 'Submitted' : 'Draft';
 
     setSaving(true);
 
@@ -237,13 +231,13 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
       counselling_aids_used: counsellingAidsUsed.trim(),
       counselling_material_provided: counsellingMaterialProvided.trim(),
       understanding_ascertained: understandingAscertained,
-      status: newStatus
+      status: saveStatus
     };
 
     const res = await saveStudentFormSectionInSupabase({
       section_type: 'counselling',
       is_mandatory: true,
-      completion_status: newStatus === 'Submitted',
+      completion_status: allRequiredFilled, // ← field-validation based, not button-based
       payload
     });
     setSaving(false);
@@ -261,7 +255,9 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
       
       showBottomNotify({
         type: 'success',
-        message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
+        message: res.counselling_completed
+          ? '✓ Counselling saved and marked as Completed (Green)'
+          : '✓ Draft saved. Fill Disease Counselled and Medications to mark as Completed.'
       });
     } else {
       showBottomNotify({
@@ -686,9 +682,16 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
         <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
           <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
 
+          {/* Required fields hint */}
+          {!isCounsellingComplete() && (
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mr-auto">
+              * Fill Disease Counselled and Medications Counselled to mark as Completed (green dot)
+            </span>
+          )}
+
           <button
             type="button"
-            onClick={() => handleSaveCounselling('Draft')}
+            onClick={handleSaveCounselling}
             disabled={saving}
             className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
@@ -698,10 +701,11 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
 
           <button
             type="button"
-            onClick={() => handleSaveCounselling('Submitted')}
+            onClick={handleSaveCounselling}
             disabled={saving}
             className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
           >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Save</span>
           </button>
         </div>

@@ -366,12 +366,24 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     setPrescribedDrugs(prescribedDrugs.filter((_, i) => i !== idx));
   };
 
-  // Save / Update Handler
-  const handleSaveProfile = async (newStatus = 'Draft') => {
+  // Validate required fields for Profile completion — used on every save
+  const isProfileComplete = () => {
+    return (
+      patientName.trim().length > 0 &&
+      age.trim().length > 0 &&
+      ipNo.trim().length === 10 &&
+      !!doa &&
+      chiefComplaints.trim().length > 0 &&
+      finalDiagnosis.trim().length > 0
+    );
+  };
+
+  // Save / Update Handler — BOTH buttons call this; completion determined by field validation
+  const handleSaveProfile = async () => {
     setFormError('');
     setSaveSuccess('');
 
-    // Common Date Validation for BOTH Draft and Submit
+    // Date cross-validation (always)
     if (dod && doa && dod < doa) {
       setFormError('Date of Discharge (DOD) cannot be earlier than Date of Admission (DOA).');
       return;
@@ -385,37 +397,10 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
       return;
     }
 
-    // SUBMIT PROFILE STRICT VALIDATION
-    if (newStatus === 'Submitted') {
-      if (!patientName.trim()) {
-        setFormError('Patient Initials are required.');
-        return;
-      }
-      if (!age.trim()) {
-        setFormError('Age is required.');
-        return;
-      }
-      if (!ipNo.trim()) {
-        setFormError('I.P Number is required.');
-        return;
-      }
-      if (ipNo.trim().length !== 10) {
-        setFormError('I.P Number must be exactly 10 digits.');
-        return;
-      }
-      if (!doa) {
-        setFormError('Date of Admission (DOA) is required.');
-        return;
-      }
-      if (!chiefComplaints.trim()) {
-        setFormError('Chief Complaints are required.');
-        return;
-      }
-      if (!finalDiagnosis.trim()) {
-        setFormError('Final Diagnosis is required.');
-        return;
-      }
-    }
+    // Determine completion purely by field validation (not by which button was clicked)
+    const allRequiredFilled = isProfileComplete();
+    // Status: 'Submitted' when all required fields complete, else keep 'Draft'
+    const saveStatus = allRequiredFilled ? 'Submitted' : 'Draft';
 
     setSaving(true);
 
@@ -459,14 +444,14 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
       other_investigations: otherInvestigations,
       final_diagnosis: finalDiagnosis,
       discharge_summary: dischargeSummary,
-      status: newStatus
+      status: saveStatus
     };
 
     // Save Patient Profile using the unified Save API
     const profRes = await saveStudentFormSectionInSupabase({
       section_type: 'profile',
       is_mandatory: true,
-      completion_status: newStatus === 'Submitted',
+      completion_status: allRequiredFilled, // ← field-validation based, not button-based
       payload
     });
 
@@ -477,6 +462,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     }
 
     const savedProfileId = profRes.profile.id;
+    setExistingProfileId(savedProfileId);
 
     // Save Child Tables
     const activeLabRecords = labInvestigations.filter(l => l.parameter_name && l.test_value);
@@ -499,7 +485,9 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     
     showBottomNotify({
       type: 'success',
-      message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
+      message: profRes.profile_completed 
+        ? '✓ Profile saved and marked as Completed (Green)'
+        : '✓ Draft saved. Complete all required fields (*) to mark as Completed.'
     });
   };
 
@@ -1172,10 +1160,17 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
       {!isReadOnly && (
         <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
           <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+
+          {/* Required fields hint */}
+          {!isProfileComplete() && (
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mr-auto">
+              * Complete required fields to mark as Completed (green dot)
+            </span>
+          )}
           
           <button
             type="button"
-            onClick={() => handleSaveProfile('Draft')}
+            onClick={handleSaveProfile}
             disabled={saving}
             className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
@@ -1185,10 +1180,11 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
 
           <button
             type="button"
-            onClick={() => handleSaveProfile('Submitted')}
+            onClick={handleSaveProfile}
             disabled={saving}
             className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
           >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Save</span>
           </button>
         </div>

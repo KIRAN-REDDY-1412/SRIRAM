@@ -1612,30 +1612,62 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       const a = adrs.find(item => item.clinical_case_id === id);
 
       const hasCompletedColumns = caseRecord && ('profile_completed' in caseRecord);
-      
+
+      // ---------------------------------------------------------------
+      // COMPLETION FLAGS (for submission gating) — source of truth: DB flags
+      // ---------------------------------------------------------------
+      // These determine whether submission is allowed. Strictly DB-backed.
+      const COMPLETED_STATUSES = ['Submitted', 'Completed', 'Approved', 'Reviewed'];
+
       let isProfileCompleted = false;
       let isCounsellingCompleted = false;
 
       if (hasCompletedColumns) {
-        const isProfileRecordSubmitted = p ? (p.status === 'Submitted' || p.status === 'Completed' || p.status === 'Approved' || p.status === 'Reviewed') : false;
+        // Primary: use the DB boolean flag
+        // Fallback: child record at a terminal status (backward compat)
+        const isProfileRecordSubmitted = p ? COMPLETED_STATUSES.includes(p.status) : false;
         isProfileCompleted = !!caseRecord.profile_completed || isProfileRecordSubmitted;
 
-        const isCounsellingRecordSubmitted = c ? (c.status === 'Submitted' || c.status === 'Completed' || c.status === 'Approved' || c.status === 'Reviewed') : false;
+        const isCounsellingRecordSubmitted = c ? COMPLETED_STATUSES.includes(c.status) : false;
         isCounsellingCompleted = !!caseRecord.counselling_completed || isCounsellingRecordSubmitted;
       } else {
-        isProfileCompleted = p ? (p.status === 'Submitted' || p.status === 'Completed' || p.status === 'Approved' || p.status === 'Reviewed') : false;
-        isCounsellingCompleted = c ? (c.status === 'Submitted' || c.status === 'Completed' || c.status === 'Approved' || c.status === 'Reviewed') : false;
+        // Fallback when columns don't exist in DB yet
+        isProfileCompleted = p ? COMPLETED_STATUSES.includes(p.status) : false;
+        isCounsellingCompleted = c ? COMPLETED_STATUSES.includes(c.status) : false;
       }
 
-      const profileStatusVal = p ? (p.approval_status || p.status || 'Completed') : 'Not Started';
-      const counsellingStatusVal = c ? (c.approval_status || c.status || 'Completed') : 'Not Started';
+      // ---------------------------------------------------------------
+      // MODULE DOT STATUS — what color dot to show
+      // Grey = No record (Not Started)
+      // Amber = Draft record exists
+      // Green = Terminal status (Submitted/Completed/Approved/Reviewed)
+      // ---------------------------------------------------------------
+      const resolveModuleStatus = (record, statusField = 'status', approvalField = null) => {
+        if (!record) return 'Not Started';
+        // Use approval_status if present and meaningful (e.g. adr_reports, interventions)
+        const effStatus = (approvalField && record[approvalField]) ? record[approvalField] : record[statusField];
+        if (!effStatus) return 'Draft';
+        if (COMPLETED_STATUSES.includes(effStatus)) return 'Completed';
+        if (effStatus === 'Returned') return 'Returned';
+        return effStatus; // 'Draft' or other values as-is
+      };
+
+      // patient_profiles and patient_counselling: only have 'status' column
+      const profileStatusVal = resolveModuleStatus(p, 'status', null);
+      const counsellingStatusVal = resolveModuleStatus(c, 'status', null);
+      // pharmacist_interventions: has both status and approval_status
+      const interventionStatusVal = resolveModuleStatus(i, 'status', 'approval_status');
+      // drug_information_requests: only has 'status'
+      const dirStatusVal = resolveModuleStatus(d, 'status', null);
+      // adr_reports: only has 'approval_status' (not 'status')
+      const adrStatusVal = a ? (a.approval_status || 'Draft') : 'Not Started';
 
       statusesMap[id] = {
         profileStatus: profileStatusVal,
         counsellingStatus: counsellingStatusVal,
-        interventionStatus: i ? (i.approval_status || i.status || 'Completed') : 'Not Added',
-        dirStatus: d ? (d.status || 'Completed') : 'Not Added',
-        adrStatus: a ? (a.approval_status || 'Completed') : 'Not Added',
+        interventionStatus: interventionStatusVal,
+        dirStatus: dirStatusVal,
+        adrStatus: adrStatusVal,
         hasProfile: Boolean(p),
         hasCounselling: Boolean(c),
         hasIntervention: Boolean(i),

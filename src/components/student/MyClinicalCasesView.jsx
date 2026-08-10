@@ -196,23 +196,21 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
     await loadStudentCases();
   };
 
-  const renderModuleDot = (statusStr, isMandatory = false) => {
-    if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added' || statusStr === 'Not Started / Not Added') {
+  const renderModuleDot = (statusStr) => {
+    // Grey: no record or not started
+    if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
       return <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
     }
-
-    if (isMandatory) {
-      if (statusStr === 'Completed' || statusStr === 'Approved' || statusStr === 'Submitted' || statusStr === 'Under Review') {
-        return <span className="text-emerald-500 font-extrabold text-[13px] leading-none shrink-0" title="Completed">✔</span>;
-      }
-      if (statusStr === 'Returned') {
-        return <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" title="Returned" />;
-      }
-      return <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title="Draft" />;
-    } else {
-      // Optional modules: show "Saved" state
-      return <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Saved" />;
+    // Green tick: completed / submitted / approved / reviewed
+    if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved' || statusStr === 'Reviewed') {
+      return <span className="text-emerald-500 font-extrabold text-[13px] leading-none shrink-0" title="Completed">✔</span>;
     }
+    // Rose: returned
+    if (statusStr === 'Returned') {
+      return <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" title="Returned" />;
+    }
+    // Amber: Draft or any in-progress status
+    return <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title={statusStr || 'Draft'} />;
   };
 
   return (
@@ -366,7 +364,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
                           title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.profileStatus, true)}
+                          {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
                           <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>Profile</span>
                         </button>
@@ -377,7 +375,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
                           title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus, true)}
+                          {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
                           <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                           <span>Counselling</span>
                         </button>
@@ -388,7 +386,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
                           title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.interventionStatus, false)}
+                          {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
                           <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                           <span>Intervention</span>
                         </button>
@@ -399,7 +397,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
                           title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.dirStatus, false)}
+                          {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
                           <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                           <span>Drug Info</span>
                         </button>
@@ -410,7 +408,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
                           title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.adrStatus, false)}
+                          {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                           <span>ADR Log</span>
                         </button>

@@ -74,7 +74,8 @@ export const PreceptorStudentCasesView = ({ student, preceptor, initialFilter = 
       c.ward_unit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.ip_op_type?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'All' || c.status === statusFilter || c.overall_case_status === statusFilter;
+    const caseSt = c.status || c.overall_case_status || 'Draft';
+    const matchesStatus = statusFilter === 'All' || caseSt === statusFilter;
     return matchesSearch && matchesStatus;
   });
 

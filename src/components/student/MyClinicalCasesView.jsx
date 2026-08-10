@@ -96,7 +96,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
       c.ward_unit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.ip_op_type?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const caseStatus = c.overall_case_status || c.status || 'Draft';
+    const caseStatus = c.status || c.overall_case_status || 'Draft';
     const matchesStatus = statusFilter === 'All' || caseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });

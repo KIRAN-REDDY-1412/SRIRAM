@@ -32,15 +32,16 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
   }, [preceptor?.id]);
 
   // Compute real-time case status counts
+  const getEffectiveCaseStatus = (c) => c?.status || c?.overall_case_status || 'Draft';
   const totalCasesCount = cases.length;
-  const submittedCount = cases.filter(c => (c.status === 'Submitted' || c.overall_case_status === 'Submitted')).length;
-  const underReviewCount = cases.filter(c => (c.status === 'Under Review' || c.overall_case_status === 'Under Review')).length;
-  const returnedCount = cases.filter(c => (c.status === 'Returned' || c.overall_case_status === 'Returned')).length;
-  const approvedCount = cases.filter(c => (c.status === 'Approved' || c.overall_case_status === 'Approved')).length;
-  const pendingReviewsCount = cases.filter(c => (
-    c.status === 'Submitted' || c.status === 'Under Review' ||
-    c.overall_case_status === 'Submitted' || c.overall_case_status === 'Under Review'
-  )).length;
+  const submittedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Submitted').length;
+  const underReviewCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Under Review').length;
+  const returnedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Returned').length;
+  const approvedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Approved').length;
+  const pendingReviewsCount = cases.filter(c => {
+    const st = getEffectiveCaseStatus(c);
+    return st === 'Submitted' || st === 'Under Review';
+  }).length;
 
   const summaryCards = [
     {

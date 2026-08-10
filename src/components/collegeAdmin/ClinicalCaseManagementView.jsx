@@ -59,12 +59,13 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
   }, [college?.id]);
 
   // Derived Statistics
+  const getEffSt = (c) => c?.status || c?.overall_case_status || 'Draft';
   const totalCount = cases.length;
-  const draftCount = cases.filter(c => c.status === 'Draft' || c.overall_case_status === 'Draft').length;
-  const submittedCount = cases.filter(c => c.status === 'Submitted' || c.overall_case_status === 'Submitted').length;
-  const underReviewCount = cases.filter(c => c.status === 'Under Review' || c.overall_case_status === 'Under Review').length;
-  const returnedCount = cases.filter(c => c.status === 'Returned' || c.overall_case_status === 'Returned').length;
-  const approvedCount = cases.filter(c => c.status === 'Approved' || c.overall_case_status === 'Approved').length;
+  const draftCount = cases.filter(c => getEffSt(c) === 'Draft').length;
+  const submittedCount = cases.filter(c => getEffSt(c) === 'Submitted').length;
+  const underReviewCount = cases.filter(c => getEffSt(c) === 'Under Review').length;
+  const returnedCount = cases.filter(c => getEffSt(c) === 'Returned').length;
+  const approvedCount = cases.filter(c => getEffSt(c) === 'Approved').length;
 
   const departmentsList = Array.from(new Set(cases.map(c => c.department).filter(Boolean)));
   const hospitalsList = Array.from(new Set(cases.map(c => c.hospital_name).filter(Boolean)));
@@ -82,7 +83,7 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
       c.hospital_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.department?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const caseSt = c.overall_case_status || c.status || 'Draft';
+    const caseSt = getEffSt(c);
     const matchesStatus = statusFilter === 'All' || caseSt === statusFilter;
     const matchesDept = departmentFilter === 'All' || c.department === departmentFilter;
     const matchesHosp = hospitalFilter === 'All' || c.hospital_name === hospitalFilter;

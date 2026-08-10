@@ -75,7 +75,7 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
       c.hospital_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.department?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const caseStatus = c.overall_case_status || c.status || 'Draft';
+    const caseStatus = c.status || c.overall_case_status || 'Draft';
 
     let matchesStatus = true;
     if (statusFilter === 'All' || statusFilter === 'All Cases') {
@@ -230,7 +230,7 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {paginatedCases.map((c) => {
                   const student = c.students || {};
-                  const caseStatus = c.overall_case_status || c.status || 'Draft';
+                  const caseStatus = c.status || c.overall_case_status || 'Draft';
                   const isApproved = caseStatus === 'Approved';
 
                   return (

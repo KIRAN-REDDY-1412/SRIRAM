@@ -1761,15 +1761,36 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
       }
     }
 
-    // 1. Update clinical_cases status to 'Submitted'
+    // Auto-lookup preceptor assignment if missing
+    if (!preceptorId && studentId) {
+      const { data: assign } = await supabase
+        .from('student_preceptor_assignments')
+        .select('preceptor_id')
+        .eq('student_id', studentId)
+        .eq('status', 'Active')
+        .maybeSingle();
+      if (assign && assign.preceptor_id) {
+        preceptorId = assign.preceptor_id;
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+
+    // 1. Update clinical_cases status and overall_case_status to 'Submitted'
     const { error: caseErr } = await supabase
       .from('clinical_cases')
-      .update({ status: 'Submitted', updated_at: new Date().toISOString() })
+      .update({
+        status: 'Submitted',
+        overall_case_status: 'Submitted',
+        preceptor_id: preceptorId || null,
+        submitted_at: nowIso,
+        updated_at: nowIso
+      })
       .eq('id', caseId);
 
     if (caseErr) return { success: false, error: caseErr.message };
 
-    // Try to update completion flags separately so it won't fail if the columns are not migrated yet
+    // Try to update completion flags separately so it won't fail if columns missing
     try {
       await supabase
         .from('clinical_cases')
@@ -1779,11 +1800,11 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
       console.warn('Could not update completion flags in clinical_cases:', e);
     }
 
-    // 2. Cascade status update to child tables if present
+    // 2. Cascade status update to child tables (only valid columns)
     await Promise.all([
-      supabase.from('patient_profiles').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
-      supabase.from('patient_counselling').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
-      supabase.from('pharmacist_interventions').update({ status: 'Submitted', approval_status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('patient_profiles').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('patient_counselling').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
+      supabase.from('pharmacist_interventions').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
       supabase.from('drug_information_requests').update({ status: 'Submitted' }).eq('clinical_case_id', caseId),
       supabase.from('adr_reports').update({ approval_status: 'Submitted' }).eq('clinical_case_id', caseId)
     ]);

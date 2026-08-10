@@ -32,12 +32,13 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
   }, [student?.id]);
 
   // Compute real-time case status counts
+  const getEffectiveCaseStatus = (c) => c?.status || c?.overall_case_status || 'Draft';
   const totalCount = cases.length;
-  const draftCount = cases.filter(c => (c.status === 'Draft' || c.overall_case_status === 'Draft')).length;
-  const submittedCount = cases.filter(c => (c.status === 'Submitted' || c.overall_case_status === 'Submitted')).length;
-  const underReviewCount = cases.filter(c => (c.status === 'Under Review' || c.overall_case_status === 'Under Review')).length;
-  const returnedCount = cases.filter(c => (c.status === 'Returned' || c.overall_case_status === 'Returned')).length;
-  const approvedCount = cases.filter(c => (c.status === 'Approved' || c.overall_case_status === 'Approved')).length;
+  const draftCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Draft').length;
+  const submittedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Submitted').length;
+  const underReviewCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Under Review').length;
+  const returnedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Returned').length;
+  const approvedCount = cases.filter(c => getEffectiveCaseStatus(c) === 'Approved').length;
 
   const summaryCards = [
     {

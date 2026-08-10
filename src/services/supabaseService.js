@@ -1628,9 +1628,23 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
         isCounsellingCompleted = c ? (c.status !== 'Draft') : false;
       }
 
+      let profileStatusVal = 'Not Started';
+      if (isProfileCompleted) {
+        profileStatusVal = 'Completed';
+      } else if (p) {
+        profileStatusVal = p.status || 'Draft';
+      }
+
+      let counsellingStatusVal = 'Not Started';
+      if (isCounsellingCompleted) {
+        counsellingStatusVal = 'Completed';
+      } else if (c) {
+        counsellingStatusVal = c.status || 'Draft';
+      }
+
       statusesMap[id] = {
-        profileStatus: isProfileCompleted ? 'Completed' : 'Not Started',
-        counsellingStatus: isCounsellingCompleted ? 'Completed' : 'Not Started',
+        profileStatus: profileStatusVal,
+        counsellingStatus: counsellingStatusVal,
         interventionStatus: i ? (i.approval_status || i.status || 'Completed') : 'Not Added',
         dirStatus: d ? (d.status || 'Completed') : 'Not Added',
         adrStatus: a ? (a.approval_status || 'Completed') : 'Not Added',

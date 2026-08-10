@@ -732,6 +732,7 @@ export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => 
 
 export const insertClinicalCaseToSupabase = async (casePayload) => {
   try {
+    // 1. Try calling the Supabase RPC first (concurrency-safe)
     const { data, error } = await supabase.rpc('create_clinical_case', {
       p_student_id: casePayload.studentId,
       p_college_id: casePayload.collegeId,
@@ -745,20 +746,127 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
       p_status: casePayload.status || 'Draft'
     });
 
-    if (error) return { success: false, error: error.message };
-
-    if (!data || !data.success) {
-      return { success: false, error: data?.error || 'Failed to generate unique Case ID.' };
+    if (!error && data && data.success) {
+      return { 
+        success: true, 
+        data: {
+          id: data.id,
+          case_id: data.case_id,
+          ...casePayload
+        } 
+      };
     }
 
-    return { 
-      success: true, 
-      data: {
-        id: data.id,
-        case_id: data.case_id,
-        ...casePayload
+    if (!error && data && !data.success) {
+      return { success: false, error: data.error };
+    }
+
+    const isRpcMissing = error && (
+      error.code === '42883' || 
+      error.message?.includes('Could not find the function') || 
+      error.message?.includes('does not exist')
+    );
+
+    if (!isRpcMissing) {
+      return { success: false, error: error?.message || 'Database error occurred.' };
+    }
+
+    // 2. Client-Side Fallback: If RPC does not exist, run sequential generation on the client
+    console.warn('Supabase RPC create_clinical_case not found. Falling back to client-side sequential generation.');
+
+    const [studentRes, collegeRes] = await Promise.all([
+      supabase.from('students').select('roll_number').eq('id', casePayload.studentId).maybeSingle(),
+      supabase.from('colleges').select('college_code').eq('id', casePayload.collegeId).maybeSingle()
+    ]);
+
+    const rollNumber = studentRes.data?.roll_number || 'UNKNOWN';
+    const collegeCode = collegeRes.data?.college_code || 'AMRMCP';
+    const currentYear = new Date().getFullYear();
+
+    let insertedRecord = null;
+    let retries = 0;
+    let success = false;
+    let lastErrorMsg = '';
+
+    while (!success && retries < 5) {
+      const { count, error: countErr } = await supabase
+        .from('clinical_cases')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', casePayload.studentId);
+
+      if (countErr) {
+        return { success: false, error: `Fallback failed: ${countErr.message}` };
       }
-    };
+
+      const nextCaseNumber = (count || 0) + 1;
+      const paddedNumber = String(nextCaseNumber).padStart(4, '0');
+      const caseId = `${collegeCode}-${currentYear}-${rollNumber}-${paddedNumber}`;
+
+      const { data: insertData, error: insertErr } = await supabase
+        .from('clinical_cases')
+        .insert([{
+          case_id: caseId,
+          case_number: nextCaseNumber,
+          roll_number: rollNumber,
+          college_id: casePayload.collegeId,
+          student_id: casePayload.studentId,
+          preceptor_id: casePayload.preceptorId || null,
+          hospital_name: casePayload.hospitalName,
+          department: casePayload.department,
+          ward_unit: casePayload.wardUnit,
+          ip_op_type: casePayload.ipOpType,
+          date_of_admission: casePayload.dateOfAdmission,
+          date_of_collection: casePayload.dateOfAdmission,
+          academic_year: casePayload.academicYear || '2026–2027',
+          status: casePayload.status || 'Draft'
+        }])
+        .select();
+
+      if (!insertErr) {
+        insertedRecord = insertData[0];
+        success = true;
+      } else {
+        lastErrorMsg = insertErr.message;
+        if (insertErr.code === '23505') {
+          retries++;
+        } else {
+          const isColumnsMissing = insertErr.code === '42703' || insertErr.message?.includes('column') || insertErr.message?.includes('does not exist');
+          if (isColumnsMissing) {
+            console.warn('Columns case_number or roll_number do not exist. Falling back to legacy insert.');
+            const { data: legacyData, error: legacyErr } = await supabase
+              .from('clinical_cases')
+              .insert([{
+                case_id: caseId,
+                college_id: casePayload.collegeId,
+                student_id: casePayload.studentId,
+                preceptor_id: casePayload.preceptorId || null,
+                hospital_name: casePayload.hospitalName,
+                department: casePayload.department,
+                ward_unit: casePayload.wardUnit,
+                ip_op_type: casePayload.ipOpType,
+                date_of_admission: casePayload.dateOfAdmission,
+                date_of_collection: casePayload.dateOfAdmission,
+                academic_year: casePayload.academicYear || '2026–2027',
+                status: casePayload.status || 'Draft'
+              }])
+              .select();
+
+            if (!legacyErr) {
+              return { success: true, data: legacyData[0] };
+            } else {
+              return { success: false, error: legacyErr.message };
+            }
+          }
+          return { success: false, error: insertErr.message };
+        }
+      }
+    }
+
+    if (success) {
+      return { success: true, data: insertedRecord };
+    } else {
+      return { success: false, error: `Failed to insert clinical case fallback: ${lastErrorMsg}` };
+    }
   } catch (err) {
     return { success: false, error: err.message };
   }

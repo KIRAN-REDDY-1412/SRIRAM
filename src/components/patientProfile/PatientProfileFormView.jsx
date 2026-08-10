@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, Eye, Send, ArrowLeft, Plus, Trash2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase } from '../../services/supabaseService';
+import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -462,8 +462,13 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
       status: newStatus
     };
 
-    // Save Patient Profile
-    const profRes = await saveOrUpdatePatientProfileInSupabase(payload);
+    // Save Patient Profile using the unified Save API
+    const profRes = await saveStudentFormSectionInSupabase({
+      section_type: 'profile',
+      is_mandatory: true,
+      completion_status: newStatus === 'Submitted',
+      payload
+    });
 
     if (!profRes.success) {
       setSaving(false);
@@ -486,7 +491,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     setProfileStatus(newStatus);
     showBottomNotify({
       type: 'success',
-      message: newStatus === 'Submitted' ? '✓ Patient Profile submitted successfully!' : '✓ Patient Profile saved as Draft.'
+      message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
     });
   };
 
@@ -1155,18 +1160,28 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
       </fieldset>
       {/* END FORM BODY */}
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
+      {/* ACTION SECTION AT THE BOTTOM */}
       {!isReadOnly && (
         <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
           <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+          
           <button
             type="button"
             onClick={() => handleSaveProfile('Draft')}
             disabled={saving}
-            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+            className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>{existingProfileId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveProfile('Submitted')}
+            disabled={saving}
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
+          >
+            <span>Save</span>
           </button>
         </div>
       )}

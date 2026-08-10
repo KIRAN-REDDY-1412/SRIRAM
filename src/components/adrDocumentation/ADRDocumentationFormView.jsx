@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, User, Activity, Pill, HeartPulse, FileText, Upload, CheckCircle2, AlertTriangle, ArrowLeft, Save, Eye, Send, Loader2, Plus, Trash2, ShieldCheck, Clock, Download, RefreshCw, Calendar, FileDown } from 'lucide-react';
-import { fetchADRReportByCaseIdFromSupabase, generateUniqueAdrNumberInSupabase, saveOrUpdateADRReportInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
+import { fetchADRReportByCaseIdFromSupabase, generateUniqueAdrNumberInSupabase, saveOrUpdateADRReportInSupabase, fetchPatientProfileByCaseIdFromSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { ADRReportPreviewModal } from './ADRReportPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -587,7 +587,14 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
       approval_status: newStatus
     };
 
-    const res = await saveOrUpdateADRReportInSupabase(masterPayload, suspectedMeds, concomitantMeds, attachments);
+    const res = await saveStudentFormSectionInSupabase({
+      section_type: 'adr',
+      is_mandatory: false,
+      payload: masterPayload,
+      suspectedMeds,
+      concomitantMeds,
+      attachments
+    });
     setSaving(false);
 
     if (res.success) {
@@ -595,7 +602,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
       setApprovalStatus(newStatus);
       showBottomNotify({
         type: 'success',
-        message: newStatus === 'Submitted' ? '✓ Adverse Drug Reaction Form submitted successfully!' : '✓ Adverse Drug Reaction Form saved as Draft.'
+        message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
       });
     } else {
       showBottomNotify({
@@ -1372,10 +1379,19 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
             type="button"
             onClick={() => handleSaveADR('Draft')}
             disabled={saving}
-            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+            className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>{existingReportId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveADR('Submitted')}
+            disabled={saving}
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
+          >
+            <span>Save</span>
           </button>
         </div>
       )}

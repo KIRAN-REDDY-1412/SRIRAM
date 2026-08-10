@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileSearch, User, Clock, FileText, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, BookOpen, Layers, ShieldCheck, RefreshCw, Plus, Trash2, Phone, Calendar } from 'lucide-react';
-import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
+import { fetchDrugInformationRequestByCaseIdFromSupabase, saveOrUpdateDrugInformationRequestInSupabase, fetchPatientProfileByCaseIdFromSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { DrugInformationPDFPreviewModal } from './DrugInformationPDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -360,7 +360,11 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
       status: newStatus
     };
 
-    const res = await saveOrUpdateDrugInformationRequestInSupabase(payload);
+    const res = await saveStudentFormSectionInSupabase({
+      section_type: 'dir',
+      is_mandatory: false,
+      payload
+    });
     setSaving(false);
 
     if (res.success) {
@@ -368,7 +372,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
       setStatus(newStatus);
       showBottomNotify({
         type: 'success',
-        message: newStatus === 'Submitted' ? '✓ Drug Information Request submitted successfully!' : '✓ Drug Information Request saved as Draft.'
+        message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
       });
     } else {
       showBottomNotify({
@@ -778,7 +782,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
       </fieldset>
       {/* END FORM BODY */}
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
+      {/* ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
       {!isReadOnly && (
         <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
           <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
@@ -787,10 +791,19 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
             type="button"
             onClick={() => handleSaveRequest('Draft')}
             disabled={saving}
-            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+            className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>{existingRequestId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveRequest('Submitted')}
+            disabled={saving}
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
+          >
+            <span>Save</span>
           </button>
         </div>
       )}

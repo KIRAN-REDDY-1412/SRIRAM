@@ -141,9 +141,32 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
     clearActionNotify();
     setActiveCaseNotifyId(caseRecord.id);
 
-    const caseStatusInfo = moduleStatuses[caseRecord.id];
+    setActionLoading(true);
+    // Real-time re-fetch of case module statuses to guarantee consistency
+    const statusesRes = await fetchCaseModuleStatusesMapFromSupabase([caseRecord.id]);
+    setActionLoading(false);
 
-    if (!caseStatusInfo || !caseStatusInfo.hasProfile || !caseStatusInfo.hasCounselling) {
+    let caseStatusInfo = moduleStatuses[caseRecord.id];
+    if (statusesRes.success && statusesRes.statusesMap[caseRecord.id]) {
+      caseStatusInfo = statusesRes.statusesMap[caseRecord.id];
+      // Update local state so UI reflects the change immediately
+      setModuleStatuses(prev => ({
+        ...prev,
+        [caseRecord.id]: caseStatusInfo
+      }));
+    }
+
+    const isProfileCompleted = caseRecord.profile_completed || 
+      (caseStatusInfo?.profileStatus && 
+       caseStatusInfo.profileStatus !== 'Draft' && 
+       caseStatusInfo.profileStatus !== 'Not Started');
+
+    const isCounsellingCompleted = caseRecord.counselling_completed || 
+      (caseStatusInfo?.counsellingStatus && 
+       caseStatusInfo.counsellingStatus !== 'Draft' && 
+       caseStatusInfo.counsellingStatus !== 'Not Started');
+
+    if (!isProfileCompleted || !isCounsellingCompleted) {
       showActionNotify({
         type: 'error',
         message: '❌ Complete Patient Profile and Patient Counselling before submitting this Clinical Case.'
@@ -180,20 +203,23 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
     await loadStudentCases();
   };
 
-  const renderModuleDot = (statusStr) => {
-    if (statusStr === 'Completed' || statusStr === 'Approved') {
-      return <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Completed" />;
+  const renderModuleDot = (statusStr, isMandatory = false) => {
+    if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added' || statusStr === 'Not Started / Not Added') {
+      return <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
     }
-    if (statusStr === 'Submitted' || statusStr === 'Under Review') {
-      return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Under Review" />;
+
+    if (isMandatory) {
+      if (statusStr === 'Completed' || statusStr === 'Approved' || statusStr === 'Submitted' || statusStr === 'Under Review') {
+        return <span className="text-emerald-500 font-extrabold text-[13px] leading-none shrink-0" title="Completed">✔</span>;
+      }
+      if (statusStr === 'Returned') {
+        return <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" title="Returned" />;
+      }
+      return <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title="Draft" />;
+    } else {
+      // Optional modules: show "Saved" state
+      return <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Saved" />;
     }
-    if (statusStr === 'Returned') {
-      return <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" title="Returned" />;
-    }
-    if (statusStr === 'Draft') {
-      return <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Draft" />;
-    }
-    return <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started / Not Added" />;
   };
 
   return (
@@ -347,7 +373,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
                           title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
+                          {renderModuleDot(moduleStatuses[c.id]?.profileStatus, true)}
                           <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           <span>Profile</span>
                         </button>
@@ -358,7 +384,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
                           title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
+                          {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus, true)}
                           <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                           <span>Counselling</span>
                         </button>
@@ -369,7 +395,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
                           title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
+                          {renderModuleDot(moduleStatuses[c.id]?.interventionStatus, false)}
                           <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                           <span>Intervention</span>
                         </button>
@@ -380,7 +406,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
                           title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
+                          {renderModuleDot(moduleStatuses[c.id]?.dirStatus, false)}
                           <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                           <span>Drug Info</span>
                         </button>
@@ -391,7 +417,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                           className="px-2 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
                           title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
                         >
-                          {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
+                          {renderModuleDot(moduleStatuses[c.id]?.adrStatus, false)}
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                           <span>ADR Log</span>
                         </button>

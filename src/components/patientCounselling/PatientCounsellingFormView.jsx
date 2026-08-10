@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
-import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase, fetchPatientProfileByCaseIdFromSupabase } from '../../services/supabaseService';
+import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase, fetchPatientProfileByCaseIdFromSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { PatientCounsellingPDFPreviewModal } from './PatientCounsellingPDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
@@ -240,7 +240,12 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
       status: newStatus
     };
 
-    const res = await saveOrUpdatePatientCounsellingInSupabase(payload);
+    const res = await saveStudentFormSectionInSupabase({
+      section_type: 'counselling',
+      is_mandatory: true,
+      completion_status: newStatus === 'Submitted',
+      payload
+    });
     setSaving(false);
 
     if (res.success) {
@@ -248,7 +253,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
       setStatus(newStatus);
       showBottomNotify({
         type: 'success',
-        message: newStatus === 'Submitted' ? '✓ Patient Counselling Form submitted successfully!' : '✓ Patient Counselling Form saved as Draft.'
+        message: newStatus === 'Submitted' ? '✓ Saved Successfully' : '✓ Draft saved successfully'
       });
     } else {
       showBottomNotify({
@@ -668,7 +673,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
       </fieldset>
       {/* END FORM BODY */}
 
-      {/* SINGLE ACTION SECTION AT THE BOTTOM */}
+      {/* ACTION SECTION AT THE BOTTOM */}
       {!isReadOnly && (
         <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
           <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
@@ -677,10 +682,19 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
             type="button"
             onClick={() => handleSaveCounselling('Draft')}
             disabled={saving}
-            className="h-[46px] px-6 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs disabled:opacity-50"
+            className="h-[46px] px-6 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-850 text-xs font-bold flex items-center gap-2 shadow-xs disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>{existingCounsellingId ? 'Update Draft' : 'Save Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSaveCounselling('Submitted')}
+            disabled={saving}
+            className="h-[46px] px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/10 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
+          >
+            <span>Save</span>
           </button>
         </div>
       )}

@@ -143,6 +143,8 @@ CREATE TABLE IF NOT EXISTS public.clinical_cases (
     date_of_collection DATE NOT NULL,
     academic_year VARCHAR(50) NOT NULL DEFAULT '2026–2027',
     status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
+    profile_completed BOOLEAN NOT NULL DEFAULT false,
+    counselling_completed BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );

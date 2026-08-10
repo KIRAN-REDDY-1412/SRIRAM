@@ -1393,9 +1393,59 @@ export const deleteMultipleCollegesFromSupabase = async (targetIds) => {
   }
 };
 
-// ====================================================================
-// CLINICAL CASE LEVEL MODULE STATUS & SUBMISSION SERVICES
-// ====================================================================
+export const saveStudentFormSectionInSupabase = async ({
+  section_type,
+  is_mandatory,
+  completion_status,
+  payload,
+  suspectedMeds = [],
+  concomitantMeds = [],
+  attachments = []
+}) => {
+  try {
+    let res;
+    if (section_type === 'profile') {
+      res = await saveOrUpdatePatientProfileInSupabase(payload);
+    } else if (section_type === 'counselling') {
+      res = await saveOrUpdatePatientCounsellingInSupabase(payload);
+    } else if (section_type === 'intervention') {
+      res = await saveOrUpdatePharmacistInterventionInSupabase(payload);
+    } else if (section_type === 'dir') {
+      res = await saveOrUpdateDrugInformationRequestInSupabase(payload);
+    } else if (section_type === 'adr') {
+      res = await saveOrUpdateADRReportInSupabase(payload, suspectedMeds, concomitantMeds, attachments);
+    } else {
+      return { success: false, error: `Invalid section type: ${section_type}` };
+    }
+
+    if (!res.success) {
+      return { success: false, error: res.error };
+    }
+
+    let completed = false;
+    if (is_mandatory) {
+      completed = !!completion_status;
+      const caseId = payload.clinical_case_id;
+      const updateField = section_type === 'profile' 
+        ? { profile_completed: completed } 
+        : { counselling_completed: completed };
+
+      // Update case completion status in clinical_cases table if columns exist
+      try {
+        await supabase
+          .from('clinical_cases')
+          .update(updateField)
+          .eq('id', caseId);
+      } catch (err) {
+        console.warn(`Could not update completion status for ${section_type} in clinical_cases table:`, err);
+      }
+    }
+
+    return { success: true, completed, ...res };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
 
 export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
   if (!caseIds || caseIds.length === 0) return { success: true, statusesMap: {} };
@@ -1474,14 +1524,31 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
 
 export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseModuleStatus) => {
   try {
-    if (!caseModuleStatus || !caseModuleStatus.hasProfile || !caseModuleStatus.hasCounselling) {
+    const caseId = clinicalCase.id;
+
+    // Fetch parent case record + child statuses directly to check completion (Rule 5 consistency)
+    const [caseCheck, profileCheck, counsellingCheck] = await Promise.all([
+      supabase.from('clinical_cases').select('profile_completed, counselling_completed').eq('id', caseId).maybeSingle(),
+      supabase.from('patient_profiles').select('status').eq('clinical_case_id', caseId).maybeSingle(),
+      supabase.from('patient_counselling').select('status').eq('clinical_case_id', caseId).maybeSingle()
+    ]);
+
+    const isProfileCompleted = caseCheck.data?.profile_completed || 
+      (profileCheck.data?.status && 
+       profileCheck.data.status !== 'Draft' && 
+       profileCheck.data.status !== 'Not Started');
+
+    const isCounsellingCompleted = caseCheck.data?.counselling_completed || 
+      (counsellingCheck.data?.status && 
+       counsellingCheck.data.status !== 'Draft' && 
+       counsellingCheck.data.status !== 'Not Started');
+
+    if (!isProfileCompleted || !isCounsellingCompleted) {
       return {
         success: false,
         error: '❌ Complete Patient Profile and Patient Counselling before submitting this Clinical Case.'
       };
     }
-
-    const caseId = clinicalCase.id;
 
     // Fetch previous status and student profile details to determine if resubmission
     let isResubmission = false;
@@ -1515,6 +1582,16 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
       .eq('id', caseId);
 
     if (caseErr) return { success: false, error: caseErr.message };
+
+    // Try to update completion flags separately so it won't fail if the columns are not migrated yet
+    try {
+      await supabase
+        .from('clinical_cases')
+        .update({ profile_completed: true, counselling_completed: true })
+        .eq('id', caseId);
+    } catch (e) {
+      console.warn('Could not update completion flags in clinical_cases:', e);
+    }
 
     // 2. Cascade status update to child tables if present
     await Promise.all([

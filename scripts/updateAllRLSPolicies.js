@@ -54,12 +54,16 @@ async function updateAllRLSPolicies() {
         FOR INSERT TO public
         WITH CHECK (student_id = auth.uid() OR current_setting('app.current_student_id', true) = student_id::text);
 
-      -- Students can edit their own cases only if status is Draft or Returned
+      -- Students can edit their own cases only if status is Draft or Returned, and can submit them (status = Submitted)
       CREATE POLICY "student_update_own_cases" ON public.clinical_cases
         FOR UPDATE TO public
         USING (
           (student_id = auth.uid() OR current_setting('app.current_student_id', true) = student_id::text)
           AND status IN ('Draft', 'Returned')
+        )
+        WITH CHECK (
+          (student_id = auth.uid() OR current_setting('app.current_student_id', true) = student_id::text)
+          AND status IN ('Draft', 'Returned', 'Submitted')
         );
 
       -- Students can delete only Draft cases

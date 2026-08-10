@@ -197,19 +197,19 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
   };
 
   const renderModuleDot = (statusStr) => {
-    // Grey: no record or not started
+    // Grey dot: no record or not started
     if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
       return <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
     }
-    // Green tick: completed / submitted / approved / reviewed
+    // Green dot: completed / submitted / approved / reviewed
     if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved' || statusStr === 'Reviewed') {
-      return <span className="text-emerald-500 font-extrabold text-[13px] leading-none shrink-0" title="Completed">✔</span>;
+      return <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Completed" />;
     }
-    // Rose: returned
+    // Rose dot: returned
     if (statusStr === 'Returned') {
       return <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" title="Returned" />;
     }
-    // Amber: Draft or any in-progress status
+    // Amber dot: Draft or any in-progress status
     return <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title={statusStr || 'Draft'} />;
   };
 

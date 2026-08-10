@@ -85,11 +85,8 @@ export const PreceptorStudentCasesView = ({ student, preceptor, initialFilter = 
   );
 
   const renderModuleDot = (statusStr) => {
-    if (statusStr === 'Completed' || statusStr === 'Approved') {
+    if (statusStr === 'Completed' || statusStr === 'Approved' || statusStr === 'Submitted' || statusStr === 'Reviewed') {
       return <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Completed" />;
-    }
-    if (statusStr === 'Submitted' || statusStr === 'Under Review') {
-      return <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Under Review" />;
     }
     if (statusStr === 'Returned') {
       return <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" title="Returned" />;
@@ -97,7 +94,7 @@ export const PreceptorStudentCasesView = ({ student, preceptor, initialFilter = 
     if (statusStr === 'Draft') {
       return <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Draft" />;
     }
-    return <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started / Not Added" />;
+    return <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
   };
 
   return (

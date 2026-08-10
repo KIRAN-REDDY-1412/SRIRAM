@@ -1587,9 +1587,9 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
   try {
     const [casesRes, profilesRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
       supabase.from('clinical_cases').select('id, profile_completed, counselling_completed').in('id', caseIds),
-      supabase.from('patient_profiles').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
-      supabase.from('patient_counselling').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
-      supabase.from('pharmacist_interventions').select('id, clinical_case_id, status, approval_status').in('clinical_case_id', caseIds),
+      supabase.from('patient_profiles').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
+      supabase.from('patient_counselling').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
+      supabase.from('pharmacist_interventions').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
       supabase.from('drug_information_requests').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
       supabase.from('adr_reports').select('id, clinical_case_id, approval_status').in('clinical_case_id', caseIds)
     ]);
@@ -1616,7 +1616,6 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       // ---------------------------------------------------------------
       // COMPLETION FLAGS (for submission gating) — source of truth: DB flags
       // ---------------------------------------------------------------
-      // These determine whether submission is allowed. Strictly DB-backed.
       const COMPLETED_STATUSES = ['Submitted', 'Completed', 'Approved', 'Reviewed'];
 
       let isProfileCompleted = false;
@@ -1642,25 +1641,22 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       // Amber = Draft record exists
       // Green = Terminal status (Submitted/Completed/Approved/Reviewed)
       // ---------------------------------------------------------------
-      const resolveModuleStatus = (record, statusField = 'status', approvalField = null) => {
+      const resolveModuleStatus = (record, statusField = 'status') => {
         if (!record) return 'Not Started';
-        // Use approval_status if present and meaningful (e.g. adr_reports, interventions)
-        const effStatus = (approvalField && record[approvalField]) ? record[approvalField] : record[statusField];
+        const effStatus = record[statusField];
         if (!effStatus) return 'Draft';
         if (COMPLETED_STATUSES.includes(effStatus)) return 'Completed';
         if (effStatus === 'Returned') return 'Returned';
-        return effStatus; // 'Draft' or other values as-is
+        return effStatus;
       };
 
-      // patient_profiles and patient_counselling: only have 'status' column
-      const profileStatusVal = resolveModuleStatus(p, 'status', null);
-      const counsellingStatusVal = resolveModuleStatus(c, 'status', null);
-      // pharmacist_interventions: has both status and approval_status
-      const interventionStatusVal = resolveModuleStatus(i, 'status', 'approval_status');
-      // drug_information_requests: only has 'status'
-      const dirStatusVal = resolveModuleStatus(d, 'status', null);
-      // adr_reports: only has 'approval_status' (not 'status')
-      const adrStatusVal = a ? (a.approval_status || 'Draft') : 'Not Started';
+      // patient_profiles, patient_counselling, pharmacist_interventions, drug_information_requests: use 'status'
+      const profileStatusVal = resolveModuleStatus(p, 'status');
+      const counsellingStatusVal = resolveModuleStatus(c, 'status');
+      const interventionStatusVal = resolveModuleStatus(i, 'status');
+      const dirStatusVal = resolveModuleStatus(d, 'status');
+      // adr_reports: uses 'approval_status'
+      const adrStatusVal = resolveModuleStatus(a, 'approval_status');
 
       statusesMap[id] = {
         profileStatus: profileStatusVal,

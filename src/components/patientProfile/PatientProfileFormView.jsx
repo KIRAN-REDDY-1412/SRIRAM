@@ -371,7 +371,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
     return (
       patientName.trim().length > 0 &&
       age.trim().length > 0 &&
-      ipNo.trim().length === 10 &&
+      ipNo.trim().length > 0 &&
       !!doa &&
       chiefComplaints.trim().length > 0 &&
       finalDiagnosis.trim().length > 0

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FilePlus2, User, GraduationCap, Building2, Stethoscope, Calendar, Save, X, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { fetchStudentAssignedPreceptorFromSupabase, generateUniqueCaseIdInSupabase, insertClinicalCaseToSupabase } from '../../services/supabaseService';
+import { fetchStudentAssignedPreceptorFromSupabase, insertClinicalCaseToSupabase } from '../../services/supabaseService';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clinicalMasterData';
 
@@ -51,14 +51,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
       if (!student) return;
       setLoading(true);
 
-      const collegeCode = student.colleges?.college_code || 'AMRMCP';
-
-      const [genIdRes, precRes] = await Promise.all([
-        generateUniqueCaseIdInSupabase(collegeCode),
-        fetchStudentAssignedPreceptorFromSupabase(student.id)
-      ]);
-
-      if (genIdRes.success) setCaseId(genIdRes.caseId);
+      const precRes = await fetchStudentAssignedPreceptorFromSupabase(student.id);
       if (precRes.success && precRes.data) setAssignedPreceptor(precRes.data);
 
       setLoading(false);
@@ -94,11 +87,12 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     setSaving(false);
 
     if (res.success) {
+      setCaseId(res.data.case_id);
       setSaveSuccess(true);
       setTimeout(() => {
         setSaveSuccess(false);
         if (onSuccess) onSuccess();
-      }, 1200);
+      }, 2000);
     } else {
       setFormError(res.error || 'Failed to save clinical case record.');
     }
@@ -108,7 +102,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
-        <p className="text-xs font-semibold text-slate-500">Generating Unique Case ID & Loading Credentials...</p>
+        <p className="text-xs font-semibold text-slate-500">Loading Credentials...</p>
       </div>
     );
   }
@@ -157,7 +151,9 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
               <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Auto-Generated Case Identifier</span>
-              <h3 className="text-xl font-black font-mono tracking-tight text-white">{caseId}</h3>
+              <h3 className="text-xl font-black font-mono tracking-tight text-white">
+                {caseId || `${student?.colleges?.college_code || 'AMRMCP'}-${new Date().getFullYear()}-XXXX (Generated after saving)`}
+              </h3>
             </div>
 
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">

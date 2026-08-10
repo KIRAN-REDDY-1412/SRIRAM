@@ -145,8 +145,11 @@ CREATE TABLE IF NOT EXISTS public.clinical_cases (
     status VARCHAR(50) NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Submitted', 'Reviewed', 'Approved')),
     profile_completed BOOLEAN NOT NULL DEFAULT false,
     counselling_completed BOOLEAN NOT NULL DEFAULT false,
+    case_number INTEGER NULL,
+    roll_number TEXT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT unique_student_case_number UNIQUE (student_id, case_number)
 );
 
 -- TABLE 8: patient_profiles
@@ -412,3 +415,104 @@ CREATE POLICY "Allow All ADR Reports" ON public.adr_reports FOR ALL USING (true)
 ALTER TABLE public.document_branding_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow All Document Branding" ON public.document_branding_settings;
 CREATE POLICY "Allow All Document Branding" ON public.document_branding_settings FOR ALL USING (true) WITH CHECK (true);
+
+-- RPC FUNCTION: create_clinical_case
+-- Safe sequential case_id generation and insertion for concurrent requests
+CREATE OR REPLACE FUNCTION public.create_clinical_case(
+    p_student_id UUID,
+    p_college_id UUID,
+    p_preceptor_id UUID,
+    p_hospital_name TEXT,
+    p_department TEXT,
+    p_ward_unit TEXT,
+    p_ip_op_type TEXT,
+    p_date_of_admission DATE,
+    p_academic_year TEXT,
+    p_status TEXT
+) RETURNS JSONB AS $$
+DECLARE
+    v_roll_number TEXT;
+    v_college_code TEXT;
+    v_year TEXT;
+    v_case_number INT;
+    v_case_id TEXT;
+    v_new_id UUID;
+    v_retries INT := 0;
+    v_inserted BOOLEAN := FALSE;
+BEGIN
+    -- Get student roll number
+    SELECT roll_number INTO v_roll_number FROM public.students WHERE id = p_student_id;
+    -- Get college code
+    SELECT college_code INTO v_college_code FROM public.colleges WHERE id = p_college_id;
+    
+    IF v_college_code IS NULL OR v_college_code = '' THEN
+        v_college_code := 'AMRMCP';
+    END IF;
+    
+    -- Current Year
+    v_year := to_char(CURRENT_DATE, 'YYYY');
+
+    -- Concurrency handling loop (max 5 retries)
+    WHILE NOT v_inserted AND v_retries < 5 LOOP
+        BEGIN
+            -- Get next running case number for this student
+            SELECT COALESCE(MAX(case_number), 0) + 1 INTO v_case_number 
+            FROM public.clinical_cases 
+            WHERE student_id = p_student_id;
+
+            -- Format Case ID: e.g. AMRMCP-2026-Y22PHD0314-0001
+            v_case_id := v_college_code || '-' || v_year || '-' || COALESCE(v_roll_number, 'UNKNOWN') || '-' || lpad(v_case_number::text, 4, '0');
+
+            -- Insert directly
+            INSERT INTO public.clinical_cases (
+                college_id,
+                student_id,
+                preceptor_id,
+                hospital_name,
+                department,
+                ward_unit,
+                ip_op_type,
+                date_of_admission,
+                date_of_collection,
+                academic_year,
+                status,
+                case_number,
+                roll_number,
+                case_id
+            ) VALUES (
+                p_college_id,
+                p_student_id,
+                p_preceptor_id,
+                p_hospital_name,
+                p_department,
+                p_ward_unit,
+                p_ip_op_type,
+                p_date_of_admission,
+                p_date_of_admission,
+                p_academic_year,
+                p_status,
+                v_case_number,
+                v_roll_number,
+                v_case_id
+            ) RETURNING id, case_id INTO v_new_id, v_case_id;
+
+            v_inserted := TRUE;
+        EXCEPTION WHEN unique_violation THEN
+            v_retries := v_retries + 1;
+        END;
+    END LOOP;
+
+    IF v_inserted THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'id', v_new_id,
+            'case_id', v_case_id
+        );
+    ELSE
+        RETURN jsonb_build_object(
+            'success', false,
+            'error', 'Failed to generate unique Case ID due to concurrent inserts. Please try again.'
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

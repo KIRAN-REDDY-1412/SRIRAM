@@ -732,26 +732,33 @@ export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => 
 
 export const insertClinicalCaseToSupabase = async (casePayload) => {
   try {
-    const { data, error } = await supabase
-      .from('clinical_cases')
-      .insert([{
-        case_id: casePayload.caseId,
-        college_id: casePayload.collegeId,
-        student_id: casePayload.studentId,
-        preceptor_id: casePayload.preceptorId || null,
-        hospital_name: casePayload.hospitalName,
-        department: casePayload.department,
-        ward_unit: casePayload.wardUnit,
-        ip_op_type: casePayload.ipOpType,
-        date_of_admission: casePayload.dateOfAdmission,
-        date_of_collection: casePayload.dateOfCollection,
-        academic_year: casePayload.academicYear || '2026–2027',
-        status: casePayload.status || 'Draft'
-      }])
-      .select();
+    const { data, error } = await supabase.rpc('create_clinical_case', {
+      p_student_id: casePayload.studentId,
+      p_college_id: casePayload.collegeId,
+      p_preceptor_id: casePayload.preceptorId || null,
+      p_hospital_name: casePayload.hospitalName,
+      p_department: casePayload.department,
+      p_ward_unit: casePayload.wardUnit,
+      p_ip_op_type: casePayload.ipOpType,
+      p_date_of_admission: casePayload.dateOfAdmission,
+      p_academic_year: casePayload.academicYear || '2026–2027',
+      p_status: casePayload.status || 'Draft'
+    });
 
     if (error) return { success: false, error: error.message };
-    return { success: true, data: data[0] };
+
+    if (!data || !data.success) {
+      return { success: false, error: data?.error || 'Failed to generate unique Case ID.' };
+    }
+
+    return { 
+      success: true, 
+      data: {
+        id: data.id,
+        case_id: data.case_id,
+        ...casePayload
+      }
+    };
   } catch (err) {
     return { success: false, error: err.message };
   }

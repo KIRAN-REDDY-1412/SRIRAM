@@ -1617,30 +1617,18 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
       let isCounsellingCompleted = false;
 
       if (hasCompletedColumns) {
-        // Resolve completed if flag is true OR child record exists and is not draft (backward compatibility for older logs)
-        const isProfileRecordCompleted = p ? (p.status !== 'Draft') : false;
-        isProfileCompleted = !!caseRecord.profile_completed || isProfileRecordCompleted;
+        const isProfileRecordSubmitted = p ? (p.status === 'Submitted' || p.status === 'Completed' || p.status === 'Approved' || p.status === 'Reviewed') : false;
+        isProfileCompleted = !!caseRecord.profile_completed || isProfileRecordSubmitted;
 
-        const isCounsellingRecordCompleted = c ? (c.status !== 'Draft') : false;
-        isCounsellingCompleted = !!caseRecord.counselling_completed || isCounsellingRecordCompleted;
+        const isCounsellingRecordSubmitted = c ? (c.status === 'Submitted' || c.status === 'Completed' || c.status === 'Approved' || c.status === 'Reviewed') : false;
+        isCounsellingCompleted = !!caseRecord.counselling_completed || isCounsellingRecordSubmitted;
       } else {
-        isProfileCompleted = p ? (p.status !== 'Draft') : false;
-        isCounsellingCompleted = c ? (c.status !== 'Draft') : false;
+        isProfileCompleted = p ? (p.status === 'Submitted' || p.status === 'Completed' || p.status === 'Approved' || p.status === 'Reviewed') : false;
+        isCounsellingCompleted = c ? (c.status === 'Submitted' || c.status === 'Completed' || c.status === 'Approved' || c.status === 'Reviewed') : false;
       }
 
-      let profileStatusVal = 'Not Started';
-      if (isProfileCompleted) {
-        profileStatusVal = 'Completed';
-      } else if (p) {
-        profileStatusVal = p.status || 'Draft';
-      }
-
-      let counsellingStatusVal = 'Not Started';
-      if (isCounsellingCompleted) {
-        counsellingStatusVal = 'Completed';
-      } else if (c) {
-        counsellingStatusVal = c.status || 'Draft';
-      }
+      const profileStatusVal = p ? (p.approval_status || p.status || 'Completed') : 'Not Started';
+      const counsellingStatusVal = c ? (c.approval_status || c.status || 'Completed') : 'Not Started';
 
       statusesMap[id] = {
         profileStatus: profileStatusVal,

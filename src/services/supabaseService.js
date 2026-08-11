@@ -1861,14 +1861,14 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
 
     const nowIso = new Date().toISOString();
 
-    // 1. Update clinical_cases status and overall_case_status to 'Submitted'
+    // 1. Update clinical_cases status to 'Submitted'
     const { error: caseErr } = await supabase
       .from('clinical_cases')
       .update({
         status: 'Submitted',
-        overall_case_status: 'Submitted',
         preceptor_id: preceptorId || null,
         submitted_at: nowIso,
+        case_locked: false,
         updated_at: nowIso
       })
       .eq('id', caseId);
@@ -1939,20 +1939,19 @@ export const approveClinicalCaseByPreceptorFromSupabase = async (clinicalCase, p
 
     const updatePayload = {
       status: 'Approved',
-      overall_case_status: 'Approved',
-      reviewed_by: preceptorId,
-      reviewed_at: now,
-      overall_preceptor_comments: comments,
+      approved_at: now,
+      approved_by_preceptor_id: preceptorId,
+      overall_preceptor_comments: comments ? comments.trim() : null,
       case_locked: true,
       returned_forms: [],
       updated_at: now
     };
 
-    // Try full update on clinical_cases
+    // Update clinical_cases
     const { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
     if (caseErr) {
-      // Fallback to basic status update if extra columns are absent
-      await supabase.from('clinical_cases').update({ status: 'Approved', updated_at: now }).eq('id', caseId);
+      console.warn('Update error on clinical_cases approve:', caseErr.message);
+      await supabase.from('clinical_cases').update({ status: 'Approved', approved_at: now, case_locked: true, updated_at: now }).eq('id', caseId);
     }
 
     // Cascade approval to child tables
@@ -2020,9 +2019,8 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
 
     const updatePayload = {
       status: 'Returned',
-      overall_case_status: 'Returned',
-      reviewed_by: preceptorId,
-      reviewed_at: now,
+      returned_at: now,
+      returned_by_preceptor_id: preceptorId,
       overall_preceptor_comments: comments.trim(),
       returned_forms: returnedForms,
       case_locked: false,
@@ -2031,7 +2029,8 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
 
     const { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
     if (caseErr) {
-      await supabase.from('clinical_cases').update({ status: 'Returned', updated_at: now }).eq('id', caseId);
+      console.warn('Update error on clinical_cases return:', caseErr.message);
+      await supabase.from('clinical_cases').update({ status: 'Returned', returned_at: now, case_locked: false, updated_at: now }).eq('id', caseId);
     }
 
     // Map module key names
@@ -2177,6 +2176,7 @@ export const fetchAllPreceptorCasesFromSupabase = async (preceptorId) => {
         students!fk_clinical_cases_student(*)
       `)
       .in('student_id', studentIds)
+      .neq('status', 'Draft')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -2184,6 +2184,7 @@ export const fetchAllPreceptorCasesFromSupabase = async (preceptorId) => {
         .from('clinical_cases')
         .select('*')
         .in('student_id', studentIds)
+        .neq('status', 'Draft')
         .order('created_at', { ascending: false });
 
       return { success: true, data: simpleData || [] };
@@ -2192,6 +2193,35 @@ export const fetchAllPreceptorCasesFromSupabase = async (preceptorId) => {
     return { success: true, data: data || [] };
   } catch (err) {
     return { success: false, data: [], error: err.message };
+  }
+};
+
+export const startReviewingCaseInSupabase = async (caseId, preceptorId) => {
+  try {
+    const nowIso = new Date().toISOString();
+    const { data: currentCase } = await supabase
+      .from('clinical_cases')
+      .select('status')
+      .eq('id', caseId)
+      .maybeSingle();
+
+    if (currentCase && currentCase.status === 'Submitted') {
+      const { data, error } = await supabase
+        .from('clinical_cases')
+        .update({
+          status: 'Under Review',
+          preceptor_id: preceptorId,
+          updated_at: nowIso
+        })
+        .eq('id', caseId)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data?.[0] };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FolderKanban, Search, Filter, Eye, ChevronLeft, ChevronRight, Loader2, Download, Stethoscope, CheckCircle2, Clock, RotateCcw, Send, FileSearch, FileText } from 'lucide-react';
-import { fetchAllPreceptorCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
+import { fetchAllPreceptorCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase, startReviewingCaseInSupabase } from '../../services/supabaseService';
 import { PreceptorReviewCaseView } from './PreceptorReviewCaseView';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
@@ -65,8 +65,25 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
     );
   }
 
-  // Filtered Cases
+  const handleOpenReview = async (caseItem) => {
+    if (!caseItem) return;
+    if (caseItem.status === 'Submitted') {
+      const res = await startReviewingCaseInSupabase(caseItem.id, preceptor?.id);
+      if (res.success && res.data) {
+        caseItem = { ...caseItem, ...res.data, status: 'Under Review' };
+      } else {
+        caseItem = { ...caseItem, status: 'Under Review' };
+      }
+      setCases(prev => prev.map(c => c.id === caseItem.id ? { ...c, status: 'Under Review' } : c));
+    }
+    setSelectedCaseForReview(caseItem);
+  };
+
+  // Filtered Cases — EXCLUDE DRAFT CASES ENTIRELY FROM PRECEPTOR REVIEW QUEUE
   const filteredCases = cases.filter(c => {
+    const caseStatus = c.status || 'Submitted';
+    if (caseStatus === 'Draft') return false;
+
     const student = c.students || {};
     const matchesSearch =
       c.case_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,8 +91,6 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
       student.roll_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.hospital_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.department?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const caseStatus = c.status || c.overall_case_status || 'Draft';
 
     let matchesStatus = true;
     if (statusFilter === 'All' || statusFilter === 'All Cases') {
@@ -264,12 +279,12 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => setSelectedCaseForReview(c)}
+                            onClick={() => handleOpenReview(c)}
                             className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
-                            title="Review Clinical Case"
+                            title={isApproved ? "View Approved Case" : "Review Clinical Case"}
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>{isApproved ? 'View Case' : 'Review Case'}</span>
+                            <span>{isApproved ? 'View Case' : caseStatus === 'Under Review' ? 'Continue Review' : caseStatus === 'Returned' ? 'View Case' : 'Review Case'}</span>
                           </button>
 
                           {isApproved && (

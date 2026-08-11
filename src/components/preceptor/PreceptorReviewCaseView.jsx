@@ -7,6 +7,7 @@ import { DrugInformationFormView } from '../drugInformationRequest/DrugInformati
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { approveClinicalCaseByPreceptorFromSupabase, returnClinicalCaseByPreceptorFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { InlineActionNotification } from '../common/InlineActionNotification';
+import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { FileCheck2 } from 'lucide-react';
 

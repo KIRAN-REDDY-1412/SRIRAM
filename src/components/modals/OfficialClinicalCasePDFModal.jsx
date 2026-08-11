@@ -208,7 +208,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle="Official Clinical Logbook Record"
+                documentTitle={branding?.document_title || "CLINICAL PHARMACY LOGBOOK RECORD"}
                 caseId={caseId}
                 student={student}
                 preceptorName={preceptor?.full_name || clinicalCase?.assigned_preceptor_name}
@@ -374,7 +374,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle="Official Clinical Logbook Record"
+                documentTitle={branding?.document_title ? `${branding.document_title} (PAGE 2)` : "CLINICAL PHARMACY LOGBOOK RECORD (PAGE 2)"}
                 caseId={caseId}
                 student={student}
                 preceptorName={preceptor?.full_name || clinicalCase?.assigned_preceptor_name}

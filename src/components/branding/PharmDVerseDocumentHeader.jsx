@@ -95,11 +95,11 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
       </div>
 
       {/* HEADER ROW 2 */}
-      <div className="flex justify-between items-center text-xs font-extrabold font-mono border-b-2 border-slate-900 pb-2 px-1">
-        <span className="branded-title font-serif font-black uppercase tracking-wider text-slate-900">
-          {documentTitle}
+      <div className="flex justify-between items-center text-xs font-extrabold font-mono border-b-2 border-slate-900 pb-1 px-1 gap-2">
+        <span className="font-serif font-black uppercase tracking-wider text-slate-900 text-xs sm:text-sm truncate max-w-[68%]">
+          {documentTitle || branding?.document_title || 'CLINICAL PHARMACY LOGBOOK RECORD'}
         </span>
-        <span className="text-slate-900">
+        <span className="text-slate-900 text-[11px] sm:text-xs font-mono font-bold whitespace-nowrap shrink-0">
           Case ID : {caseId || 'AMRMCP-2026-000001'}
         </span>
       </div>

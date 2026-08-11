@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, Eye, Send, ArrowLeft, Plus, Trash2, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { UserCheck, Stethoscope, Activity, FileText, FlaskConical, Pill, Save, Eye, Send, ArrowLeft, Plus, Trash2, Loader2, CheckCircle2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { fetchPatientProfileByCaseIdFromSupabase, saveOrUpdatePatientProfileInSupabase, saveLabInvestigationsInSupabase, savePrescribedDrugsInSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
@@ -525,6 +525,21 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
           </div>
         </div>
       </div>
+
+      {/* FACULTY RETURN FEEDBACK BANNER */}
+      {(clinicalCase?.status === 'Returned' || profileStatus === 'Returned') && (
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 dark:border-rose-800 space-y-1.5 shadow-xs">
+          <div className="flex items-center gap-2 text-rose-800 dark:text-rose-200 font-extrabold text-xs">
+            <RotateCcw className="w-4.5 h-4.5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>FACULTY RETURN FEEDBACK FOR CORRECTIONS</span>
+          </div>
+          {clinicalCase?.overall_preceptor_comments && (
+            <p className="text-xs text-slate-800 dark:text-slate-200 font-medium pl-6.5 italic">
+              "{clinicalCase.overall_preceptor_comments}"
+            </p>
+          )}
+        </div>
+      )}
 
       {formError && (
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2.5 shadow-xs">

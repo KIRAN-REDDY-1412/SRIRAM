@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw } from 'lucide-react';
+import { HeartHandshake, User, Clock, FileText, CheckSquare, Square, Save, Eye, Send, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, RefreshCw, RotateCcw } from 'lucide-react';
 import { fetchPatientCounsellingByCaseIdFromSupabase, saveOrUpdatePatientCounsellingInSupabase, fetchPatientProfileByCaseIdFromSupabase, saveStudentFormSectionInSupabase } from '../../services/supabaseService';
 import { PatientCounsellingPDFPreviewModal } from './PatientCounsellingPDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
@@ -304,6 +304,21 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
           </div>
         </div>
       </div>
+
+      {/* FACULTY RETURN FEEDBACK BANNER */}
+      {(clinicalCase?.status === 'Returned' || status === 'Returned') && (
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 dark:border-rose-800 space-y-1.5 shadow-xs">
+          <div className="flex items-center gap-2 text-rose-800 dark:text-rose-200 font-extrabold text-xs">
+            <RotateCcw className="w-4.5 h-4.5 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>FACULTY RETURN FEEDBACK FOR CORRECTIONS</span>
+          </div>
+          {clinicalCase?.overall_preceptor_comments && (
+            <p className="text-xs text-slate-800 dark:text-slate-200 font-medium pl-6.5 italic">
+              "{clinicalCase.overall_preceptor_comments}"
+            </p>
+          )}
+        </div>
+      )}
 
       {/* FORM BODY — wrapped in fieldset for read-only enforcement */}
       <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0, minInlineSize: 'auto' }}>

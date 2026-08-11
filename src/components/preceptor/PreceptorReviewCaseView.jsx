@@ -87,8 +87,53 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
     }
   };
 
+  // Detect if this case was previously returned and is now resubmitted
+  const isResubmission = clinicalCase?.returned_at && (clinicalCase?.status === 'Submitted' || clinicalCase?.status === 'Under Review');
+
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
+      {/* RESUBMISSION ALERT BANNER — shown when case was returned and student resubmitted */}
+      {isResubmission && (
+        <div className="p-4 rounded-2xl bg-violet-50 dark:bg-violet-950/60 border-2 border-violet-400 dark:border-violet-700 space-y-2 shadow-xs">
+          <div className="flex items-center gap-2.5 text-violet-800 dark:text-violet-200 font-extrabold text-xs">
+            <RotateCcw className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0" />
+            <span className="uppercase tracking-wider">⚡ RESUBMITTED WITH CHANGES — Student Corrected & Resubmitted This Case</span>
+          </div>
+
+          {clinicalCase.overall_preceptor_comments && (
+            <div className="pl-7.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
+              <strong className="font-bold text-violet-900 dark:text-violet-100">Your Previous Return Comments: </strong>
+              <span className="italic">"{clinicalCase.overall_preceptor_comments}"</span>
+            </div>
+          )}
+
+          {clinicalCase.returned_forms && Array.isArray(clinicalCase.returned_forms) && clinicalCase.returned_forms.length > 0 && (
+            <div className="pl-7.5 text-[11px] font-bold text-violet-700 dark:text-violet-300 flex flex-wrap items-center gap-1.5">
+              <span>Forms you requested corrections on:</span>
+              {clinicalCase.returned_forms.map((f, idx) => {
+                let label = f;
+                if (f === 'patient_profile' || f === 'Patient Profile') label = 'Patient Profile';
+                else if (f === 'patient_counselling' || f === 'Patient Counselling') label = 'Patient Counselling';
+                else if (f === 'pharmacist_intervention' || f === 'Pharmacist Intervention') label = 'Pharmacist Intervention';
+                else if (f === 'drug_information_request' || f === 'Drug Information Request') label = 'Drug Info Request';
+                else if (f === 'adr_documentation' || f === 'ADR Documentation') label = 'ADR Documentation';
+                return (
+                  <span key={idx} className="px-2 py-0.5 rounded-md bg-violet-200 dark:bg-violet-900 text-violet-900 dark:text-violet-100 border border-violet-400 dark:border-violet-700 text-[10px] font-extrabold">
+                    ✏️ {label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {clinicalCase.returned_at && (
+            <div className="pl-7.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+              Originally returned on: {new Date(clinicalCase.returned_at).toLocaleDateString()} at {new Date(clinicalCase.returned_at).toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* PRECEPTOR REVIEW MODE BANNER */}
       <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 flex items-start gap-3.5 shadow-xs">
         <ShieldAlert className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />

@@ -110,7 +110,22 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
     currentPage * itemsPerPage
   );
 
-  const getStatusBadge = (statusStr) => {
+  // Detect resubmission: case was previously returned (has returned_at) but is now Submitted again
+  const isResubmitted = (caseItem) => {
+    return caseItem && caseItem.returned_at && (caseItem.status === 'Submitted' || caseItem.status === 'Under Review');
+  };
+
+  const getStatusBadge = (statusStr, caseItem) => {
+    // Show "Resubmitted" badge for cases that were returned and then resubmitted
+    if (isResubmitted(caseItem)) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-violet-100 dark:bg-violet-950/80 text-violet-800 dark:text-violet-300 border border-violet-200 dark:border-violet-800 animate-pulse">
+          <RotateCcw className="w-3 h-3 text-violet-600 dark:text-violet-400" />
+          ⚡ Resubmitted
+        </span>
+      );
+    }
+
     switch (statusStr) {
       case 'Approved':
         return (
@@ -274,7 +289,7 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                         {c.submitted_at ? new Date(c.submitted_at).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '—')}
                       </td>
                       <td className="py-3.5 px-4">
-                        {getStatusBadge(caseStatus)}
+                        {getStatusBadge(caseStatus, c)}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -284,7 +299,7 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                             title={isApproved ? "View Approved Case" : "Review Clinical Case"}
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>{isApproved ? 'View Case' : caseStatus === 'Under Review' ? 'Continue Review' : caseStatus === 'Returned' ? 'View Case' : 'Review Case'}</span>
+                            <span>{isApproved ? 'View Case' : caseStatus === 'Under Review' ? 'Continue Review' : caseStatus === 'Returned' ? 'View Case' : isResubmitted(c) ? '⚡ Review Resubmission' : 'Review Case'}</span>
                           </button>
 
                           {isApproved && (

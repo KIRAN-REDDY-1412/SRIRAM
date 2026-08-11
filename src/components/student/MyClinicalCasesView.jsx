@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, Download } from 'lucide-react';
+import { ClipboardList, Search, Filter, Plus, Edit3, Trash2, Eye, Send, ChevronLeft, ChevronRight, Loader2, Save, X, AlertTriangle, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, Download, RotateCcw } from 'lucide-react';
 import { fetchStudentCasesFromSupabase, updateClinicalCaseInSupabase, deleteClinicalCaseFromSupabase, fetchCaseModuleStatusesMapFromSupabase, submitCompleteClinicalCaseInSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { InlineActionNotification } from '../common/InlineActionNotification';
@@ -220,6 +220,18 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
     await loadStudentCases();
   };
 
+  const isFormReturned = (c, formKey, formTitle) => {
+    if (!c || c.status !== 'Returned') return false;
+    const returnedArr = c.returned_forms || [];
+    if (!Array.isArray(returnedArr)) return false;
+    return returnedArr.some(f =>
+      f === formKey ||
+      f === formTitle ||
+      f?.toLowerCase() === formKey?.toLowerCase() ||
+      f?.toLowerCase() === formTitle?.toLowerCase()
+    );
+  };
+
   const renderModuleDot = (statusStr) => {
     // Grey dot: no record or not started
     if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
@@ -433,6 +445,42 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                             <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="inline" />
                           )}
 
+                          {/* RETURNED CASE PRECEPTOR FEEDBACK BANNER */}
+                          {c.status === 'Returned' && (
+                            <div className="mb-3 p-3.5 rounded-2xl bg-rose-50/90 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 space-y-1.5 shadow-xs">
+                              <div className="flex items-center gap-2 text-rose-800 dark:text-rose-200 font-extrabold text-xs">
+                                <RotateCcw className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                                <span>Returned by Preceptor for Corrections</span>
+                              </div>
+
+                              {c.overall_preceptor_comments && (
+                                <div className="text-xs text-slate-800 dark:text-slate-200 font-medium pl-6">
+                                  <strong className="font-bold text-slate-900 dark:text-white">Faculty Comments: </strong>
+                                  <span className="italic font-semibold text-rose-950 dark:text-rose-100">"{c.overall_preceptor_comments}"</span>
+                                </div>
+                              )}
+
+                              {c.returned_forms && Array.isArray(c.returned_forms) && c.returned_forms.length > 0 && (
+                                <div className="text-[11px] font-bold text-rose-700 dark:text-rose-300 pl-6 flex flex-wrap items-center gap-1.5 mt-1">
+                                  <span>Forms requiring correction:</span>
+                                  {c.returned_forms.map((f, idx) => {
+                                    let label = f;
+                                    if (f === 'patient_profile' || f === 'Patient Profile') label = 'Patient Profile';
+                                    else if (f === 'patient_counselling' || f === 'Patient Counselling') label = 'Patient Counselling';
+                                    else if (f === 'pharmacist_intervention' || f === 'Pharmacist Intervention') label = 'Pharmacist Intervention';
+                                    else if (f === 'drug_information_request' || f === 'Drug Information Request') label = 'Drug Info Request';
+                                    else if (f === 'adr_documentation' || f === 'ADR Documentation') label = 'ADR Documentation';
+                                    return (
+                                      <span key={idx} className="px-2 py-0.5 rounded-md bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100 border border-rose-400 dark:border-rose-700 text-[10px] font-extrabold">
+                                        ⚠️ {label}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1">
@@ -442,56 +490,91 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                               {/* Open Patient Profile */}
                               <button
                                 onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
-                                className="px-2 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
+                                className={`px-2 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-all ${
+                                  isFormReturned(c, 'patient_profile', 'Patient Profile')
+                                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-400 ring-2 ring-rose-500/40'
+                                    : 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                }`}
                                 title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
                               >
                                 {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
                                 <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 <span>Profile</span>
+                                {isFormReturned(c, 'patient_profile', 'Patient Profile') && (
+                                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded text-[9px] font-black uppercase">Needs Fix</span>
+                                )}
                               </button>
 
                               {/* Open Patient Counselling */}
                               <button
                                 onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
-                                className="px-2 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
+                                className={`px-2 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-all ${
+                                  isFormReturned(c, 'patient_counselling', 'Patient Counselling')
+                                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-400 ring-2 ring-rose-500/40'
+                                    : 'bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800'
+                                }`}
                                 title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
                               >
                                 {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
                                 <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                                 <span>Counselling</span>
+                                {isFormReturned(c, 'patient_counselling', 'Patient Counselling') && (
+                                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded text-[9px] font-black uppercase">Needs Fix</span>
+                                )}
                               </button>
 
                               {/* Open Pharmacist Intervention */}
                               <button
                                 onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
-                                className="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
+                                className={`px-2 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-all ${
+                                  isFormReturned(c, 'pharmacist_intervention', 'Pharmacist Intervention')
+                                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-400 ring-2 ring-rose-500/40'
+                                    : 'bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                }`}
                                 title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
                               >
                                 {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
                                 <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                                 <span>Intervention</span>
+                                {isFormReturned(c, 'pharmacist_intervention', 'Pharmacist Intervention') && (
+                                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded text-[9px] font-black uppercase">Needs Fix</span>
+                                )}
                               </button>
 
                               {/* Open Drug Information Request */}
                               <button
                                 onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
-                                className="px-2 py-1 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
+                                className={`px-2 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-all ${
+                                  isFormReturned(c, 'drug_information_request', 'Drug Information Request')
+                                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-400 ring-2 ring-rose-500/40'
+                                    : 'bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800'
+                                }`}
                                 title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
                               >
                                 {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
                                 <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                                 <span>Drug Info</span>
+                                {isFormReturned(c, 'drug_information_request', 'Drug Information Request') && (
+                                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded text-[9px] font-black uppercase">Needs Fix</span>
+                                )}
                               </button>
 
                               {/* Open ADR Documentation */}
                               <button
                                 onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
-                                className="px-2 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
+                                className={`px-2 py-1 rounded-xl text-[10px] font-extrabold border flex items-center gap-1.5 transition-all ${
+                                  isFormReturned(c, 'adr_documentation', 'ADR Documentation')
+                                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-400 ring-2 ring-rose-500/40'
+                                    : 'bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                }`}
                                 title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
                               >
                                 {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
                                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                 <span>ADR Log</span>
+                                {isFormReturned(c, 'adr_documentation', 'ADR Documentation') && (
+                                  <span className="px-1.5 py-0.2 bg-rose-600 text-white rounded text-[9px] font-black uppercase">Needs Fix</span>
+                                )}
                               </button>
                             </div>
 
@@ -499,11 +582,15 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                             {(c.status === 'Draft' || c.status === 'Returned') && (
                               <button
                                 onClick={() => handleSubmitCase(c)}
-                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] flex items-center gap-1.5 shadow-xs transition-all"
-                                title="Submit Clinical Case"
+                                className={`px-3.5 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1.5 shadow-xs transition-all text-white ${
+                                  c.status === 'Returned'
+                                    ? 'bg-violet-600 hover:bg-violet-700'
+                                    : 'bg-emerald-600 hover:bg-emerald-700'
+                                }`}
+                                title={c.status === 'Returned' ? 'Resubmit Clinical Case with Corrections' : 'Submit Clinical Case'}
                               >
                                 <Send className="w-3.5 h-3.5" />
-                                <span>Submit Case</span>
+                                <span>{c.status === 'Returned' ? '⚡ Resubmit Case' : 'Submit Case'}</span>
                               </button>
                             )}
                           </div>
@@ -587,8 +674,40 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Status:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedCase.status}</span>
+                <span className={`font-bold ${
+                  selectedCase.status === 'Approved' ? 'text-emerald-600 dark:text-emerald-400' :
+                  selectedCase.status === 'Returned' ? 'text-rose-600 dark:text-rose-400' :
+                  selectedCase.status === 'Under Review' ? 'text-amber-600 dark:text-amber-400' :
+                  selectedCase.status === 'Submitted' ? 'text-blue-600 dark:text-blue-400' :
+                  'text-slate-600 dark:text-slate-400'
+                }`}>
+                  {selectedCase.status || 'Draft'}
+                </span>
               </div>
+
+              {selectedCase.status === 'Returned' && (
+                <div className="mt-3 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs space-y-1.5">
+                  <div className="font-extrabold text-rose-800 dark:text-rose-200 flex items-center gap-1.5">
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>Faculty Return Feedback</span>
+                  </div>
+                  {selectedCase.overall_preceptor_comments && (
+                    <p className="text-slate-700 dark:text-slate-300 italic font-medium">
+                      "{selectedCase.overall_preceptor_comments}"
+                    </p>
+                  )}
+                  {selectedCase.returned_forms && Array.isArray(selectedCase.returned_forms) && selectedCase.returned_forms.length > 0 && (
+                    <div className="text-[11px] font-bold text-rose-700 dark:text-rose-400 pt-1 border-t border-rose-200 dark:border-rose-900/60 flex flex-wrap gap-1">
+                      <span>Forms to update:</span>
+                      {selectedCase.returned_forms.map((f, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100 font-extrabold text-[10px]">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </ModalWrapper>

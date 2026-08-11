@@ -208,40 +208,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle={branding?.document_title || "CLINICAL PHARMACY LOGBOOK RECORD"}
+                documentTitle="PATIENT PROFILE & CLINICAL DEMOGRAPHICS"
                 caseId={caseId}
                 student={student}
-                preceptorName={preceptor?.full_name || clinicalCase?.assigned_preceptor_name}
+                preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name}
                 pageNumber="1 of 2"
                 showSignatures={false}
               >
                 <div className="space-y-4 text-xs">
-                  {/* STUDENT & CASE DEMOGRAPHICS */}
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-3 text-xs branded-border">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Student Candidate</span>
-                      <strong className="text-slate-900 font-bold">{student?.full_name || 'Student Candidate'}</strong>
-                      <span className="text-[11px] text-slate-600 block font-mono">Roll: {student?.roll_number}</span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Evaluating Preceptor</span>
-                      <strong className="text-slate-900 font-bold">{preceptor?.full_name || clinicalCase?.assigned_preceptor_name || 'Assigned Preceptor'}</strong>
-                      <span className="text-[11px] text-slate-600 block">{preceptor?.department || 'Clinical Practice'}</span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Hospital & Ward</span>
-                      <strong className="text-slate-900 font-bold">{clinicalCase?.hospital_name}</strong>
-                      <span className="text-[11px] text-slate-600 block">{clinicalCase?.department} (Unit: {clinicalCase?.ward_unit})</span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Category & Date</span>
-                      <strong className="text-slate-900 font-bold">{clinicalCase?.ip_op_type} Patient</strong>
-                      <span className="text-[11px] text-slate-600 block font-mono">Admission: {clinicalCase?.date_of_admission ? new Date(clinicalCase.date_of_admission).toLocaleDateString() : '—'}</span>
-                    </div>
-                  </div>
 
                   {/* MODULE 1: PATIENT PROFILE */}
                   {profile.id && (
@@ -374,10 +348,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle={branding?.document_title ? `${branding.document_title} (PAGE 2)` : "CLINICAL PHARMACY LOGBOOK RECORD (PAGE 2)"}
+                documentTitle="PATIENT CLINICAL DOCUMENTATION LOGS"
                 caseId={caseId}
                 student={student}
-                preceptorName={preceptor?.full_name || clinicalCase?.assigned_preceptor_name}
+                preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Assigned Faculty Preceptor'}
                 pageNumber="2 of 2"
                 isLastPage={true}
                 showSignatures={true}
@@ -529,7 +503,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <span className="text-[10px] uppercase font-bold text-slate-500 block">Reviewed & Approved By</span>
-                        <strong className="text-slate-900 text-sm font-black">{preceptor?.full_name || clinicalCase?.assigned_preceptor_name || 'Preceptor Evaluator'}</strong>
+                        <strong className="text-slate-900 text-sm font-black">{clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Assigned Faculty Preceptor'}</strong>
                         <span className="text-[11px] text-slate-600 block">Clinical Preceptor / Faculty Evaluator</span>
                       </div>
 

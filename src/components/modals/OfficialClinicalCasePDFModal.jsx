@@ -1,45 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
-
-const loadScript = (src) => {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-};
-
-const getPdfLibraries = async () => {
-  if (!window.html2canvas) {
-    try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    } catch (e) {
-      console.warn('html2canvas CDN load failed:', e);
-    }
-  }
-
-  if (!window.jspdf) {
-    try {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    } catch (e) {
-      console.warn('jsPDF CDN load failed:', e);
-    }
-  }
-
-  const html2canvasFn = window.html2canvas;
-  const jsPDFFn = window.jspdf?.jsPDF || window.jsPDF;
-
-  return { html2canvas: html2canvasFn, jsPDF: jsPDFFn };
-};
 
 export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, student, preceptor, college }) => {
   const [loading, setLoading] = useState(true);
@@ -90,23 +55,22 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
     setDownloading(true);
     try {
-      const { html2canvas, jsPDF } = await getPdfLibraries();
-
-      if (!html2canvas || !jsPDF) {
-        throw new Error('PDF libraries could not be initialized.');
-      }
-
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff'
       });
 
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
-      const pdf = new jsPDF(isLandscape ? 'l' : 'p', 'mm', branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4');
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: isLandscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4'
+      });
 
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = canvas.width;
@@ -121,8 +85,9 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
       window.print();
+    } finally {
+      setDownloading(false);
     }
-    setDownloading(false);
   };
 
   if (!isOpen) return null;

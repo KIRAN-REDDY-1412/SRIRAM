@@ -2209,28 +2209,31 @@ export const fetchAllPreceptorCasesFromSupabase = async (preceptorId) => {
     const studentIds = (assignments || []).map(a => a.student_id);
     if (!studentIds.length) return { success: true, data: [] };
 
-    const { data, error } = await supabase
-      .from('clinical_cases')
-      .select(`
-        *,
-        students!fk_clinical_cases_student(*)
-      `)
-      .in('student_id', studentIds)
-      .neq('status', 'Draft')
-      .order('created_at', { ascending: false });
+    // Fetch cases and student details in parallel to guarantee student full_name & roll_number
+    const [casesRes, studentsRes] = await Promise.all([
+      supabase.from('clinical_cases').select('*').in('student_id', studentIds).neq('status', 'Draft').order('created_at', { ascending: false }),
+      supabase.from('students').select('*').in('id', studentIds)
+    ]);
 
-    if (error) {
-      const { data: simpleData } = await supabase
-        .from('clinical_cases')
-        .select('*')
-        .in('student_id', studentIds)
-        .neq('status', 'Draft')
-        .order('created_at', { ascending: false });
+    const rawCases = casesRes.data || [];
+    const studentList = studentsRes.data || [];
+    const studentMap = new Map(studentList.map(s => [s.id, s]));
 
-      return { success: true, data: simpleData || [] };
-    }
+    const mergedCases = rawCases.map(c => {
+      const studentObj = studentMap.get(c.student_id) || {};
+      return {
+        ...c,
+        students: {
+          ...studentObj,
+          full_name: studentObj.full_name || c.student_name || 'Student Candidate',
+          roll_number: studentObj.roll_number || c.roll_number || '—',
+          batch: studentObj.batch || c.batch || '',
+          academic_year: studentObj.academic_year || c.academic_year || ''
+        }
+      };
+    });
 
-    return { success: true, data: data || [] };
+    return { success: true, data: mergedCases };
   } catch (err) {
     return { success: false, data: [], error: err.message };
   }

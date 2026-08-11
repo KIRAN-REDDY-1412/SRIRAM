@@ -269,10 +269,10 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                         {c.case_id || `#${c.id?.substring(0, 8)}`}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                        {student.full_name || 'Student'}
+                        {student.full_name || c.student_name || 'Student Candidate'}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-400">
-                        {student.roll_number || '—'}
+                        {student.roll_number || c.roll_number || '—'}
                       </td>
                       <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                         {c.hospital_name || 'General Hospital'}

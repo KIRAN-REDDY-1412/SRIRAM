@@ -22,11 +22,29 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
       if (!clinicalCase?.id) return;
       const res = await fetchCaseModuleStatusesMapFromSupabase([clinicalCase.id]);
       if (res.success && res.statusesMap?.[clinicalCase.id]) {
-        setModStatus(res.statusesMap[clinicalCase.id]);
+        const s = res.statusesMap[clinicalCase.id];
+        setModStatus(s);
+
+        const checkFilled = (status) => status && status !== 'Not Started' && status !== 'Not Added' && status !== 'Draft';
+        if (checkFilled(s.profileStatus)) setActiveTab('profile');
+        else if (checkFilled(s.counsellingStatus)) setActiveTab('counselling');
+        else if (checkFilled(s.interventionStatus)) setActiveTab('intervention');
+        else if (checkFilled(s.dirStatus)) setActiveTab('dir');
+        else if (checkFilled(s.adrStatus)) setActiveTab('adr');
       }
     };
     loadModuleStatuses();
   }, [clinicalCase?.id]);
+
+  const checkFilled = (status) => status && status !== 'Not Started' && status !== 'Not Added' && status !== 'Draft';
+  const hasLoadedStatuses = Object.keys(modStatus).length > 0;
+  
+  // If statuses loaded, only show filled tabs. If loading, show profile/counselling fallback.
+  const isProfileFilled = hasLoadedStatuses ? checkFilled(modStatus.profileStatus) : true;
+  const isCounsellingFilled = hasLoadedStatuses ? checkFilled(modStatus.counsellingStatus) : true;
+  const isInterventionFilled = hasLoadedStatuses ? checkFilled(modStatus.interventionStatus) : false;
+  const isDirFilled = hasLoadedStatuses ? checkFilled(modStatus.dirStatus) : false;
+  const isAdrFilled = hasLoadedStatuses ? checkFilled(modStatus.adrStatus) : false;
 
   // Return checkboxes selection
   const [returnedForms, setReturnedForms] = useState({
@@ -247,92 +265,103 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs pt-1">
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Candidate Student</span>
-            <strong className="text-slate-900 dark:text-white font-bold">{student?.full_name}</strong>
+            <strong className="text-slate-900 dark:text-white font-bold">{student?.full_name || clinicalCase.student_name || 'Student Candidate'}</strong>
           </div>
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Roll Number</span>
-            <strong className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{student?.roll_number}</strong>
+            <strong className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{student?.roll_number || clinicalCase.roll_number || '—'}</strong>
           </div>
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Admission Date</span>
-            <strong className="font-mono text-slate-800 dark:text-slate-200 font-bold">{clinicalCase.date_of_admission}</strong>
+            <strong className="font-mono text-slate-800 dark:text-slate-200 font-bold">{clinicalCase.date_of_admission ? new Date(clinicalCase.date_of_admission).toLocaleDateString() : '—'}</strong>
           </div>
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Final Diagnosis</span>
-            <strong className="text-slate-800 dark:text-slate-200 font-bold truncate block" title={clinicalCase.final_diagnosis}>{clinicalCase.final_diagnosis || '—'}</strong>
+            <strong className="text-slate-800 dark:text-slate-200 font-bold truncate block" title={clinicalCase.final_diagnosis || modStatus?.finalDiagnosis}>{clinicalCase.final_diagnosis || modStatus?.finalDiagnosis || '—'}</strong>
           </div>
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Batch / Year</span>
-            <strong className="text-slate-800 dark:text-slate-200 font-bold">{student?.year} • Batch {student?.batch}</strong>
+            <strong className="text-slate-800 dark:text-slate-200 font-bold">{student?.academic_year || student?.year || 'PharmD'} {student?.batch ? `• Batch ${student.batch}` : ''}</strong>
           </div>
         </div>
       </div>
-      {/* MODULE TABS NAVIGATION */}
+
+      {/* MODULE TABS NAVIGATION — ONLY RENDER STUDENT FILLED / GREEN DOT DOCUMENTS */}
       <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-x-auto shadow-xs">
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-            activeTab === 'profile'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Stethoscope className="w-4 h-4" />
-          <span>Patient Profile</span>
-          {renderStatusBadge(modStatus.profileStatus)}
-        </button>
+        {isProfileFilled && (
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'profile'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Stethoscope className="w-4 h-4" />
+            <span>Patient Profile</span>
+            {renderStatusBadge(modStatus.profileStatus)}
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('counselling')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-            activeTab === 'counselling'
-              ? 'bg-teal-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <HeartHandshake className="w-4 h-4" />
-          <span>Patient Counselling</span>
-          {renderStatusBadge(modStatus.counsellingStatus)}
-        </button>
+        {isCounsellingFilled && (
+          <button
+            onClick={() => setActiveTab('counselling')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'counselling'
+                ? 'bg-teal-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <HeartHandshake className="w-4 h-4" />
+            <span>Patient Counselling</span>
+            {renderStatusBadge(modStatus.counsellingStatus)}
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('intervention')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-            activeTab === 'intervention'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <ShieldAlert className="w-4 h-4" />
-          <span>Pharmacist Intervention</span>
-          {renderStatusBadge(modStatus.interventionStatus)}
-        </button>
+        {isInterventionFilled && (
+          <button
+            onClick={() => setActiveTab('intervention')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'intervention'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Pharmacist Intervention</span>
+            {renderStatusBadge(modStatus.interventionStatus)}
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('dir')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-            activeTab === 'dir'
-              ? 'bg-cyan-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <FileSearch className="w-4 h-4" />
-          <span>Drug Information Request</span>
-          {renderStatusBadge(modStatus.dirStatus)}
-        </button>
+        {isDirFilled && (
+          <button
+            onClick={() => setActiveTab('dir')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'dir'
+                ? 'bg-cyan-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <FileSearch className="w-4 h-4" />
+            <span>Drug Information Request</span>
+            {renderStatusBadge(modStatus.dirStatus)}
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab('adr')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
-            activeTab === 'adr'
-              ? 'bg-amber-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4" />
-          <span>ADR Documentation</span>
-          {renderStatusBadge(modStatus.adrStatus)}
-        </button>
+        {isAdrFilled && (
+          <button
+            onClick={() => setActiveTab('adr')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
+              activeTab === 'adr'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            <span>ADR Documentation</span>
+            {renderStatusBadge(modStatus.adrStatus)}
+          </button>
+        )}
       </div>
 
       {/* ACTIVE FORM DISPLAY (READ-ONLY) */}

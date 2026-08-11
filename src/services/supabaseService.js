@@ -862,7 +862,33 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
       }
     }
 
-    if (success) {
+    if (success && insertedRecord) {
+      if (casePayload.finalDiagnosis) {
+        try {
+          const { data: existingProf } = await supabase
+            .from('patient_profiles')
+            .select('id')
+            .eq('clinical_case_id', insertedRecord.id)
+            .maybeSingle();
+
+          if (existingProf) {
+            await supabase
+              .from('patient_profiles')
+              .update({ final_diagnosis: casePayload.finalDiagnosis })
+              .eq('id', existingProf.id);
+          } else {
+            await supabase
+              .from('patient_profiles')
+              .insert([{
+                clinical_case_id: insertedRecord.id,
+                final_diagnosis: casePayload.finalDiagnosis,
+                status: 'Draft'
+              }]);
+          }
+        } catch (e) {
+          console.warn('Could not save finalDiagnosis to patient_profiles:', e);
+        }
+      }
       return { success: true, data: insertedRecord };
     } else {
       return { success: false, error: `Failed to insert clinical case fallback: ${lastErrorMsg}` };
@@ -921,6 +947,34 @@ export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) =>
       .select();
 
     if (error) return { success: false, error: error.message };
+
+    if (casePayload.finalDiagnosis !== undefined && caseRecordId) {
+      try {
+        const { data: existingProf } = await supabase
+          .from('patient_profiles')
+          .select('id')
+          .eq('clinical_case_id', caseRecordId)
+          .maybeSingle();
+
+        if (existingProf) {
+          await supabase
+            .from('patient_profiles')
+            .update({ final_diagnosis: casePayload.finalDiagnosis })
+            .eq('id', existingProf.id);
+        } else if (casePayload.finalDiagnosis) {
+          await supabase
+            .from('patient_profiles')
+            .insert([{
+              clinical_case_id: caseRecordId,
+              final_diagnosis: casePayload.finalDiagnosis,
+              status: 'Draft'
+            }]);
+        }
+      } catch (e) {
+        console.warn('Could not update finalDiagnosis in patient_profiles:', e);
+      }
+    }
+
     return { success: true, data: data[0] };
   } catch (err) {
     return { success: false, error: err.message };

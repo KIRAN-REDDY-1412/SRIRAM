@@ -39,6 +39,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [ipOpType, setIpOpType] = useState('IP');
   const [dateOfAdmission, setDateOfAdmission] = useState(new Date().toISOString().split('T')[0]);
   const [dateOfCollection, setDateOfCollection] = useState(new Date().toISOString().split('T')[0]);
+  const [finalDiagnosis, setFinalDiagnosis] = useState('');
   const [status, setStatus] = useState('Draft');
 
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
       dateOfAdmission,
       dateOfCollection: dateOfAdmission,
       academicYear: student.academic_year || '2026–2027',
+      finalDiagnosis: finalDiagnosis.trim(),
       status
     });
     setSaving(false);
@@ -255,6 +257,19 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
                 value={dateOfAdmission}
                 onChange={(e) => setDateOfAdmission(e.target.value)}
                 className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-mono font-bold"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Final Diagnosis
+              </label>
+              <input
+                type="text"
+                value={finalDiagnosis}
+                onChange={(e) => setFinalDiagnosis(e.target.value)}
+                placeholder="Enter patient's primary / final diagnosis (e.g. Type 2 Diabetes Mellitus, Hypertension...)"
+                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-medium"
               />
             </div>
           </div>

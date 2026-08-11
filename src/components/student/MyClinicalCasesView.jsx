@@ -116,6 +116,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
       ipOpType: caseRecord.ip_op_type,
       dateOfAdmission: caseRecord.date_of_admission,
       dateOfCollection: caseRecord.date_of_collection,
+      finalDiagnosis: moduleStatuses[caseRecord.id]?.finalDiagnosis || caseRecord.final_diagnosis || '',
       status: caseRecord.status
     });
     setIsEditModalOpen(true);
@@ -710,6 +711,17 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                   className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis</label>
+              <input
+                type="text"
+                value={editFormData.finalDiagnosis || ''}
+                onChange={(e) => setEditFormData({ ...editFormData, finalDiagnosis: e.target.value })}
+                placeholder="Patient's primary / final diagnosis"
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

@@ -261,25 +261,43 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
         setProfileStatus(p.status || 'Draft');
 
         if (res.labInvestigations && res.labInvestigations.length > 0) {
-          setLabInvestigations(res.labInvestigations.map(item => ({
-            category: item.category || 'Haematological Patterns',
-            parameter_name: item.parameter_name || '',
-            reference_range: item.reference_range || '',
-            test_value: item.test_value || ''
-          })));
+          const seenLab = new Set();
+          const uniqueLabs = [];
+          res.labInvestigations.forEach(item => {
+            const key = `${item.category}_${item.parameter_name}_${item.test_value}`;
+            if (!seenLab.has(key)) {
+              seenLab.add(key);
+              uniqueLabs.push({
+                category: item.category || 'Haematological Patterns',
+                parameter_name: item.parameter_name || '',
+                reference_range: item.reference_range || '',
+                test_value: item.test_value || ''
+              });
+            }
+          });
+          setLabInvestigations(uniqueLabs);
         }
 
         if (res.prescribedDrugs && res.prescribedDrugs.length > 0) {
-          setPrescribedDrugs(res.prescribedDrugs.map((item, i) => ({
-            s_no: item.s_no || i + 1,
-            trade_name: (item.trade_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
-            generic_name: (item.generic_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
-            route_of_admin: item.route_of_admin || 'Oral',
-            dose: item.dose || '',
-            frequency: item.frequency || 'OD',
-            start_date: item.start_date || '',
-            stop_date: item.stop_date || ''
-          })));
+          const seenDrug = new Set();
+          const uniqueDrugs = [];
+          res.prescribedDrugs.forEach(item => {
+            const key = `${item.trade_name}_${item.generic_name}_${item.dose}`;
+            if (!seenDrug.has(key)) {
+              seenDrug.add(key);
+              uniqueDrugs.push({
+                s_no: uniqueDrugs.length + 1,
+                trade_name: (item.trade_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
+                generic_name: (item.generic_name || '').replace(/[^A-Za-z\s]/g, '').toUpperCase(),
+                route_of_admin: item.route_of_admin || 'Oral',
+                dose: item.dose || '',
+                frequency: item.frequency || 'OD',
+                start_date: item.start_date || '',
+                stop_date: item.stop_date || ''
+              });
+            }
+          });
+          setPrescribedDrugs(uniqueDrugs);
         }
       }
 

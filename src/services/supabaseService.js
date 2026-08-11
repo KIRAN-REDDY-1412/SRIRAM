@@ -1978,6 +1978,7 @@ export const approveClinicalCaseByPreceptorFromSupabase = async (clinicalCase, p
 
     const updatePayload = {
       status: 'Approved',
+      overall_case_status: 'Approved',
       approved_at: now,
       approved_by_preceptor_id: preceptorId,
       overall_preceptor_comments: comments ? comments.trim() : null,

@@ -961,18 +961,22 @@ export const fetchStudentCasesForPreceptorFromSupabase = async (studentId) => {
 
 export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) => {
   try {
+    const updateObj = {
+      hospital_name: casePayload.hospitalName,
+      department: casePayload.department,
+      ward_unit: casePayload.wardUnit,
+      ip_op_type: casePayload.ipOpType,
+      date_of_admission: casePayload.dateOfAdmission,
+      date_of_collection: casePayload.dateOfCollection,
+      final_diagnosis: casePayload.finalDiagnosis || null
+    };
+    if (casePayload.status) {
+      updateObj.status = casePayload.status;
+    }
+
     const { data, error } = await supabase
       .from('clinical_cases')
-      .update({
-        hospital_name: casePayload.hospitalName,
-        department: casePayload.department,
-        ward_unit: casePayload.wardUnit,
-        ip_op_type: casePayload.ipOpType,
-        date_of_admission: casePayload.dateOfAdmission,
-        date_of_collection: casePayload.dateOfCollection,
-        status: casePayload.status || 'Draft',
-        final_diagnosis: casePayload.finalDiagnosis || null
-      })
+      .update(updateObj)
       .eq('id', caseRecordId)
       .select();
 
@@ -2043,38 +2047,38 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
     // Update child modules according to return selection
     await Promise.all([
       supabase.from('patient_profiles').update({
-        status: isProfileReturned ? 'Returned' : 'Approved',
-        approval_status: isProfileReturned ? 'Returned' : 'Approved',
-        review_status: isProfileReturned ? 'Returned' : 'Approved',
+        status: isProfileReturned ? 'Returned' : 'Submitted',
+        approval_status: isProfileReturned ? 'Returned' : 'Submitted',
+        review_status: isProfileReturned ? 'Returned' : 'Submitted',
         preceptor_comments: isProfileReturned ? comments.trim() : null,
         reviewed_at: now
       }).eq('clinical_case_id', caseId),
 
       supabase.from('patient_counselling').update({
-        status: isCounsellingReturned ? 'Returned' : 'Approved',
-        approval_status: isCounsellingReturned ? 'Returned' : 'Approved',
-        review_status: isCounsellingReturned ? 'Returned' : 'Approved',
+        status: isCounsellingReturned ? 'Returned' : 'Submitted',
+        approval_status: isCounsellingReturned ? 'Returned' : 'Submitted',
+        review_status: isCounsellingReturned ? 'Returned' : 'Submitted',
         preceptor_comments: isCounsellingReturned ? comments.trim() : null,
         reviewed_at: now
       }).eq('clinical_case_id', caseId),
 
       supabase.from('pharmacist_interventions').update({
-        status: isInterventionReturned ? 'Returned' : 'Approved',
-        approval_status: isInterventionReturned ? 'Returned' : 'Approved',
-        review_status: isInterventionReturned ? 'Returned' : 'Approved',
+        status: isInterventionReturned ? 'Returned' : 'Submitted',
+        approval_status: isInterventionReturned ? 'Returned' : 'Submitted',
+        review_status: isInterventionReturned ? 'Returned' : 'Submitted',
         preceptor_comments: isInterventionReturned ? comments.trim() : null,
         reviewed_at: now
       }).eq('clinical_case_id', caseId),
 
       supabase.from('drug_information_requests').update({
-        status: isDirReturned ? 'Returned' : 'Approved',
-        review_status: isDirReturned ? 'Returned' : 'Approved',
+        status: isDirReturned ? 'Returned' : 'Submitted',
+        review_status: isDirReturned ? 'Returned' : 'Submitted',
         reviewed_at: now
       }).eq('clinical_case_id', caseId),
 
       supabase.from('adr_reports').update({
-        approval_status: isAdrReturned ? 'Returned' : 'Approved',
-        review_status: isAdrReturned ? 'Returned' : 'Approved',
+        approval_status: isAdrReturned ? 'Returned' : 'Submitted',
+        review_status: isAdrReturned ? 'Returned' : 'Submitted',
         reviewed_at: now
       }).eq('clinical_case_id', caseId)
     ]);

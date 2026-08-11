@@ -7,12 +7,14 @@ import { DrugInformationFormView } from '../drugInformationRequest/DrugInformati
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { approveClinicalCaseByPreceptorFromSupabase, returnClinicalCaseByPreceptorFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { InlineActionNotification } from '../common/InlineActionNotification';
-import { useInlineNotification } from '../../hooks/useInlineNotification';
+import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
+import { FileCheck2 } from 'lucide-react';
 
 export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBack, onReviewComplete }) => {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'counselling' | 'intervention' | 'dir' | 'adr'
   const [submitting, setSubmitting] = useState(false);
   const [modStatus, setModStatus] = useState({});
+  const [showPDF, setShowPDF] = useState(false);
 
   useEffect(() => {
     const loadModuleStatuses = async () => {
@@ -222,10 +224,21 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
             </div>
           </div>
 
-          {/* Read-Only Badge */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold">
-            <Lock className="w-4 h-4" />
-            <span>Preceptor Review Mode (Read-Only)</span>
+          {/* Read-Only Badge & PDF Button */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPDF(true)}
+              className="px-3.5 py-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+              title="View & Download Official Branded PDF"
+            >
+              <FileCheck2 className="w-4 h-4" />
+              <span>View Branded PDF</span>
+            </button>
+
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold">
+              <Lock className="w-4 h-4" />
+              <span className="hidden sm:inline">Preceptor Review Mode (Read-Only)</span>
+            </div>
           </div>
         </div>
 
@@ -480,6 +493,18 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
             </button>
           </div>
         </div>
+      )}
+
+      {/* OFFICIAL BRANDED PDF MODAL */}
+      {showPDF && (
+        <OfficialClinicalCasePDFModal
+          isOpen={showPDF}
+          onClose={() => setShowPDF(false)}
+          clinicalCase={clinicalCase}
+          student={student}
+          preceptor={preceptor}
+          college={student?.colleges}
+        />
       )}
     </div>
   );

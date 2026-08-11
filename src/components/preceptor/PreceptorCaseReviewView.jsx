@@ -355,8 +355,12 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
       {/* OFFICIAL PDF MODAL */}
       {selectedCaseForPDF && (
         <OfficialClinicalCasePDFModal
-          clinicalCase={selectedCaseForPDF}
+          isOpen={Boolean(selectedCaseForPDF)}
           onClose={() => setSelectedCaseForPDF(null)}
+          clinicalCase={selectedCaseForPDF}
+          student={selectedCaseForPDF.students || { full_name: selectedCaseForPDF.student_name, roll_number: selectedCaseForPDF.roll_number, id: selectedCaseForPDF.student_id, college_id: selectedCaseForPDF.college_id }}
+          preceptor={preceptor}
+          college={selectedCaseForPDF.colleges}
         />
       )}
     </div>

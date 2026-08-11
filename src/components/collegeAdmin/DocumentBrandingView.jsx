@@ -370,7 +370,8 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             <span>Restore Default</span>
           </button>
 
-          <div className="relative inline-block">
+          <div className="flex items-center gap-2">
+            <InlineActionNotification notification={brandNotify} onClose={clearBrandNotify} position="inline" />
             <button
               type="button"
               onClick={handleSave}
@@ -380,7 +381,6 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               <Save className="w-4 h-4" />
               <span>{saving ? 'Saving...' : 'Save Branding'}</span>
             </button>
-            <InlineActionNotification notification={brandNotify} onClose={clearBrandNotify} position="bottom-right" />
           </div>
         </div>
       </div>

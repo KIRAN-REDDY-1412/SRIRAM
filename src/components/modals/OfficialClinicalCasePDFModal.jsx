@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer } from 'lucide-react';
-import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase } from '../../services/supabaseService';
+import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
@@ -46,11 +46,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const [downloading, setDownloading] = useState(false);
   const [caseModulesData, setCaseModulesData] = useState({});
   const [branding, setBranding] = useState(null);
+  const [collegeData, setCollegeData] = useState(college);
 
   const caseId = clinicalCase?.case_id || 'AMRMCP-2026-000001';
   const fileName = `${caseId}_Approved.pdf`;
-  const approvedDateStr = clinicalCase?.reviewed_at 
-    ? new Date(clinicalCase.reviewed_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const approvedDateStr = clinicalCase?.reviewed_at || clinicalCase?.approved_at
+    ? new Date(clinicalCase.reviewed_at || clinicalCase.approved_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   useEffect(() => {
@@ -58,9 +59,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       if (!clinicalCase?.id) return;
       setLoading(true);
       const collegeId = college?.id || student?.college_id || clinicalCase?.college_id;
-      const [res, brandRes] = await Promise.all([
+      const [res, brandRes, collegeRes] = await Promise.all([
         fetchCaseModuleStatusesFromSupabase(clinicalCase.id),
-        collegeId ? fetchDocumentBrandingSettingsFromSupabase(collegeId) : Promise.resolve({ success: false })
+        collegeId ? fetchDocumentBrandingSettingsFromSupabase(collegeId) : Promise.resolve({ success: false }),
+        collegeId ? fetchCollegeByIdFromSupabase(collegeId) : Promise.resolve({ success: false })
       ]);
 
       if (res.success) {
@@ -68,6 +70,11 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       }
       if (brandRes.success && brandRes.settings) {
         setBranding(brandRes.settings);
+      }
+      if (collegeRes.success && collegeRes.college) {
+        setCollegeData(collegeRes.college);
+      } else {
+        setCollegeData(college);
       }
       setLoading(false);
     };
@@ -98,24 +105,18 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
       const pdf = new jsPDF(isLandscape ? 'l' : 'p', 'mm', branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4');
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
 
-      let heightLeft = imgHeight;
-      let position = 0;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 0;
 
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
@@ -131,6 +132,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const intervention = caseModulesData.intervention || {};
   const dir = caseModulesData.dir || {};
   const adr = caseModulesData.adr || {};
+  const labs = caseModulesData.labs || [];
+  const drugs = caseModulesData.drugs || [];
+
+  const finalCollegeObj = collegeData || college || student?.colleges;
 
   return (
     <ModalWrapper
@@ -147,7 +152,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
               <h4 className="font-bold text-emerald-900 dark:text-emerald-300">Official Clinical Record Approved</h4>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Ready for instant download & printing.</p>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Branded PDF document with complete clinical student documentation.</p>
             </div>
           </div>
 
@@ -173,7 +178,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               
               {/* PAGE 1 OF 2 */}
               <PharmDVerseBrandedDocumentContainer
-                college={college}
+                college={finalCollegeObj}
                 branding={branding}
                 documentTitle="Official Clinical Logbook Record"
                 caseId={caseId}
@@ -187,7 +192,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-3 text-xs branded-border">
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Student Candidate</span>
-                      <strong className="text-slate-900 font-bold">{student?.full_name || 'Student'}</strong>
+                      <strong className="text-slate-900 font-bold">{student?.full_name || 'Student Candidate'}</strong>
                       <span className="text-[11px] text-slate-600 block font-mono">Roll: {student?.roll_number}</span>
                     </div>
 
@@ -212,40 +217,92 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
                   {/* MODULE 1: PATIENT PROFILE */}
                   {profile.id && (
-                    <div className="space-y-2 pt-2 border-t border-slate-200 branded-border">
+                    <div className="space-y-3 pt-2 border-t border-slate-200 branded-border">
                       <h3 className="text-xs font-black uppercase tracking-wider branded-heading flex items-center justify-between border-b pb-1 branded-border">
                         <span>1. Patient Profile & Clinical Demographics</span>
                         <span className="text-[10px] text-emerald-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="grid grid-cols-3 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg">
+
+                      <div className="grid grid-cols-3 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg branded-border">
                         <div>Patient: <strong>{profile.patient_name || '—'}</strong></div>
                         <div>Age / Gender: <strong>{profile.age} / {profile.gender}</strong></div>
                         <div>IP/OP No: <strong>{profile.ip_no || profile.ip_op_number || '—'}</strong></div>
+                        <div>Department: <strong>{profile.department || clinicalCase?.department || '—'}</strong></div>
+                        <div>Ward: <strong>{profile.ward || clinicalCase?.ward_unit || '—'}</strong></div>
+                        <div>Physician: <strong>{profile.physician || '—'}</strong></div>
+                        {profile.chief_complaints && <div className="col-span-3">Chief Complaints: <strong>{profile.chief_complaints}</strong></div>}
+                        {profile.past_medical_history && <div className="col-span-3">Past History: <strong>{profile.past_medical_history}</strong></div>}
                         <div className="col-span-3">Diagnosis: <strong>{profile.final_diagnosis || profile.provisional_diagnosis || clinicalCase?.final_diagnosis || 'Not specified'}</strong></div>
                       </div>
+
+                      {/* LAB INVESTIGATIONS TABLE */}
+                      {labs.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
+                            Laboratory Investigations
+                          </strong>
+                          <table className="w-full text-left border border-collapse text-[10px] branded-border">
+                            <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                              <tr>
+                                <th className="p-1.5 border-r branded-border">Category</th>
+                                <th className="p-1.5 border-r branded-border">Parameter Name</th>
+                                <th className="p-1.5 border-r branded-border">Observed Value</th>
+                                <th className="p-1.5">Reference Range</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y branded-border">
+                              {labs.map((l, idx) => (
+                                <tr key={idx} className="border-b branded-border">
+                                  <td className="p-1.5 border-r branded-border">{l.category || 'General'}</td>
+                                  <td className="p-1.5 border-r font-bold branded-border">{l.parameter_name}</td>
+                                  <td className="p-1.5 border-r font-mono font-bold branded-border">{l.test_value}</td>
+                                  <td className="p-1.5 border-r branded-border">{l.reference_range || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* PRESCRIBED PHARMACOTHERAPY TABLE */}
+                      {drugs.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
+                            Prescribed Pharmacotherapy Log
+                          </strong>
+                          <table className="w-full text-left border border-collapse text-[10px] branded-border">
+                            <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                              <tr>
+                                <th className="p-1.5 border-r branded-border">S.No</th>
+                                <th className="p-1.5 border-r branded-border">Brand & Generic Name</th>
+                                <th className="p-1.5 border-r branded-border">Dose & Route</th>
+                                <th className="p-1.5">Frequency</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y branded-border">
+                              {drugs.map((d, idx) => (
+                                <tr key={idx} className="border-b branded-border">
+                                  <td className="p-1.5 border-r text-center font-mono branded-border">{d.s_no || idx + 1}</td>
+                                  <td className="p-1.5 border-r font-bold branded-border">
+                                    {d.trade_name} {d.generic_name ? `(${d.generic_name})` : ''}
+                                  </td>
+                                  <td className="p-1.5 border-r branded-border">{d.dose} ({d.route_of_admin || 'Oral'})</td>
+                                  <td className="p-1.5 font-mono font-bold branded-border">{d.frequency || 'OD'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* MODULE 2: PATIENT COUNSELLING */}
-                  {counselling.id && (
-                    <div className="space-y-2 pt-2 border-t border-slate-200 branded-border">
-                      <h3 className="text-xs font-black uppercase tracking-wider branded-heading flex items-center justify-between border-b pb-1 branded-border">
-                        <span>2. Patient Counselling Record</span>
-                        <span className="text-[10px] text-teal-600 font-bold">🟢 Approved</span>
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg">
-                        <div>Date of Counselling: <strong>{counselling.date_of_counselling || '—'}</strong></div>
-                        <div>Counselling Mode: <strong>{counselling.counselling_provided || 'Oral & Leaflet'}</strong></div>
-                        <div className="col-span-2">Key Focus: <strong>{counselling.disease_medication_info || counselling.special_instructions || 'Prescription instructions'}</strong></div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </PharmDVerseBrandedDocumentContainer>
 
               {/* PAGE 2 OF 2 */}
               <PharmDVerseBrandedDocumentContainer
-                college={college}
+                college={finalCollegeObj}
                 branding={branding}
                 documentTitle="Official Clinical Logbook Record"
                 caseId={caseId}
@@ -256,6 +313,24 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                 showSignatures={true}
               >
                 <div className="space-y-4 text-xs">
+
+                  {/* MODULE 2: PATIENT COUNSELLING */}
+                  {counselling.id && (
+                    <div className="space-y-2 pt-2 border-t border-slate-200 branded-border">
+                      <h3 className="text-xs font-black uppercase tracking-wider branded-heading flex items-center justify-between border-b pb-1 branded-border">
+                        <span>2. Patient Counselling Record</span>
+                        <span className="text-[10px] text-teal-600 font-bold">🟢 Approved</span>
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg branded-border">
+                        <div>Date of Counselling: <strong>{counselling.date_of_counselling || '—'}</strong></div>
+                        <div>Counselling Mode: <strong>{counselling.counselling_provided || 'Oral & Leaflet'}</strong></div>
+                        {counselling.disease_medication_info && <div className="col-span-2">Disease & Medication Info: <strong>{counselling.disease_medication_info}</strong></div>}
+                        {counselling.special_instructions && <div className="col-span-2">Special Instructions: <strong>{counselling.special_instructions}</strong></div>}
+                        {counselling.patient_response && <div className="col-span-2">Patient Response: <strong>{counselling.patient_response}</strong></div>}
+                      </div>
+                    </div>
+                  )}
+
                   {/* MODULE 3: PHARMACIST INTERVENTION */}
                   {intervention.id && (
                     <div className="space-y-2 pt-2 border-t border-slate-200 branded-border">
@@ -263,9 +338,11 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>3. Pharmacist Intervention Log</span>
                         <span className="text-[10px] text-indigo-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1">
+                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
+                        {intervention.category && <div>Category: <strong>{intervention.category}</strong></div>}
                         <div>Problem Identified: <strong>{intervention.description_of_problem || 'Prescription Review'}</strong></div>
                         <div>Action & Recommendations: <strong>{intervention.action_taken || intervention.recommendations || 'Communicated to physician'}</strong></div>
+                        {intervention.physician_response && <div>Physician Response: <strong>{intervention.physician_response}</strong></div>}
                       </div>
                     </div>
                   )}
@@ -277,7 +354,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>4. Drug Information Request</span>
                         <span className="text-[10px] text-cyan-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1">
+                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
+                        <div>Enquirer Name & Role: <strong>{dir.enquirer_name || 'Clinician'} ({dir.enquirer_category || 'Doctor'})</strong></div>
                         <div>Enquiry Details: <strong>{dir.details_of_enquiry || 'Drug Query'}</strong></div>
                         <div>Response Summary: <strong>{dir.information_provided || 'Provided via Micromedex / UpToDate'}</strong></div>
                       </div>
@@ -291,9 +369,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>5. Adverse Drug Reaction Log</span>
                         <span className="text-[10px] text-amber-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1">
+                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
                         <div>Reaction Title: <strong>{adr.reaction_title || 'Suspected ADR'}</strong></div>
-                        <div>Suspected Drug: <strong>{adr.reaction_description || 'Evaluated'}</strong></div>
+                        <div>Suspected Drug: <strong>{adr.suspected_drug || adr.reaction_description || 'Evaluated'}</strong></div>
+                        {adr.naranjo_score !== undefined && <div>Naranjo Causality Score: <strong>{adr.naranjo_score} ({adr.causality_assessment || 'Possible'})</strong></div>}
                       </div>
                     </div>
                   )}

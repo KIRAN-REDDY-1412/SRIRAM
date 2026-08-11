@@ -1784,14 +1784,46 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
       supabase.from('adr_reports').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle()
     ]);
 
+    const profileData = profileRes.data || {};
+    let labs = [];
+    let drugs = [];
+
+    if (profileData.id) {
+      const [labRes, drugRes] = await Promise.all([
+        supabase.from('patient_lab_investigations').select('*').eq('patient_profile_id', profileData.id).order('created_at', { ascending: true }),
+        supabase.from('patient_prescribed_drugs').select('*').eq('patient_profile_id', profileData.id).order('s_no', { ascending: true })
+      ]);
+
+      // Deduplicate labs & drugs
+      const seenLab = new Set();
+      (labRes.data || []).forEach(l => {
+        const key = `${l.category}_${l.parameter_name}_${l.test_value}`;
+        if (!seenLab.has(key)) {
+          seenLab.add(key);
+          labs.push(l);
+        }
+      });
+
+      const seenDrug = new Set();
+      (drugRes.data || []).forEach(d => {
+        const key = `${d.trade_name}_${d.generic_name}_${d.dose}`;
+        if (!seenDrug.has(key)) {
+          seenDrug.add(key);
+          drugs.push(d);
+        }
+      });
+    }
+
     return {
       success: true,
       records: {
-        profile: profileRes.data || {},
+        profile: profileData,
         counselling: counsellingRes.data || {},
         intervention: interventionRes.data || {},
         dir: dirRes.data || {},
-        adr: adrRes.data || {}
+        adr: adrRes.data || {},
+        labs,
+        drugs
       }
     };
   } catch (err) {

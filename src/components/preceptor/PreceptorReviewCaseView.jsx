@@ -270,8 +270,6 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
       ) : (
         /* PENDING / SUBMITTED / RETURNED — Show full review controls */
         <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl space-y-6 border border-slate-800 relative">
-          <InlineActionNotification notification={notification} onClose={clearNotification} position="top-right" />
-
           <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
             <MessageSquare className="w-5 h-5 text-cyan-400" />
             <h3 className="text-base font-extrabold tracking-tight">Preceptor Clinical Review Control Panel</h3>
@@ -350,7 +348,11 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
                 setCommentError('');
               }}
               placeholder="Enter preceptor feedback, clinical evaluation notes, or specific instructions for corrections..."
-              className="w-full p-4 text-xs rounded-2xl bg-slate-800/90 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 font-sans"
+              className={`w-full p-4 text-xs rounded-2xl text-white placeholder-slate-400 focus:outline-none font-sans transition-all ${
+                commentError
+                  ? 'border-2 border-rose-500 ring-2 ring-rose-500/30 bg-rose-950/20'
+                  : 'bg-slate-800/90 border border-slate-700 focus:ring-2 focus:ring-cyan-500/50'
+              }`}
             />
 
             {commentError && (
@@ -360,6 +362,9 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
               </p>
             )}
           </div>
+
+          {/* ACTION NOTIFICATION IMMEDIATELY ABOVE BUTTONS */}
+          <InlineActionNotification notification={notification} onClose={clearNotification} position="inline" />
 
           {/* FINAL DECISION BUTTONS */}
           <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-800">

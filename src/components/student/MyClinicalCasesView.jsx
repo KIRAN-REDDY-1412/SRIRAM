@@ -109,14 +109,17 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
 
   const handleOpenEditModal = (caseRecord) => {
     setSelectedCase(caseRecord);
+    setEditFormError('');
+    setEditFormSuccess('');
+    setEditFieldErrors({});
     setEditFormData({
-      hospitalName: caseRecord.hospital_name,
-      department: caseRecord.department,
-      wardUnit: caseRecord.ward_unit,
-      ipOpType: caseRecord.ip_op_type,
-      dateOfAdmission: caseRecord.date_of_admission,
-      dateOfCollection: caseRecord.date_of_collection,
-      finalDiagnosis: moduleStatuses[caseRecord.id]?.finalDiagnosis || caseRecord.final_diagnosis || '',
+      hospitalName: caseRecord.hospital_name || '',
+      department: caseRecord.department || '',
+      wardUnit: caseRecord.ward_unit || '',
+      ipOpType: caseRecord.ip_op_type || 'IP',
+      dateOfAdmission: caseRecord.date_of_admission || '',
+      dateOfCollection: caseRecord.date_of_collection || caseRecord.date_of_admission || '',
+      finalDiagnosis: caseRecord.final_diagnosis || moduleStatuses[caseRecord.id]?.finalDiagnosis || '',
       status: caseRecord.status
     });
     setIsEditModalOpen(true);
@@ -125,16 +128,35 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!selectedCase) return;
+    setEditFormError('');
+    setEditFormSuccess('');
+    const errors = {};
+
+    if (!editFormData.hospitalName.trim()) errors.hospitalName = 'Hospital name is required.';
+    if (!editFormData.department.trim()) errors.department = 'Department is required.';
+    if (!editFormData.wardUnit.trim()) errors.wardUnit = 'Ward/Unit is required.';
+    if (!editFormData.dateOfAdmission) errors.dateOfAdmission = 'Date of admission is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setEditFieldErrors(errors);
+      setEditFormError('Please complete all required fields highlighted in red.');
+      return;
+    }
+    setEditFieldErrors({});
 
     setActionLoading(true);
     const res = await updateClinicalCaseInSupabase(selectedCase.id, editFormData);
     setActionLoading(false);
 
     if (res.success) {
-      setIsEditModalOpen(false);
-      await loadStudentCases();
+      setEditFormSuccess('Clinical case updated successfully!');
+      setTimeout(async () => {
+        setEditFormSuccess('');
+        setIsEditModalOpen(false);
+        await loadStudentCases();
+      }, 1200);
     } else {
-      alert(res.error || 'Failed to update case.');
+      setEditFormError(res.error || 'Failed to update clinical case.');
     }
   };
 
@@ -403,7 +425,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                       <tr className="bg-slate-50/70 dark:bg-slate-800/40 border-b-2 border-slate-200/80 dark:border-slate-800">
                         <td colSpan={6} className="px-5 py-2.5 relative">
                           {activeCaseNotifyId === c.id && (
-                            <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="bottom-right" />
+                            <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="inline" />
                           )}
 
                           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -583,9 +605,19 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                 type="text"
                 required
                 value={editFormData.hospitalName}
-                onChange={(e) => setEditFormData({ ...editFormData, hospitalName: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => { setEditFormData({ ...editFormData, hospitalName: e.target.value }); setEditFieldErrors(prev => ({ ...prev, hospitalName: '' })); }}
+                className={`w-full h-[44px] px-3 rounded-xl border text-slate-900 dark:text-white transition-all ${
+                  editFieldErrors.hospitalName
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
+                }`}
               />
+              {editFieldErrors.hospitalName && (
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>{editFieldErrors.hospitalName}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -594,9 +626,19 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                 type="text"
                 required
                 value={editFormData.department}
-                onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => { setEditFormData({ ...editFormData, department: e.target.value }); setEditFieldErrors(prev => ({ ...prev, department: '' })); }}
+                className={`w-full h-[44px] px-3 rounded-xl border text-slate-900 dark:text-white transition-all ${
+                  editFieldErrors.department
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
+                }`}
               />
+              {editFieldErrors.department && (
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>{editFieldErrors.department}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -605,9 +647,19 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                 type="text"
                 required
                 value={editFormData.wardUnit}
-                onChange={(e) => setEditFormData({ ...editFormData, wardUnit: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => { setEditFormData({ ...editFormData, wardUnit: e.target.value }); setEditFieldErrors(prev => ({ ...prev, wardUnit: '' })); }}
+                className={`w-full h-[44px] px-3 rounded-xl border text-slate-900 dark:text-white transition-all ${
+                  editFieldErrors.wardUnit
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
+                }`}
               />
+              {editFieldErrors.wardUnit && (
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>{editFieldErrors.wardUnit}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -629,9 +681,19 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                   type="date"
                   required
                   value={editFormData.dateOfAdmission}
-                  onChange={(e) => setEditFormData({ ...editFormData, dateOfAdmission: e.target.value })}
-                  className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+                  onChange={(e) => { setEditFormData({ ...editFormData, dateOfAdmission: e.target.value }); setEditFieldErrors(prev => ({ ...prev, dateOfAdmission: '' })); }}
+                  className={`w-full h-[44px] px-3 rounded-xl border text-slate-900 dark:text-white font-mono transition-all ${
+                    editFieldErrors.dateOfAdmission
+                      ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
+                  }`}
                 />
+                {editFieldErrors.dateOfAdmission && (
+                  <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    <span>{editFieldErrors.dateOfAdmission}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -657,11 +719,26 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               />
             </div>
 
+            {/* ACTION FEEDBACK NEAR SAVE BUTTON */}
+            {editFormError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2 animate-fadeIn">
+                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <span>{editFormError}</span>
+              </div>
+            )}
+
+            {editFormSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{editFormSuccess}</span>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 font-bold"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 font-bold text-slate-700 dark:text-slate-300"
               >
                 Cancel
               </button>
@@ -669,9 +746,16 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50"
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 flex items-center gap-1.5"
               >
-                {actionLoading ? 'Saving...' : 'Save Case'}
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Case</span>
+                )}
               </button>
             </div>
           </form>
@@ -691,6 +775,13 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Are you sure you want to delete this draft case entry? This action cannot be undone.
             </p>
+
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{deleteError}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button

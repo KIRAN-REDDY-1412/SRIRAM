@@ -17,14 +17,22 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
 
   if (!isOpen) return null;
 
+  const [fieldErrors, setFieldErrors] = useState({});
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    const errors = {};
 
-    if (!username.trim() || !password.trim()) {
-      setErrorMsg('Please enter both Username (Roll Number) and Password.');
+    if (!username.trim()) errors.username = 'Username is required.';
+    if (!password.trim()) errors.password = 'Password is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setErrorMsg('Please enter both Username and Password.');
       return;
     }
+    setFieldErrors({});
 
     setLoggingIn(true);
     const res = await authenticateStudentInSupabase(username.trim(), password.trim());
@@ -85,13 +93,6 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
             </button>
           </div>
         
-          {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2 shadow-xs">
-              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Username (Roll Number) *
@@ -100,10 +101,20 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
               type="text"
               required
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => { setUsername(e.target.value); setFieldErrors(prev => ({ ...prev, username: '' })); }}
               placeholder="Enter student roll number"
-              className="w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-bold"
+              className={`w-full h-[46px] px-3.5 text-xs font-mono rounded-xl border text-slate-900 dark:text-white focus:ring-2 focus:outline-none font-bold transition-all ${
+                fieldErrors.username
+                  ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 focus:ring-emerald-500/50'
+              }`}
             />
+            {fieldErrors.username && (
+              <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
+                <span>{fieldErrors.username}</span>
+              </p>
+            )}
           </div>
 
           <div>
@@ -115,9 +126,13 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
                 type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: '' })); }}
                 placeholder="Enter your password"
-                className="w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none"
+                className={`w-full h-[46px] pl-3.5 pr-10 text-xs font-mono rounded-xl border text-slate-900 dark:text-white focus:ring-2 focus:outline-none transition-all ${
+                  fieldErrors.password
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-emerald-500/50'
+                }`}
               />
               <button
                 type="button"
@@ -127,7 +142,21 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 shrink-0" />
+                <span>{fieldErrors.password}</span>
+              </p>
+            )}
           </div>
+
+          {/* ACTION ERROR NEAR LOGIN BUTTON */}
+          {errorMsg && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2 shadow-xs animate-fadeIn">
+              <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
           <div className="pt-2 flex items-center justify-end gap-3">
             <button
@@ -141,22 +170,21 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
             <button
               type="submit"
               disabled={loggingIn}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 disabled:opacity-50 flex items-center gap-1.5 transition-colors"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all"
             >
               {loggingIn ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Authenticating...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Logging in...</span>
                 </>
               ) : (
                 <>
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In to Student Portal</span>
+                  <LogIn className="w-4 h-4" />
+                  <span>Login to Portal</span>
                 </>
               )}
             </button>
           </div>
-
         </form>
       </ModalWrapper>
       <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />

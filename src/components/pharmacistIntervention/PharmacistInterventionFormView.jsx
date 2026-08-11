@@ -522,7 +522,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
                 {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 <span>Import from Patient Profile</span>
               </button>
-              <InlineActionNotification notification={importNotify} onClose={clearImportNotify} position="bottom-right" />
+              <InlineActionNotification notification={importNotify} onClose={clearImportNotify} position="inline" />
             </div>
 
             {/* ADD DRUG ROW BUTTON */}
@@ -863,8 +863,10 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
 
       {/* ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
       {!isReadOnly && (
-        <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+        <div className="space-y-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="inline" />
+
+          <div className="flex flex-wrap items-center justify-end gap-3">
 
           <button
             type="button"
@@ -884,6 +886,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
           >
             <span>Save</span>
           </button>
+          </div>
         </div>
       )}
 

@@ -28,16 +28,17 @@ export const InlineActionNotification = ({ notification, onClose, position = 'bo
     iconColor = 'text-indigo-600 dark:text-indigo-400';
   }
 
-  let positionClasses = 'top-full mt-2 right-0';
-  if (position === 'bottom-left') positionClasses = 'top-full mt-2 left-0';
-  if (position === 'bottom-center') positionClasses = 'top-full mt-2 left-1/2 -translate-x-1/2';
-  if (position === 'top-right') positionClasses = 'bottom-full mb-2 right-0';
-  if (position === 'top-left') positionClasses = 'bottom-full mb-2 left-0';
-  if (position === 'top-center') positionClasses = 'bottom-full mb-2 left-1/2 -translate-x-1/2';
-  if (position === 'inline') positionClasses = 'relative mt-2';
+  let isInline = position === 'inline';
+  let positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] top-full mt-2 right-0';
+  if (position === 'bottom-left') positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] top-full mt-2 left-0';
+  if (position === 'bottom-center') positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] top-full mt-2 left-1/2 -translate-x-1/2';
+  if (position === 'top-right') positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] bottom-full mb-2 right-0';
+  if (position === 'top-left') positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] bottom-full mb-2 left-0';
+  if (position === 'top-center') positionClasses = 'absolute z-50 min-w-[240px] max-w-[340px] bottom-full mb-2 left-1/2 -translate-x-1/2';
+  if (isInline) positionClasses = 'relative z-10 w-full my-2';
 
   return (
-    <div className={`absolute z-50 min-w-[240px] max-w-[340px] p-3 rounded-2xl border shadow-xl flex items-start gap-2.5 text-xs font-semibold backdrop-blur-md animate-fadeIn transition-all transform origin-top ${bgClasses} ${positionClasses}`}>
+    <div className={`p-3.5 rounded-2xl border shadow-md flex items-start gap-2.5 text-xs font-semibold backdrop-blur-md animate-fadeIn transition-all ${bgClasses} ${positionClasses}`}>
       <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${iconColor}`} />
       <div className="flex-1 leading-snug break-words pr-1">{message}</div>
       <button

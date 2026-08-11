@@ -784,8 +784,10 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
 
       {/* ACTION SECTION AT THE BOTTOM WITH INLINE NOTIFICATION */}
       {!isReadOnly && (
-        <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+        <div className="space-y-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="inline" />
+
+          <div className="flex flex-wrap items-center justify-end gap-3">
 
           <button
             type="button"
@@ -805,6 +807,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
           >
             <span>Save</span>
           </button>
+          </div>
         </div>
       )}
 

@@ -1158,8 +1158,10 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
 
       {/* ACTION SECTION AT THE BOTTOM */}
       {!isReadOnly && (
-        <div className="relative flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="top-right" />
+        <div className="space-y-3 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <InlineActionNotification notification={bottomNotify} onClose={clearBottomNotify} position="inline" />
+
+          <div className="flex flex-wrap items-center justify-end gap-3">
 
           {/* Required fields hint */}
           {!isProfileComplete() && (
@@ -1187,6 +1189,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Save</span>
           </button>
+          </div>
         </div>
       )}
 

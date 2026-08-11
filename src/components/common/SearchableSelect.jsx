@@ -8,6 +8,7 @@ export const SearchableSelect = ({
   placeholder = 'Select option...',
   required = false,
   disabled = false,
+  hasError = false,
   className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -96,7 +97,9 @@ export const SearchableSelect = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
         className={`w-full h-[46px] px-3.5 text-xs rounded-xl border flex items-center justify-between cursor-pointer select-none transition-all ${
-          isOpen
+          hasError
+            ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+            : isOpen
             ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-white dark:bg-slate-900'
             : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800/80'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}

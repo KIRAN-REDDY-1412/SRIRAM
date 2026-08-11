@@ -55,14 +55,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
     setDownloading(true);
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: '#ffffff'
-      });
-
+      const pageElements = element.querySelectorAll('.pharmdverse-document-page');
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
       const pdf = new jsPDF({
         orientation: isLandscape ? 'landscape' : 'portrait',
@@ -70,17 +63,24 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         format: branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4'
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
 
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0;
+      for (let i = 0; i < pagesToCapture.length; i++) {
+        if (i > 0) pdf.addPage();
+        const pageCanvas = await html2canvas(pagesToCapture[i], {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
 
-      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      }
+
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
@@ -225,7 +225,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span className="text-[10px] text-emerald-600 font-bold">🟢 Approved</span>
                       </h3>
 
-                      <div className="grid grid-cols-3 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg branded-border">
+                      <div className="grid grid-cols-3 gap-2 text-[11px] bg-white border border-slate-300 p-3 rounded-lg branded-border">
                         <div>Patient: <strong>{patientName}</strong></div>
                         <div>Age / Gender: <strong>{ageGender}</strong></div>
                         <div>IP/OP No: <strong>{ipNo}</strong></div>
@@ -365,7 +365,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>2. Patient Counselling Record</span>
                         <span className="text-[10px] text-teal-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg branded-border">
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-white border border-slate-300 p-3 rounded-lg branded-border">
                         <div>Date & Time: <strong>{counsellingDateVal} {counsellingTimeVal}</strong></div>
                         <div>Counselling Mode / Patient Type: <strong>{counsellingModeVal} (Ward: {counselling.unit_ward || ward})</strong></div>
                         <div>Counselled To: <strong>{counselling.counselling_provided_to || 'Patient'}</strong></div>
@@ -398,7 +398,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>3. Pharmacist Intervention Log</span>
                         <span className="text-[10px] text-indigo-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1.5 branded-border">
+                      <div className="text-[11px] bg-white border border-slate-300 p-3 rounded-lg space-y-1.5 branded-border">
                         <div className="grid grid-cols-2 gap-2 pb-1 border-b border-slate-200">
                           <div>Date of Intervention: <strong>{interDateVal}</strong></div>
                           <div>Present Diagnosis: <strong>{intervention.present_diagnosis || diagnosisStr}</strong></div>
@@ -439,7 +439,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>4. Drug Information Request</span>
                         <span className="text-[10px] text-cyan-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
+                      <div className="text-[11px] bg-white border border-slate-300 p-3 rounded-lg space-y-1 branded-border">
                         <div>Enquirer Name & Role: <strong>{dir.enquirer_name || 'Clinician'} ({dir.enquirer_category || 'Doctor'})</strong></div>
                         <div>Enquiry Details: <strong>{dir.details_of_enquiry || dir.background_info || 'Drug Query'}</strong></div>
                         {dir.sources_consulted && <div>Sources Consulted: <strong>{dir.sources_consulted}</strong></div>}
@@ -455,7 +455,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span>5. Adverse Drug Reaction Log</span>
                         <span className="text-[10px] text-amber-600 font-bold">🟢 Approved</span>
                       </h3>
-                      <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
+                      <div className="text-[11px] bg-white border border-slate-300 p-3 rounded-lg space-y-1 branded-border">
                         <div className="grid grid-cols-2 gap-2 pb-1 border-b border-slate-200">
                           <div>ADR Report No: <strong>{adr.adr_number || 'ADR-2026-001'}</strong></div>
                           <div>Reporting Date: <strong>{adr.reporting_date ? new Date(adr.reporting_date).toLocaleDateString() : '—'}</strong></div>

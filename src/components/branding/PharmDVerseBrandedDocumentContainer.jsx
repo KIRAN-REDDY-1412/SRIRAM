@@ -38,7 +38,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
   const watermarkEnabled = branding?.watermark_enabled ?? true;
   const watermarkLine1 = branding?.watermark_text_line1 || 'PHARMDVERSE';
   const watermarkLine2 = branding?.watermark_text_line2 || 'Clinical Documentation System';
-  const opacityPct = (branding?.watermark_opacity ?? 10) / 100;
+  const opacityPct = Math.max((branding?.watermark_opacity ?? 18) / 100, 0.16);
   const isDiagonal = branding?.watermark_position === 'Diagonal';
 
   const footerLeft = branding?.footer_left_text || 'PharmDVerse';
@@ -111,7 +111,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   return (
     <div
-      className={`bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
+      className={`pharmdverse-document-page bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
         isLandscape 
           ? 'w-full max-w-5xl mx-auto min-h-[210mm] aspect-[297/210]' 
           : 'w-full max-w-3xl mx-auto min-h-[297mm]'
@@ -121,6 +121,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
         shouldShowTableHeader ? '[&_thead]:table-header-group' : '[&_thead]:hidden'
       }`}
       style={{
+        backgroundColor: '#ffffff',
         fontFamily: fontFamily,
         borderColor: borderCol,
         color: textColor,
@@ -141,6 +142,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
             margin: ${marginTop} ${marginRight} ${marginBottom} ${marginLeft};
           }
           body {
+            background-color: #ffffff !important;
             font-family: ${fontFamily} !important;
             color: ${textColor} !important;
           }
@@ -198,7 +200,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
         }
       `}</style>
 
-      {/* WATERMARK OVERLAY */}
+      {/* WATERMARK OVERLAY - XEROX SUITABLE CONTRAST */}
       {watermarkEnabled && (
         <div
           className={`absolute inset-0 pointer-events-none flex flex-col items-center justify-center select-none z-0 ${
@@ -206,10 +208,10 @@ export const PharmDVerseBrandedDocumentContainer = ({
           }`}
           style={{ opacity: opacityPct }}
         >
-          <span className="text-4xl sm:text-5xl font-black uppercase tracking-widest font-mono text-slate-800">
+          <span className="text-4xl sm:text-5xl font-black uppercase tracking-widest font-mono text-slate-600">
             {watermarkLine1}
           </span>
-          <span className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-700 mt-1">
+          <span className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-slate-500 mt-1">
             {watermarkLine2}
           </span>
         </div>

@@ -1587,7 +1587,7 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
   try {
     const [casesRes, profilesRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
       supabase.from('clinical_cases').select('id, profile_completed, counselling_completed').in('id', caseIds),
-      supabase.from('patient_profiles').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
+      supabase.from('patient_profiles').select('id, clinical_case_id, status, final_diagnosis').in('clinical_case_id', caseIds),
       supabase.from('patient_counselling').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
       supabase.from('pharmacist_interventions').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
       supabase.from('drug_information_requests').select('id, clinical_case_id, status').in('clinical_case_id', caseIds),
@@ -1664,6 +1664,7 @@ export const fetchCaseModuleStatusesMapFromSupabase = async (caseIds = []) => {
         interventionStatus: interventionStatusVal,
         dirStatus: dirStatusVal,
         adrStatus: adrStatusVal,
+        finalDiagnosis: p?.final_diagnosis || '',
         hasProfile: Boolean(p),
         hasCounselling: Boolean(c),
         hasIntervention: Boolean(i),

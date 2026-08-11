@@ -304,176 +304,186 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-3.5 px-5">Case ID</th>
-                  <th className="py-3.5 px-5">Hospital</th>
-                  <th className="py-3.5 px-5">Department</th>
-                  <th className="py-3.5 px-5">IP/OP</th>
-                  <th className="py-3.5 px-5">Admission Date</th>
+                  <th className="py-3.5 px-5">Hospital Name</th>
+                  <th className="py-3.5 px-5">Final Diagnosis</th>
+                  <th className="py-3.5 px-5">Date of Admission</th>
                   <th className="py-3.5 px-5">Status</th>
-                  <th className="py-3.5 px-5">Clinical Documentation</th>
                   <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {paginatedCases.map((c) => (
-                  <tr key={c.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                    <td className="py-3.5 px-5 font-mono font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
-                      {c.case_id}
-                    </td>
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800">
+                {paginatedCases.map((c) => {
+                  const diag = moduleStatuses[c.id]?.finalDiagnosis || c.final_diagnosis || '—';
+                  return (
+                    <React.Fragment key={c.id}>
+                      {/* ROW 1 — CASE DETAILS */}
+                      <tr className="transition-colors bg-white dark:bg-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td className="py-3 px-5 font-mono font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
+                          {c.case_id}
+                        </td>
 
-                    <td className="py-3.5 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {c.hospital_name}
-                    </td>
+                        <td className="py-3 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                          <div>{c.hospital_name}</div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal">{c.department} • Unit: {c.ward_unit}</div>
+                        </td>
 
-                    <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                      <span className="font-bold text-slate-900 dark:text-white uppercase block tracking-wide">{c.department}</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">Unit : {c.ward_unit}</span>
-                    </td>
+                        <td className="py-3 px-5 text-slate-800 dark:text-slate-200 font-semibold max-w-[220px] truncate" title={diag}>
+                          {diag}
+                        </td>
 
-                    <td className="py-3.5 px-5 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
-                        c.ip_op_type === 'IP' ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                      }`}>
-                        {c.ip_op_type}
-                      </span>
-                    </td>
+                        <td className="py-3 px-5 font-mono text-slate-800 dark:text-slate-200 font-bold whitespace-nowrap">
+                          {c.date_of_admission}
+                        </td>
 
-                    <td className="py-3.5 px-5 font-mono text-slate-800 dark:text-slate-200 font-bold whitespace-nowrap">
-                      {c.date_of_admission}
-                    </td>
+                        <td className="py-3 px-5 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            c.status === 'Submitted' || c.status === 'Approved'
+                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                              : c.status === 'Returned'
+                              ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                              : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                          }`}>
+                            {c.status}
+                          </span>
+                        </td>
 
-                    <td className="py-3.5 px-5 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        c.status === 'Submitted'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                      }`}>
-                        {c.status}
-                      </span>
-                    </td>
-
-                    {/* CLINICAL DOCUMENTATION MODULE BUTTONS COLUMN */}
-                    <td className="py-3.5 px-5 relative whitespace-nowrap">
-                      <div className="flex items-center gap-1 relative">
-                        {activeCaseNotifyId === c.id && (
-                          <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="bottom-right" />
-                        )}
-
-                        {/* Open Patient Profile */}
-                        <button
-                          onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
-                          className="px-2 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
-                          title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
-                        >
-                          {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
-                          <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Profile</span>
-                        </button>
-
-                        {/* Open Patient Counselling */}
-                        <button
-                          onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
-                          className="px-2 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
-                          title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
-                        >
-                          {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
-                          <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                          <span>Counselling</span>
-                        </button>
-
-                        {/* Open Pharmacist Intervention */}
-                        <button
-                          onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
-                          className="px-2 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
-                          title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
-                        >
-                          {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
-                          <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                          <span>Intervention</span>
-                        </button>
-
-                        {/* Open Drug Information Request */}
-                        <button
-                          onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
-                          className="px-2 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
-                          title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
-                        >
-                          {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
-                          <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                          <span>Drug Info</span>
-                        </button>
-
-                        {/* Open ADR Documentation */}
-                        <button
-                          onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
-                          className="px-2 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
-                          title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
-                        >
-                          {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>ADR Log</span>
-                        </button>
-                      </div>
-                    </td>
-
-                    {/* CASE-LEVEL ACTIONS COLUMN */}
-                    <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center justify-end gap-1">
-                        {/* Open Details Modal */}
-                        <button
-                          onClick={() => {
-                            setSelectedCase(c);
-                            setIsViewModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                          title="View Clinical Case"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-
-                        {/* Approved PDF button (only if Approved) */}
-                        {(c.status === 'Approved' || c.overall_case_status === 'Approved') && (
-                          <button
-                            onClick={() => setSelectedCaseForPDF(c)}
-                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
-                            title="Download Approved Official PDF"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Approved PDF</span>
-                          </button>
-                        )}
-
-                        {/* Edit / Submit / Delete (only if Draft or Returned) */}
-                        {(c.status === 'Draft' || c.status === 'Returned') && (
-                          <>
+                        {/* ROW 1 ACTIONS (View, Edit, Delete, Approved PDF) */}
+                        <td className="py-3 px-5 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            {/* Open Details Modal */}
                             <button
-                              onClick={() => handleOpenEditModal(c)}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
-                              title="Edit Case Details"
+                              onClick={() => {
+                                setSelectedCase(c);
+                                setIsViewModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              title="View Clinical Case"
                             >
-                              <Edit3 className="w-4 h-4" />
+                              <Eye className="w-4 h-4" />
                             </button>
 
-                            <button
-                              onClick={() => handleSubmitCase(c)}
-                              className="p-1.5 rounded-xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition-colors font-bold"
-                              title="Submit Clinical Case"
-                            >
-                              <Send className="w-4 h-4" />
-                            </button>
+                            {/* Approved PDF button (only if Approved) */}
+                            {(c.status === 'Approved' || c.overall_case_status === 'Approved') && (
+                              <button
+                                onClick={() => setSelectedCaseForPDF(c)}
+                                className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                                title="Download Approved Official PDF"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Approved PDF</span>
+                              </button>
+                            )}
 
-                            <button
-                              onClick={() => setCaseToDelete(c)}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
-                              title="Delete Case"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                            {/* Edit & Delete (only if Draft or Returned) */}
+                            {(c.status === 'Draft' || c.status === 'Returned') && (
+                              <>
+                                <button
+                                  onClick={() => handleOpenEditModal(c)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors"
+                                  title="Edit Case Details"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  onClick={() => setCaseToDelete(c)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
+                                  title="Delete Case"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* ROW 2 — CLINICAL DOCUMENTATION */}
+                      <tr className="bg-slate-50/70 dark:bg-slate-800/40 border-b-2 border-slate-200/80 dark:border-slate-800">
+                        <td colSpan={6} className="px-5 py-2.5 relative">
+                          {activeCaseNotifyId === c.id && (
+                            <InlineActionNotification notification={actionNotify} onClose={clearActionNotify} position="bottom-right" />
+                          )}
+
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1">
+                                Clinical Documentation:
+                              </span>
+
+                              {/* Open Patient Profile */}
+                              <button
+                                onClick={(e) => handleTriggerAction(e, onOpenPatientProfile, c, 'Patient Profile')}
+                                className="px-2 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 transition-all"
+                                title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
+                              >
+                                {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
+                                <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>Profile</span>
+                              </button>
+
+                              {/* Open Patient Counselling */}
+                              <button
+                                onClick={(e) => handleTriggerAction(e, onOpenPatientCounselling, c, 'Patient Counselling')}
+                                className="px-2 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5 transition-all"
+                                title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
+                              >
+                                {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
+                                <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                                <span>Counselling</span>
+                              </button>
+
+                              {/* Open Pharmacist Intervention */}
+                              <button
+                                onClick={(e) => handleTriggerAction(e, onOpenPharmacistIntervention, c, 'Pharmacist Intervention')}
+                                className="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5 transition-all"
+                                title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
+                              >
+                                {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
+                                <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                <span>Intervention</span>
+                              </button>
+
+                              {/* Open Drug Information Request */}
+                              <button
+                                onClick={(e) => handleTriggerAction(e, onOpenDrugInformationRequest, c, 'Drug Information Request')}
+                                className="px-2 py-1 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5 transition-all"
+                                title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
+                              >
+                                {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
+                                <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                                <span>Drug Info</span>
+                              </button>
+
+                              {/* Open ADR Documentation */}
+                              <button
+                                onClick={(e) => handleTriggerAction(e, onOpenADRDocumentation, c, 'ADR Documentation')}
+                                className="px-2 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all"
+                                title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
+                              >
+                                {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                <span>ADR Log</span>
+                              </button>
+                            </div>
+
+                            {/* SUBMIT ACTION (aligned right) */}
+                            {(c.status === 'Draft' || c.status === 'Returned') && (
+                              <button
+                                onClick={() => handleSubmitCase(c)}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] flex items-center gap-1.5 shadow-xs transition-all"
+                                title="Submit Clinical Case"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Submit Case</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

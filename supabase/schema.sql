@@ -452,14 +452,18 @@ BEGIN
     -- Current Year
     v_year := to_char(CURRENT_DATE, 'YYYY');
 
-    -- Concurrency handling loop (max 5 retries)
-    WHILE NOT v_inserted AND v_retries < 5 LOOP
-        BEGIN
-            -- Get next running case number for this student
-            SELECT COALESCE(MAX(case_number), 0) + 1 INTO v_case_number 
-            FROM public.clinical_cases 
-            WHERE student_id = p_student_id;
+    -- Get next running case number for this student using max of case_number or count
+    SELECT COALESCE(
+        GREATEST(
+            MAX(case_number),
+            COUNT(*)
+        ), 0) + 1 INTO v_case_number 
+    FROM public.clinical_cases 
+    WHERE student_id = p_student_id;
 
+    -- Concurrency handling loop (max 15 retries)
+    WHILE NOT v_inserted AND v_retries < 15 LOOP
+        BEGIN
             -- Format Case ID: e.g. AMRMCP-2026-Y22PHD0314-0001
             v_case_id := v_college_code || '-' || v_year || '-' || COALESCE(v_roll_number, 'UNKNOWN') || '-' || lpad(v_case_number::text, 4, '0');
 
@@ -498,6 +502,7 @@ BEGIN
 
             v_inserted := TRUE;
         EXCEPTION WHEN unique_violation THEN
+            v_case_number := v_case_number + 1;
             v_retries := v_retries + 1;
         END;
     END LOOP;

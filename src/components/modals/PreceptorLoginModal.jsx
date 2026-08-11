@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { authenticatePreceptorInSupabase } from '../../services/supabaseService';
-import { Eye, EyeOff, LogIn, AlertTriangle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
 import { LogoPreviewModal } from './LogoPreviewModal';
 import { LoginHeader } from './LoginHeader';
 

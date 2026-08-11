@@ -1020,6 +1020,34 @@ export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) =>
 
 export const deleteClinicalCaseFromSupabase = async (caseRecordId) => {
   try {
+    if (!caseRecordId) return { success: false, error: 'Invalid Case ID' };
+
+    // Fetch profile id if exists to clean up labs and drugs
+    const { data: profile } = await supabase
+      .from('patient_profiles')
+      .select('id')
+      .eq('clinical_case_id', caseRecordId)
+      .maybeSingle();
+
+    if (profile?.id) {
+      await Promise.all([
+        supabase.from('patient_lab_investigations').delete().eq('patient_profile_id', profile.id),
+        supabase.from('patient_prescribed_drugs').delete().eq('patient_profile_id', profile.id)
+      ]);
+    }
+
+    // Cascade delete across all child module tables
+    await Promise.all([
+      supabase.from('patient_profiles').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('patient_counselling').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('pharmacist_interventions').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('drug_information_requests').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('adr_reports').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('workflow_notifications').delete().eq('clinical_case_id', caseRecordId),
+      supabase.from('clinical_case_review_history').delete().eq('clinical_case_id', caseRecordId)
+    ]);
+
+    // Finally delete from clinical_cases table
     const { error } = await supabase.from('clinical_cases').delete().eq('id', caseRecordId);
     if (error) return { success: false, error: error.message };
     return { success: true };

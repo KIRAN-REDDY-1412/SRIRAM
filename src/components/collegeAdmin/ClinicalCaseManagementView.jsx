@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Search, Filter, Eye, Download, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, CheckCircle2, Clock, RotateCcw, Building2, User, GraduationCap } from 'lucide-react';
-import { fetchAllCollegeClinicalCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
+import { ClipboardList, Search, Filter, Eye, Download, ChevronLeft, ChevronRight, Loader2, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, CheckCircle2, Clock, RotateCcw, Building2, User, GraduationCap, Trash2 } from 'lucide-react';
+import { fetchAllCollegeClinicalCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
@@ -13,6 +13,8 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
+  const [caseToDelete, setCaseToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -195,56 +197,43 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3.5 px-5">Case ID</th>
-                  <th className="py-3.5 px-5">Student Name</th>
-                  <th className="py-3.5 px-5">Roll Number</th>
-                  <th className="py-3.5 px-5">Assigned Preceptor</th>
-                  <th className="py-3.5 px-5">Hospital</th>
-                  <th className="py-3.5 px-5">Department</th>
-                  <th className="py-3.5 px-5">Admission Date</th>
-                  <th className="py-3.5 px-5">Overall Status</th>
-                  <th className="py-3.5 px-5">Clinical Documentation</th>
-                  <th className="py-3.5 px-5 text-right">Actions</th>
+                  <th className="py-3.5 px-4">Case ID</th>
+                  <th className="py-3.5 px-4">Student Name</th>
+                  <th className="py-3.5 px-4">Roll Number</th>
+                  <th className="py-3.5 px-4">Final Diagnosis</th>
+                  <th className="py-3.5 px-4">Submission Date</th>
+                  <th className="py-3.5 px-4">Current Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {paginatedCases.map((c) => {
                   const student = c.students || {};
-                  const preceptor = c.preceptors || {};
                   const isApproved = c.status === 'Approved' || c.overall_case_status === 'Approved';
 
                   return (
                     <tr key={c.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                      <td className="py-3.5 px-5 font-mono font-extrabold text-slate-900 dark:text-white whitespace-nowrap">
-                        {c.case_id}
+                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-600 dark:text-cyan-400">
+                        {c.case_id || `#${c.id?.substring(0, 8)}`}
                       </td>
 
-                      <td className="py-3.5 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                        {student.full_name || '—'}
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                        {student.full_name || c.student_name || '—'}
                       </td>
 
-                      <td className="py-3.5 px-5 font-mono font-bold text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
-                        {student.roll_number || '—'}
+                      <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-400">
+                        {student.roll_number || c.roll_number || '—'}
                       </td>
 
-                      <td className="py-3.5 px-5 font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                        {preceptor.full_name || c.assigned_preceptor_name || 'Unassigned'}
+                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-semibold max-w-[220px] truncate" title={c.final_diagnosis || moduleStatuses[c.id]?.finalDiagnosis || '—'}>
+                        {c.final_diagnosis || moduleStatuses[c.id]?.finalDiagnosis || '—'}
                       </td>
 
-                      <td className="py-3.5 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                        {c.hospital_name}
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                        {c.submitted_at ? new Date(c.submitted_at).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '—')}
                       </td>
 
-                      <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        <span className="font-bold text-slate-900 dark:text-white uppercase block tracking-wide">{c.department}</span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">Unit : {c.ward_unit}</span>
-                      </td>
-
-                      <td className="py-3.5 px-5 font-mono text-slate-800 dark:text-slate-200 font-bold whitespace-nowrap">
-                        {c.date_of_admission}
-                      </td>
-
-                      <td className="py-3.5 px-5 whitespace-nowrap">
+                      <td className="py-3.5 px-4">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                           isApproved
                             ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
@@ -258,62 +247,36 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
                         </span>
                       </td>
 
-                      {/* CLINICAL DOCUMENTATION MODULE BUTTONS COLUMN */}
-                      <td className="py-3.5 px-5 whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <span className="px-2 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5" title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}>
-                            {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
-                            <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Profile</span>
-                          </span>
-
-                          <span className="px-2 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-[10px] font-extrabold border border-teal-200 dark:border-teal-800 flex items-center gap-1.5" title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}>
-                            {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
-                            <HeartHandshake className="w-3.5 h-3.5 text-teal-600" />
-                            <span>Counselling</span>
-                          </span>
-
-                          <span className="px-2 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-extrabold border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5" title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}>
-                            {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
-                            <ShieldAlert className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>Intervention</span>
-                          </span>
-
-                          <span className="px-2 py-1 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 text-[10px] font-extrabold border border-cyan-200 dark:border-cyan-800 flex items-center gap-1.5" title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}>
-                            {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
-                            <FileSearch className="w-3.5 h-3.5 text-cyan-600" />
-                            <span>Drug Info</span>
-                          </span>
-
-                          <span className="px-2 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold border border-amber-200 dark:border-amber-800 flex items-center gap-1.5" title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}>
-                            {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                            <span>ADR Log</span>
-                          </span>
-                        </div>
-                      </td>
-
                       {/* ACTIONS COLUMN */}
-                      <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedCaseForView(c)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            title="View Clinical Case (Read Only)"
+                            className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+                            title="View Clinical Case Details"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View Case</span>
                           </button>
 
                           {isApproved && (
                             <button
                               onClick={() => setSelectedCaseForPDF(c)}
-                              className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 transition-all"
                               title="Download Approved Official PDF"
                             >
                               <Download className="w-3.5 h-3.5" />
-                              <span>Approved PDF</span>
+                              <span className="hidden sm:inline">PDF</span>
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setCaseToDelete(c)}
+                            className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:hover:bg-rose-900 dark:text-rose-400 border border-rose-200 dark:border-rose-800 transition-all"
+                            title="Permanently Delete Clinical Case"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -423,6 +386,58 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
           preceptor={selectedCaseForPDF.preceptors}
           college={college}
         />
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {caseToDelete && (
+        <ModalWrapper
+          isOpen={Boolean(caseToDelete)}
+          onClose={() => setCaseToDelete(null)}
+          title={`Delete Clinical Case ${caseToDelete.case_id}`}
+          subtitle="Permanent Database Deletion"
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4 text-xs">
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold text-sm mb-0.5">Warning: Irreversible Action</strong>
+                Are you sure you want to permanently delete Clinical Case <strong>{caseToDelete.case_id}</strong>? This will permanently erase all patient profiles, counselling records, interventions, drug queries, and ADR reports from the database.
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setCaseToDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  const res = await deleteClinicalCaseFromSupabase(caseToDelete.id);
+                  setDeleting(false);
+                  if (res.success) {
+                    setCaseToDelete(null);
+                    loadCollegeCases();
+                  } else {
+                    alert(res.error || 'Failed to delete clinical case.');
+                  }
+                }}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>{deleting ? 'Deleting...' : 'Delete Case'}</span>
+              </button>
+            </div>
+          </div>
+        </ModalWrapper>
       )}
     </div>
   );

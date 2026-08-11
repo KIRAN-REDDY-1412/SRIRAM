@@ -5,13 +5,25 @@ import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsel
 import { PharmacistInterventionFormView } from '../pharmacistIntervention/PharmacistInterventionFormView';
 import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
-import { approveClinicalCaseByPreceptorFromSupabase, returnClinicalCaseByPreceptorFromSupabase } from '../../services/supabaseService';
+import { approveClinicalCaseByPreceptorFromSupabase, returnClinicalCaseByPreceptorFromSupabase, fetchCaseModuleStatusesMapFromSupabase } from '../../services/supabaseService';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 
 export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBack, onReviewComplete }) => {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'counselling' | 'intervention' | 'dir' | 'adr'
   const [submitting, setSubmitting] = useState(false);
+  const [modStatus, setModStatus] = useState({});
+
+  useEffect(() => {
+    const loadModuleStatuses = async () => {
+      if (!clinicalCase?.id) return;
+      const res = await fetchCaseModuleStatusesMapFromSupabase([clinicalCase.id]);
+      if (res.success && res.statusesMap?.[clinicalCase.id]) {
+        setModStatus(res.statusesMap[clinicalCase.id]);
+      }
+    };
+    loadModuleStatuses();
+  }, [clinicalCase?.id]);
 
   // Return checkboxes selection
   const [returnedForms, setReturnedForms] = useState({
@@ -89,6 +101,36 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
 
   // Detect if this case was previously returned and is now resubmitted
   const isResubmission = clinicalCase?.returned_at && (clinicalCase?.status === 'Submitted' || clinicalCase?.status === 'Under Review');
+
+  const renderStatusBadge = (statusStr) => {
+    if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+          Not Added
+        </span>
+      );
+    }
+    if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved') {
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500 text-white flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          Completed
+        </span>
+      );
+    }
+    if (statusStr === 'Returned') {
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-rose-500 text-white">
+          Returned
+        </span>
+      );
+    }
+    return (
+      <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-400 text-slate-900">
+        {statusStr}
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -211,7 +253,6 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           </div>
         </div>
       </div>
-
       {/* MODULE TABS NAVIGATION */}
       <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-x-auto shadow-xs">
         <button
@@ -224,6 +265,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         >
           <Stethoscope className="w-4 h-4" />
           <span>Patient Profile</span>
+          {renderStatusBadge(modStatus.profileStatus)}
         </button>
 
         <button
@@ -236,6 +278,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         >
           <HeartHandshake className="w-4 h-4" />
           <span>Patient Counselling</span>
+          {renderStatusBadge(modStatus.counsellingStatus)}
         </button>
 
         <button
@@ -248,6 +291,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         >
           <ShieldAlert className="w-4 h-4" />
           <span>Pharmacist Intervention</span>
+          {renderStatusBadge(modStatus.interventionStatus)}
         </button>
 
         <button
@@ -260,6 +304,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         >
           <FileSearch className="w-4 h-4" />
           <span>Drug Information Request</span>
+          {renderStatusBadge(modStatus.dirStatus)}
         </button>
 
         <button
@@ -272,6 +317,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         >
           <AlertTriangle className="w-4 h-4" />
           <span>ADR Documentation</span>
+          {renderStatusBadge(modStatus.adrStatus)}
         </button>
       </div>
 

@@ -7,6 +7,7 @@ import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clin
 export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [caseId, setCaseId] = useState('');
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const rawConfiguredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || 'Lalitha Super Specialities Hospital';
   
@@ -31,6 +32,17 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   };
 
   const hospitalOptions = getUniqueHospitals([rawConfiguredHospital, 'Lalitha Super Specialities Hospital']);
+
+  const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || 'Lalitha Super Specialities Hospital');
+  const [department, setDepartment] = useState('');
+  const [wardUnit, setWardUnit] = useState('');
+  const [ipOpType, setIpOpType] = useState('In-Patient (IP)');
+  const [dateOfAdmission, setDateOfAdmission] = useState(new Date().toISOString().split('T')[0]);
+  const [finalDiagnosis, setFinalDiagnosis] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     const initializeForm = async () => {

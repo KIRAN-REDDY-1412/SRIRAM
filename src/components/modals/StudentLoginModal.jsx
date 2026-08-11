@@ -12,13 +12,12 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
   const [errorMsg, setErrorMsg] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [successMsg, setSuccessMsg] = useState('');
   const [showLogoModal, setShowLogoModal] = useState(false);
 
   const collegeName = initialCollege?.name || initialCollege?.college_name || 'Pharmacy College';
 
   if (!isOpen) return null;
-
-  const [successMsg, setSuccessMsg] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

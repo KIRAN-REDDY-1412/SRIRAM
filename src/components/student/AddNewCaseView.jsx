@@ -36,7 +36,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || 'Lalitha Super Specialities Hospital');
   const [department, setDepartment] = useState('');
   const [wardUnit, setWardUnit] = useState('');
-  const [ipOpType, setIpOpType] = useState('In-Patient (IP)');
+  const [ipOpType, setIpOpType] = useState('IP');
   const [dateOfAdmission, setDateOfAdmission] = useState(new Date().toISOString().split('T')[0]);
   const [finalDiagnosis, setFinalDiagnosis] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});

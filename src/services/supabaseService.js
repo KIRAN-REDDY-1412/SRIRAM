@@ -732,6 +732,8 @@ export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => 
 
 export const insertClinicalCaseToSupabase = async (casePayload) => {
   try {
+    const sanitizedIpOp = (casePayload.ipOpType || 'IP').includes('OP') ? 'OP' : 'IP';
+
     // 1. Try calling the Supabase RPC first (concurrency-safe)
     const { data, error } = await supabase.rpc('create_clinical_case', {
       p_student_id: casePayload.studentId,
@@ -740,7 +742,7 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
       p_hospital_name: casePayload.hospitalName,
       p_department: casePayload.department,
       p_ward_unit: casePayload.wardUnit,
-      p_ip_op_type: casePayload.ipOpType,
+      p_ip_op_type: sanitizedIpOp,
       p_date_of_admission: casePayload.dateOfAdmission,
       p_academic_year: casePayload.academicYear || '2026–2027',
       p_status: casePayload.status || 'Draft',
@@ -780,7 +782,8 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
         data: {
           id: data.id,
           case_id: data.case_id,
-          ...casePayload
+          ...casePayload,
+          ipOpType: sanitizedIpOp
         } 
       };
     }
@@ -842,7 +845,7 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
           hospital_name: casePayload.hospitalName,
           department: casePayload.department,
           ward_unit: casePayload.wardUnit,
-          ip_op_type: casePayload.ipOpType,
+          ip_op_type: sanitizedIpOp,
           date_of_admission: casePayload.dateOfAdmission,
           date_of_collection: casePayload.dateOfAdmission,
           academic_year: casePayload.academicYear || '2026–2027',

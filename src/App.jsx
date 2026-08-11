@@ -50,29 +50,34 @@ export default function App() {
   const [loggedPreceptor, setLoggedPreceptor] = useState(null);
   const [loggedStudent, setLoggedStudent] = useState(null);
 
+  // Helper to safely set/delete custom headers on supabase.rest
+  const setSupabaseCustomHeader = (key, val) => {
+    try {
+      if (supabase?.rest?.headers) {
+        if (typeof supabase.rest.headers.set === 'function') {
+          if (val) supabase.rest.headers.set(key, val);
+          else if (typeof supabase.rest.headers.delete === 'function') supabase.rest.headers.delete(key);
+        } else if (typeof supabase.rest.headers === 'object') {
+          if (val) supabase.rest.headers[key] = val;
+          else delete supabase.rest.headers[key];
+        }
+      }
+    } catch (e) {
+      console.warn(`[Supabase Header Warning] Could not update header ${key}:`, e);
+    }
+  };
+
   // Set custom RLS headers on supabase client based on logged-in user
   useEffect(() => {
-    if (loggedStudent) {
-      supabase.rest.headers.set('x-student-id', loggedStudent.id);
-    } else {
-      supabase.rest.headers.delete('x-student-id');
-    }
+    setSupabaseCustomHeader('x-student-id', loggedStudent?.id);
   }, [loggedStudent]);
 
   useEffect(() => {
-    if (loggedPreceptor) {
-      supabase.rest.headers.set('x-preceptor-id', loggedPreceptor.id);
-    } else {
-      supabase.rest.headers.delete('x-preceptor-id');
-    }
+    setSupabaseCustomHeader('x-preceptor-id', loggedPreceptor?.id);
   }, [loggedPreceptor]);
 
   useEffect(() => {
-    if (loggedCollegeAdmin) {
-      supabase.rest.headers.set('x-college-id', loggedCollegeAdmin.id);
-    } else {
-      supabase.rest.headers.delete('x-college-id');
-    }
+    setSupabaseCustomHeader('x-college-id', loggedCollegeAdmin?.id);
   }, [loggedCollegeAdmin]);
 
   // Helper to normalize college object fields (handling both snake_case from DB and camelCase from frontend)

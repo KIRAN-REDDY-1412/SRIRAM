@@ -249,9 +249,7 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                   <th className="py-3.5 px-4">Case ID</th>
                   <th className="py-3.5 px-4">Student Name</th>
                   <th className="py-3.5 px-4">Roll Number</th>
-                  <th className="py-3.5 px-4">Hospital</th>
-                  <th className="py-3.5 px-4">Department</th>
-                  <th className="py-3.5 px-4">Admission Type</th>
+                  <th className="py-3.5 px-4">Final Diagnosis</th>
                   <th className="py-3.5 px-4">Submission Date</th>
                   <th className="py-3.5 px-4">Current Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -274,16 +272,8 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
                       <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-400">
                         {student.roll_number || c.roll_number || '—'}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
-                        {c.hospital_name || 'General Hospital'}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                        {c.department || 'General Medicine'}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {c.admission_type || 'IP'}
-                        </span>
+                      <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-semibold max-w-[220px] truncate" title={c.final_diagnosis || moduleStatuses[c.id]?.finalDiagnosis || '—'}>
+                        {c.final_diagnosis || moduleStatuses[c.id]?.finalDiagnosis || '—'}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                         {c.submitted_at ? new Date(c.submitted_at).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '—')}

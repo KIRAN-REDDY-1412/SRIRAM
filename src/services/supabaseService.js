@@ -743,7 +743,8 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
       p_ip_op_type: casePayload.ipOpType,
       p_date_of_admission: casePayload.dateOfAdmission,
       p_academic_year: casePayload.academicYear || '2026–2027',
-      p_status: casePayload.status || 'Draft'
+      p_status: casePayload.status || 'Draft',
+      p_final_diagnosis: casePayload.finalDiagnosis || null
     });
 
     if (!error && data && data.success) {
@@ -845,7 +846,8 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
           date_of_admission: casePayload.dateOfAdmission,
           date_of_collection: casePayload.dateOfAdmission,
           academic_year: casePayload.academicYear || '2026–2027',
-          status: casePayload.status || 'Draft'
+          status: casePayload.status || 'Draft',
+          final_diagnosis: casePayload.finalDiagnosis || null
         }])
         .select();
 
@@ -968,7 +970,8 @@ export const updateClinicalCaseInSupabase = async (caseRecordId, casePayload) =>
         ip_op_type: casePayload.ipOpType,
         date_of_admission: casePayload.dateOfAdmission,
         date_of_collection: casePayload.dateOfCollection,
-        status: casePayload.status || 'Draft'
+        status: casePayload.status || 'Draft',
+        final_diagnosis: casePayload.finalDiagnosis || null
       })
       .eq('id', caseRecordId)
       .select();

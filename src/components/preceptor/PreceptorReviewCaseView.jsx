@@ -143,7 +143,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         </div>
 
         {/* STUDENT INFO HIGHLIGHT */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs pt-1">
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Candidate Student</span>
             <strong className="text-slate-900 dark:text-white font-bold">{student?.full_name}</strong>
@@ -153,12 +153,16 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
             <strong className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{student?.roll_number}</strong>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Batch / Year</span>
-            <strong className="text-slate-800 dark:text-slate-200 font-bold">{student?.year} • Batch {student?.batch}</strong>
-          </div>
-          <div>
             <span className="text-[10px] uppercase font-bold text-slate-400 block">Admission Date</span>
             <strong className="font-mono text-slate-800 dark:text-slate-200 font-bold">{clinicalCase.date_of_admission}</strong>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Final Diagnosis</span>
+            <strong className="text-slate-800 dark:text-slate-200 font-bold truncate block" title={clinicalCase.final_diagnosis}>{clinicalCase.final_diagnosis || '—'}</strong>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Batch / Year</span>
+            <strong className="text-slate-800 dark:text-slate-200 font-bold">{student?.year} • Batch {student?.batch}</strong>
           </div>
         </div>
       </div>

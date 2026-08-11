@@ -314,7 +314,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               </thead>
               <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800">
                 {paginatedCases.map((c) => {
-                  const diag = moduleStatuses[c.id]?.finalDiagnosis || c.final_diagnosis || '—';
+                  const diag = c.final_diagnosis || moduleStatuses[c.id]?.finalDiagnosis || '—';
                   return (
                     <React.Fragment key={c.id}>
                       {/* ROW 1 — CASE DETAILS */}
@@ -556,7 +556,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-400">Final Diagnosis:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{moduleStatuses[selectedCase.id]?.finalDiagnosis || selectedCase.final_diagnosis || '—'}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedCase.final_diagnosis || moduleStatuses[selectedCase.id]?.finalDiagnosis || '—'}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Status:</span>

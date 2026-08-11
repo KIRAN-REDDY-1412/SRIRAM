@@ -211,7 +211,7 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
           setGender(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
           setWeight(p.weight || '');
           setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
-          setPrimaryDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
+          setPrimaryDiagnosis(p.final_diagnosis || p.provisional_diagnosis || clinicalCase?.final_diagnosis || '');
           setDrugAllergyHistory(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
           setPregnancyLactationStatus(p.pregnancy_status || p.pregnancy_lactation_status || 'Not Applicable');
           setRenalStatus(p.renal_status || 'Normal');

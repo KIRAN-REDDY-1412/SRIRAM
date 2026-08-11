@@ -221,7 +221,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <div>Patient: <strong>{profile.patient_name || '—'}</strong></div>
                         <div>Age / Gender: <strong>{profile.age} / {profile.gender}</strong></div>
                         <div>IP/OP No: <strong>{profile.ip_no || profile.ip_op_number || '—'}</strong></div>
-                        <div className="col-span-3">Diagnosis: <strong>{profile.provisional_diagnosis || profile.final_diagnosis || 'Not specified'}</strong></div>
+                        <div className="col-span-3">Diagnosis: <strong>{profile.final_diagnosis || profile.provisional_diagnosis || clinicalCase?.final_diagnosis || 'Not specified'}</strong></div>
                       </div>
                     </div>
                   )}

@@ -125,6 +125,7 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
         setSex(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
         setUnitWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
         setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
+        setDiseaseCounselled(prev => prev || p.final_diagnosis || p.provisional_diagnosis || clinicalCase?.final_diagnosis || '');
       }
 
       if (counsellingRes.success && counsellingRes.counselling) {

@@ -107,7 +107,7 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
         setSex(p.gender === 'Female' ? 'F' : p.gender === 'Male' ? 'M' : p.gender || 'M');
         setIpOpNo(p.ip_no || p.ip_op_number || '');
         setWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
-        setPresentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
+        setPresentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || clinicalCase?.final_diagnosis || '');
         setPhysician(p.physician || p.attending_physician || '');
         setDoa(p.doa || p.date_of_admission || '');
         setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));

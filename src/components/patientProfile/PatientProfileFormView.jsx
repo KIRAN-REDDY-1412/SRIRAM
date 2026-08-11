@@ -256,7 +256,7 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
 
         if (p.vital_signs && p.vital_signs.length > 0) setVitalSigns(p.vital_signs);
         setOtherInvestigations(p.other_investigations || '');
-        setFinalDiagnosis(p.final_diagnosis || '');
+        setFinalDiagnosis(p?.final_diagnosis || clinicalCase?.final_diagnosis || '');
         setDischargeSummary(p.discharge_summary || '');
         setProfileStatus(p.status || 'Draft');
 

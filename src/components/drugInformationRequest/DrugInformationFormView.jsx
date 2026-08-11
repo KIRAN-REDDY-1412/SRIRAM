@@ -176,7 +176,7 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
           setWeightKg(p.weight || '');
           setUnitWard(p.ward || p.ward_unit || clinicalCase.ward_unit || '');
           setAllergies(p.allergies || (p.allergy_drugs || p.allergy_food ? `Drugs: ${p.allergy_drugs || 'None'}, Food: ${p.allergy_food || 'None'}` : 'None'));
-          setCurrentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || '');
+          setCurrentDiagnosis(p.final_diagnosis || p.provisional_diagnosis || clinicalCase?.final_diagnosis || '');
         }
 
         if (dirRes.success && dirRes.request) {

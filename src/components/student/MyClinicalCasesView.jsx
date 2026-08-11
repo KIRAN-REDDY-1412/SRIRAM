@@ -554,67 +554,14 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
                 <span className="text-slate-400">Date of Collection:</span>
                 <span className="font-mono text-slate-800 dark:text-slate-200">{selectedCase.date_of_collection}</span>
               </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-400">Final Diagnosis:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{moduleStatuses[selectedCase.id]?.finalDiagnosis || selectedCase.final_diagnosis || '—'}</span>
+              </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Status:</span>
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedCase.status}</span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  onOpenPatientProfile(selectedCase);
-                }}
-                className="px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
-              >
-                <Stethoscope className="w-3.5 h-3.5" />
-                <span>Profile</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  onOpenPatientCounselling(selectedCase);
-                }}
-                className="px-2.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
-              >
-                <HeartHandshake className="w-3.5 h-3.5" />
-                <span>Counselling</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  onOpenPharmacistIntervention(selectedCase);
-                }}
-                className="px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Intervention</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  onOpenDrugInformationRequest && onOpenDrugInformationRequest(selectedCase);
-                }}
-                className="px-2.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
-              >
-                <FileSearch className="w-3.5 h-3.5" />
-                <span>Drug Info</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  onOpenADRDocumentation && onOpenADRDocumentation(selectedCase);
-                }}
-                className="col-span-2 px-2.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] flex items-center justify-center gap-1"
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>ADR Documentation Wizard</span>
-              </button>
             </div>
           </div>
         </ModalWrapper>
@@ -663,30 +610,16 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">IP/OP Category</label>
-                <select
-                  value={editFormData.ipOpType}
-                  onChange={(e) => setEditFormData({ ...editFormData, ipOpType: e.target.value })}
-                  className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
-                >
-                  <option value="IP">IP</option>
-                  <option value="OP">OP</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Status</label>
-                <select
-                  value={editFormData.status}
-                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                  className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold text-amber-600 dark:text-amber-400"
-                >
-                  <option value="Draft">Draft</option>
-                  <option value="Submitted">Submitted</option>
-                </select>
-              </div>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">IP/OP Category</label>
+              <select
+                value={editFormData.ipOpType}
+                onChange={(e) => setEditFormData({ ...editFormData, ipOpType: e.target.value })}
+                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+              >
+                <option value="IP">In-Patient (IP)</option>
+                <option value="OP">Out-Patient (OP)</option>
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

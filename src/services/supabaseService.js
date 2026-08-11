@@ -747,6 +747,33 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
     });
 
     if (!error && data && data.success) {
+      if (casePayload.finalDiagnosis && data.id) {
+        try {
+          const { data: existingProf } = await supabase
+            .from('patient_profiles')
+            .select('id')
+            .eq('clinical_case_id', data.id)
+            .maybeSingle();
+
+          if (existingProf) {
+            await supabase
+              .from('patient_profiles')
+              .update({ final_diagnosis: casePayload.finalDiagnosis })
+              .eq('id', existingProf.id);
+          } else {
+            await supabase
+              .from('patient_profiles')
+              .insert([{
+                clinical_case_id: data.id,
+                final_diagnosis: casePayload.finalDiagnosis,
+                status: 'Draft'
+              }]);
+          }
+        } catch (e) {
+          console.warn('Could not save finalDiagnosis to patient_profiles:', e);
+        }
+      }
+
       return { 
         success: true, 
         data: {

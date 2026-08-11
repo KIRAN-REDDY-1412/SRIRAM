@@ -2200,27 +2200,33 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
 
 export const fetchAllCollegeClinicalCasesFromSupabase = async (collegeId) => {
   try {
-    const { data, error } = await supabase
-      .from('clinical_cases')
-      .select(`
-        *,
-        students!fk_clinical_cases_student(*),
-        preceptors!fk_clinical_cases_preceptor(*)
-      `)
-      .eq('college_id', collegeId)
-      .order('created_at', { ascending: false });
+    if (!collegeId) return { success: true, data: [] };
 
-    if (error) {
-      const { data: simpleData } = await supabase
-        .from('clinical_cases')
-        .select('*')
-        .eq('college_id', collegeId)
-        .order('created_at', { ascending: false });
+    // Fetch cases and college students in parallel to guarantee student full_name & roll_number
+    const [casesRes, studentsRes] = await Promise.all([
+      supabase.from('clinical_cases').select('*').eq('college_id', collegeId).order('created_at', { ascending: false }),
+      supabase.from('students').select('*').eq('college_id', collegeId)
+    ]);
 
-      return { success: true, data: simpleData || [] };
-    }
+    const rawCases = casesRes.data || [];
+    const studentList = studentsRes.data || [];
+    const studentMap = new Map(studentList.map(s => [s.id, s]));
 
-    return { success: true, data: data || [] };
+    const mergedCases = rawCases.map(c => {
+      const studentObj = studentMap.get(c.student_id) || {};
+      return {
+        ...c,
+        students: {
+          ...studentObj,
+          full_name: studentObj.full_name || c.student_name || 'Student Candidate',
+          roll_number: studentObj.roll_number || c.roll_number || '—',
+          batch: studentObj.batch || c.batch || '',
+          academic_year: studentObj.academic_year || c.academic_year || ''
+        }
+      };
+    });
+
+    return { success: true, data: mergedCases };
   } catch (err) {
     return { success: false, data: [], error: err.message };
   }

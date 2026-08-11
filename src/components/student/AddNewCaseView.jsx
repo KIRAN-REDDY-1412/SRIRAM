@@ -55,6 +55,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     if (!department.trim()) errors.department = 'Please select Department.';
     if (!wardUnit.trim()) errors.wardUnit = 'Please select Ward / Unit.';
     if (!dateOfAdmission) errors.dateOfAdmission = 'Date of admission is required.';
+    if (!finalDiagnosis.trim()) errors.finalDiagnosis = 'Final diagnosis is required.';
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -247,7 +248,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               </select>
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Date of Admission *
               </label>
@@ -270,17 +271,28 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
               )}
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Final Diagnosis
+                Final Diagnosis *
               </label>
               <input
                 type="text"
+                required
                 value={finalDiagnosis}
-                onChange={(e) => setFinalDiagnosis(e.target.value)}
-                placeholder="Enter patient's primary / final diagnosis (e.g. Type 2 Diabetes Mellitus, Hypertension...)"
-                className="w-full h-[46px] px-3.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/50 focus:outline-none font-medium"
+                onChange={(e) => { setFinalDiagnosis(e.target.value); setFieldErrors(prev => ({ ...prev, finalDiagnosis: '' })); }}
+                placeholder="Enter final diagnosis"
+                className={`w-full h-[46px] px-3.5 text-xs rounded-xl border text-slate-900 dark:text-white focus:ring-2 focus:outline-none font-medium transition-all ${
+                  fieldErrors.finalDiagnosis
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 focus:ring-emerald-500/50'
+                }`}
               />
+              {fieldErrors.finalDiagnosis && (
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>{fieldErrors.finalDiagnosis}</span>
+                </p>
+              )}
             </div>
           </div>
         </div>

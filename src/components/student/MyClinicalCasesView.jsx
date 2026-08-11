@@ -136,6 +136,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
     if (!editFormData.department.trim()) errors.department = 'Department is required.';
     if (!editFormData.wardUnit.trim()) errors.wardUnit = 'Ward/Unit is required.';
     if (!editFormData.dateOfAdmission) errors.dateOfAdmission = 'Date of admission is required.';
+    if (!editFormData.finalDiagnosis.trim()) errors.finalDiagnosis = 'Final diagnosis is required.';
 
     if (Object.keys(errors).length > 0) {
       setEditFieldErrors(errors);
@@ -709,14 +710,25 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis</label>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Final Diagnosis *</label>
               <input
                 type="text"
+                required
                 value={editFormData.finalDiagnosis || ''}
-                onChange={(e) => setEditFormData({ ...editFormData, finalDiagnosis: e.target.value })}
-                placeholder="Patient's primary / final diagnosis"
-                className="w-full h-[44px] px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                onChange={(e) => { setEditFormData({ ...editFormData, finalDiagnosis: e.target.value }); setEditFieldErrors(prev => ({ ...prev, finalDiagnosis: '' })); }}
+                placeholder="Enter final diagnosis"
+                className={`w-full h-[44px] px-3 rounded-xl border text-slate-900 dark:text-white transition-all ${
+                  editFieldErrors.finalDiagnosis
+                    ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 dark:bg-rose-950/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900'
+                }`}
               />
+              {editFieldErrors.finalDiagnosis && (
+                <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" />
+                  <span>{editFieldErrors.finalDiagnosis}</span>
+                </p>
+              )}
             </div>
 
             {/* ACTION FEEDBACK NEAR SAVE BUTTON */}

@@ -137,6 +137,15 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
   const finalCollegeObj = collegeData || college || student?.colleges;
 
+  // Profile data
+  const counsellingDateVal = counselling.counselling_date ? new Date(counselling.counselling_date).toLocaleDateString() : '—';
+  const counsellingModeVal = counselling.patient_type || counselling.counselling_provided_to || 'In patient';
+  const pointsCoveredStr = Array.isArray(counselling.points_covered) ? counselling.points_covered.join(', ') : (counselling.points_covered || 'Prescription instructions & medication compliance');
+
+  const interProblemsStr = Array.isArray(intervention.prescription_problems) ? intervention.prescription_problems.join(', ') : (intervention.description_of_problem || 'Prescription Review');
+  const interActionsStr = Array.isArray(intervention.action_taken) ? intervention.action_taken.join(', ') : (intervention.action_taken_other || 'Communicated to physician');
+  const interRecsStr = Array.isArray(intervention.recommendations) ? intervention.recommendations.join(', ') : (intervention.recommendation_other || 'Dose & therapy optimization');
+
   return (
     <ModalWrapper
       isOpen={isOpen}
@@ -232,7 +241,9 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <div>Physician: <strong>{profile.physician || '—'}</strong></div>
                         {profile.chief_complaints && <div className="col-span-3">Chief Complaints: <strong>{profile.chief_complaints}</strong></div>}
                         {profile.past_medical_history && <div className="col-span-3">Past History: <strong>{profile.past_medical_history}</strong></div>}
+                        {profile.past_medication_history && <div className="col-span-3">Past Medication History: <strong>{profile.past_medication_history}</strong></div>}
                         <div className="col-span-3">Diagnosis: <strong>{profile.final_diagnosis || profile.provisional_diagnosis || clinicalCase?.final_diagnosis || 'Not specified'}</strong></div>
+                        {profile.discharge_summary && <div className="col-span-3">Discharge Summary: <strong>{profile.discharge_summary}</strong></div>}
                       </div>
 
                       {/* LAB INVESTIGATIONS TABLE */}
@@ -322,11 +333,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span className="text-[10px] text-teal-600 font-bold">🟢 Approved</span>
                       </h3>
                       <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-3 rounded-lg branded-border">
-                        <div>Date of Counselling: <strong>{counselling.date_of_counselling || '—'}</strong></div>
-                        <div>Counselling Mode: <strong>{counselling.counselling_provided || 'Oral & Leaflet'}</strong></div>
-                        {counselling.disease_medication_info && <div className="col-span-2">Disease & Medication Info: <strong>{counselling.disease_medication_info}</strong></div>}
-                        {counselling.special_instructions && <div className="col-span-2">Special Instructions: <strong>{counselling.special_instructions}</strong></div>}
-                        {counselling.patient_response && <div className="col-span-2">Patient Response: <strong>{counselling.patient_response}</strong></div>}
+                        <div>Date of Counselling: <strong>{counsellingDateVal}</strong></div>
+                        <div>Counselling Mode / Patient Type: <strong>{counsellingModeVal}</strong></div>
+                        {counselling.disease_counselled && <div className="col-span-2">Disease Counselled: <strong>{counselling.disease_counselled}</strong></div>}
+                        {counselling.medications_counselled && <div className="col-span-2">Medications Counselled: <strong>{counselling.medications_counselled}</strong></div>}
+                        <div className="col-span-2">Key Focus & Points Covered: <strong>{pointsCoveredStr}</strong></div>
+                        {counselling.time_taken && <div>Time Taken: <strong>{counselling.time_taken}</strong></div>}
                       </div>
                     </div>
                   )}
@@ -339,10 +351,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span className="text-[10px] text-indigo-600 font-bold">🟢 Approved</span>
                       </h3>
                       <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
-                        {intervention.category && <div>Category: <strong>{intervention.category}</strong></div>}
-                        <div>Problem Identified: <strong>{intervention.description_of_problem || 'Prescription Review'}</strong></div>
-                        <div>Action & Recommendations: <strong>{intervention.action_taken || intervention.recommendations || 'Communicated to physician'}</strong></div>
-                        {intervention.physician_response && <div>Physician Response: <strong>{intervention.physician_response}</strong></div>}
+                        <div>Problem Identified: <strong>{interProblemsStr}</strong></div>
+                        <div>Action Taken: <strong>{interActionsStr}</strong></div>
+                        <div>Recommendations: <strong>{interRecsStr}</strong></div>
+                        {intervention.outcome && <div>Outcome: <strong>{intervention.outcome}</strong></div>}
                       </div>
                     </div>
                   )}
@@ -356,7 +368,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                       </h3>
                       <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
                         <div>Enquirer Name & Role: <strong>{dir.enquirer_name || 'Clinician'} ({dir.enquirer_category || 'Doctor'})</strong></div>
-                        <div>Enquiry Details: <strong>{dir.details_of_enquiry || 'Drug Query'}</strong></div>
+                        <div>Enquiry Details: <strong>{dir.details_of_enquiry || dir.background_info || 'Drug Query'}</strong></div>
                         <div>Response Summary: <strong>{dir.information_provided || 'Provided via Micromedex / UpToDate'}</strong></div>
                       </div>
                     </div>
@@ -370,9 +382,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                         <span className="text-[10px] text-amber-600 font-bold">🟢 Approved</span>
                       </h3>
                       <div className="text-[11px] bg-slate-50 p-3 rounded-lg space-y-1 branded-border">
-                        <div>Reaction Title: <strong>{adr.reaction_title || 'Suspected ADR'}</strong></div>
-                        <div>Suspected Drug: <strong>{adr.suspected_drug || adr.reaction_description || 'Evaluated'}</strong></div>
-                        {adr.naranjo_score !== undefined && <div>Naranjo Causality Score: <strong>{adr.naranjo_score} ({adr.causality_assessment || 'Possible'})</strong></div>}
+                        <div>Reaction Title: <strong>{adr.reaction_title || adr.reaction_category || 'Suspected ADR'}</strong></div>
+                        <div>Suspected Drug: <strong>{adr.suspected_drug || adr.primary_diagnosis || adr.reaction_description || 'Evaluated'}</strong></div>
+                        {adr.initial_causality_opinion && <div>Initial Causality Opinion: <strong>{adr.initial_causality_opinion}</strong></div>}
+                        {adr.reaction_severity && <div>Severity / Outcome: <strong>{adr.reaction_severity} ({adr.patient_outcome || 'Recovered'})</strong></div>}
                       </div>
                     </div>
                   )}

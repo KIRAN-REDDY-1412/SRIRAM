@@ -18,9 +18,12 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
 
   if (!isOpen) return null;
 
+  const [successMsg, setSuccessMsg] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     const errors = {};
 
     if (!username.trim()) errors.username = 'Email address is required.';
@@ -38,8 +41,12 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
     setLoggingIn(false);
 
     if (res.success && res.preceptor) {
-      if (onLoginSuccess) onLoginSuccess(res.preceptor);
-      if (onClose) onClose();
+      setSuccessMsg('✅ Login successful! Redirecting to Preceptor Portal...');
+      setTimeout(() => {
+        setSuccessMsg('');
+        if (onLoginSuccess) onLoginSuccess(res.preceptor);
+        if (onClose) onClose();
+      }, 1000);
     } else {
       setErrorMsg(res.error || 'Invalid Email or Password.');
     }
@@ -149,11 +156,18 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
             )}
           </div>
 
-          {/* ACTION ERROR NEAR LOGIN BUTTON */}
+          {/* ACTION ERROR / SUCCESS NEAR LOGIN BUTTON */}
           {errorMsg && (
             <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-start gap-2 shadow-xs animate-fadeIn">
               <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 shadow-xs animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{successMsg}</span>
             </div>
           )}
 

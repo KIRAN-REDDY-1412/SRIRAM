@@ -14,6 +14,7 @@ import { DocumentBrandingView } from './DocumentBrandingView';
 import { CollegeAdminProfileView } from './CollegeAdminProfileView';
 import { ClinicalCaseManagementView } from './ClinicalCaseManagementView';
 import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { LogoutConfirmModal } from '../modals/LogoutConfirmModal';
 import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
@@ -24,6 +25,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [college, setCollege] = useState(initialCollege);
   const [showLogoModal, setShowLogoModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     setCollege(initialCollege);
@@ -217,7 +219,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
             </button>
 
             <button
-              onClick={onLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-full h-10 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />
@@ -354,6 +356,13 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
         onClose={() => setShowLeaveModal(false)}
         onConfirmLeave={onLogout}
         leaveButtonText="Go to College Landing Page"
+      />
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirmLogout={onLogout}
+        userType="College Admin"
       />
 
       <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { LogoutConfirmModal } from '../modals/LogoutConfirmModal';
 import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
@@ -19,6 +20,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const { isDark, toggleTheme } = useTheme();
   const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('requests');
   const [showLogoModal, setShowLogoModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { 
     pendingRequests, 
     activeColleges, 
@@ -327,10 +329,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           </button>
 
           <button
-            onClick={() => {
-              logoutSuperAdmin();
-              onExitToLanding();
-            }}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
             title="Sign Out Super Admin"
           >
@@ -1034,6 +1033,16 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           onExitToLanding();
         }}
         leaveButtonText="Go to Main Landing Page"
+      />
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirmLogout={() => {
+          logoutSuperAdmin();
+          onExitToLanding();
+        }}
+        userType="Super Admin"
       />
 
       <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />

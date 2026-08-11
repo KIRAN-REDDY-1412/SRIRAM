@@ -14,6 +14,7 @@ import { DrugInformationFormView } from '../drugInformationRequest/DrugInformati
 import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
 import { NotificationsView } from '../common/NotificationsView';
 import { LeaveWorkspaceModal } from '../modals/LeaveWorkspaceModal';
+import { LogoutConfirmModal } from '../modals/LogoutConfirmModal';
 import { LogoPreviewModal } from '../modals/LogoPreviewModal';
 import { useWorkspaceHistory } from '../../hooks/useWorkspaceHistory';
 
@@ -28,6 +29,7 @@ export const StudentLayout = ({ student, onLogout }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [forcePasswordReset, setForcePasswordReset] = useState(student?.force_password_reset || false);
   const [showLogoModal, setShowLogoModal] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const loadUnreadCount = async () => {
     if (!student?.id) return;
@@ -238,7 +240,7 @@ export const StudentLayout = ({ student, onLogout }) => {
             </button>
 
             <button
-              onClick={onLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-full h-10 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />
@@ -400,6 +402,13 @@ export const StudentLayout = ({ student, onLogout }) => {
         onClose={() => setShowLeaveModal(false)}
         onConfirmLeave={onLogout}
         leaveButtonText="Go to College Landing Page"
+      />
+
+      <LogoutConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirmLogout={onLogout}
+        userType="Student"
       />
 
       <LogoPreviewModal isOpen={showLogoModal} onClose={() => setShowLogoModal(false)} />

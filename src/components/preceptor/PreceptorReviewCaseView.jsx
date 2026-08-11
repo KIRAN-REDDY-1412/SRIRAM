@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Stethoscope, HeartHandshake, ShieldAlert, FileSearch, AlertTriangle, CheckCircle2, RotateCcw, MessageSquare, AlertCircle, Lock } from 'lucide-react';
 import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
 import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsellingFormView';

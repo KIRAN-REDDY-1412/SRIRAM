@@ -45,10 +45,13 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
     }
   }, [forcePasswordReset]);
 
-  const handleNavigate = (tab, filter = 'All') => {
+  const [targetCaseId, setTargetCaseId] = useState(null);
+
+  const handleNavigate = (tab, filter = 'All', caseId = null) => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
     setPreceptorCaseFilter(filter);
+    setTargetCaseId(caseId || null);
     pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -256,7 +259,12 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
           )}
 
           {activeTab === 'case-review' && (
-            <PreceptorCaseReviewView preceptor={preceptor} initialFilter={preceptorCaseFilter} />
+            <PreceptorCaseReviewView
+              preceptor={preceptor}
+              initialFilter={preceptorCaseFilter}
+              targetCaseId={targetCaseId}
+              onClearTargetCase={() => setTargetCaseId(null)}
+            />
           )}
 
           {activeTab === 'notifications' && (
@@ -264,7 +272,8 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
               userId={preceptor.id}
               userRole="Preceptor"
               onNavigate={(route, caseId) => {
-                handleNavigate(route);
+                const targetTab = route === 'assigned-students' ? 'assigned-students' : 'case-review';
+                handleNavigate(targetTab, 'All', caseId);
               }}
               onBack={() => handleNavigate('dashboard')}
             />

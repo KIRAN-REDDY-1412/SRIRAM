@@ -32,11 +32,10 @@ export const NotificationsView = ({ userId, userRole, onNavigate, onBack }) => {
       }
     }
 
-    // Trigger navigation if action_route is provided
-    if (notif.action_route && onNavigate) {
-      // For student, navigate to my-cases
-      // For preceptor, navigate to assigned-students
-      onNavigate(notif.action_route, notif.clinical_case_id);
+    // Trigger navigation
+    if (onNavigate) {
+      const targetRoute = notif.action_route || (userRole === 'Preceptor' ? 'case-review' : 'my-cases');
+      onNavigate(targetRoute, notif.clinical_case_id);
     }
   };
 

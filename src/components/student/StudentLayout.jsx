@@ -53,10 +53,13 @@ export const StudentLayout = ({ student, onLogout }) => {
     }
   }, [forcePasswordReset]);
 
-  const handleNavigate = (tab, filter = 'All') => {
+  const [targetCaseId, setTargetCaseId] = useState(null);
+
+  const handleNavigate = (tab, filter = 'All', caseId = null) => {
     // Block navigation if force password reset is active
     if (forcePasswordReset && tab !== 'profile') return;
     setCaseFilter(filter);
+    setTargetCaseId(caseId || null);
     pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -316,6 +319,8 @@ export const StudentLayout = ({ student, onLogout }) => {
             <MyClinicalCasesView
               student={student}
               initialFilter={caseFilter}
+              targetCaseId={targetCaseId}
+              onClearTargetCase={() => setTargetCaseId(null)}
               onAddNew={() => handleNavigate('add-new-case')}
               onOpenPatientProfile={handleOpenPatientProfile}
               onOpenPatientCounselling={handleOpenPatientCounselling}
@@ -374,13 +379,8 @@ export const StudentLayout = ({ student, onLogout }) => {
               userId={student.id}
               userRole="Student"
               onNavigate={(route, caseId) => {
-                // If caseId is provided, we can set it and open the specific view or route
-                if (caseId) {
-                  // Simply open the clinical cases screen
-                  handleNavigate(route);
-                } else {
-                  handleNavigate(route);
-                }
+                const targetTab = route || 'my-cases';
+                handleNavigate(targetTab, 'All', caseId);
               }}
               onBack={() => handleNavigate('dashboard')}
             />

@@ -5,7 +5,7 @@ import { PreceptorReviewCaseView } from './PreceptorReviewCaseView';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { ModalWrapper } from '../modals/ModalWrapper';
 
-export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) => {
+export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All', targetCaseId = null, onClearTargetCase }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,6 +43,13 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
       if (statusesRes.success) {
         setModuleStatuses(statusesRes.statusesMap || {});
       }
+
+      if (targetCaseId) {
+        const found = fetchedCases.find(c => c.id === targetCaseId || c.case_id === targetCaseId);
+        if (found) {
+          setSelectedCaseForReview(found);
+        }
+      }
     } else {
       setCases([]);
     }
@@ -53,15 +60,28 @@ export const PreceptorCaseReviewView = ({ preceptor, initialFilter = 'All' }) =>
     loadCases();
   }, [preceptor?.id]);
 
+  useEffect(() => {
+    if (targetCaseId && cases.length > 0) {
+      const found = cases.find(c => c.id === targetCaseId || c.case_id === targetCaseId);
+      if (found) {
+        setSelectedCaseForReview(found);
+      }
+    }
+  }, [targetCaseId, cases]);
+
   if (selectedCaseForReview) {
     return (
       <PreceptorReviewCaseView
         clinicalCase={selectedCaseForReview}
         student={selectedCaseForReview.students}
         preceptor={preceptor}
-        onBack={() => setSelectedCaseForReview(null)}
+        onBack={() => {
+          setSelectedCaseForReview(null);
+          if (onClearTargetCase) onClearTargetCase();
+        }}
         onReviewComplete={() => {
           setSelectedCaseForReview(null);
+          if (onClearTargetCase) onClearTargetCase();
           loadCases();
         }}
       />

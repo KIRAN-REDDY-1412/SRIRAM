@@ -6,7 +6,7 @@ import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 
-export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest, onOpenADRDocumentation }) => {
+export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCaseId = null, onClearTargetCase, onAddNew, onOpenPatientProfile, onOpenPatientCounselling, onOpenPharmacistIntervention, onOpenDrugInformationRequest, onOpenADRDocumentation }) => {
   const [cases, setCases] = useState([]);
   const [moduleStatuses, setModuleStatuses] = useState({});
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,21 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', onAddNew, 
       setStatusFilter(initialFilter);
     }
   }, [initialFilter]);
+
+  useEffect(() => {
+    if (targetCaseId && cases.length > 0) {
+      const found = cases.find(c => c.id === targetCaseId || c.case_id === targetCaseId);
+      if (found) {
+        if (found.status === 'Approved' || found.overall_case_status === 'Approved') {
+          setSelectedCaseForPDF(found);
+        } else {
+          setSelectedCase(found);
+          setIsViewModalOpen(true);
+        }
+        if (onClearTargetCase) onClearTargetCase();
+      }
+    }
+  }, [targetCaseId, cases]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);

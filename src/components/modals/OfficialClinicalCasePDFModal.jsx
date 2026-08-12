@@ -109,6 +109,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
         const targetEl = pagesToCapture[i];
 
+        // Ensure target page element is scrolled into view for html2canvas
+        try {
+          targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
+          await new Promise(r => setTimeout(r, 120));
+        } catch (sErr) {}
+
         let pageCanvas;
         try {
           pageCanvas = await html2canvas(targetEl, {
@@ -118,6 +124,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             logging: false,
             backgroundColor: '#ffffff',
             windowWidth: isLandscape ? 1123 : 850,
+            scrollX: 0,
+            scrollY: 0,
             onclone: (clonedDoc, clonedEl) => {
               // Unclip all scroll containers in cloned document so html2canvas renders complete pages without truncating
               const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto');
@@ -129,6 +137,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
               const container = clonedDoc.getElementById('official-clinical-case-pdf-container');
               if (container) {
+                container.style.position = 'relative';
                 container.style.maxHeight = 'none';
                 container.style.overflow = 'visible';
                 container.style.height = 'auto';
@@ -140,7 +149,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                 clonedEl.style.height = 'auto';
                 clonedEl.style.maxHeight = 'none';
                 clonedEl.style.overflow = 'visible';
-                clonedEl.style.margin = '0';
+                clonedEl.style.margin = '0 auto';
                 clonedEl.style.boxShadow = 'none';
                 clonedEl.style.transform = 'none';
               }
@@ -279,7 +288,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
               <h4 className="font-bold text-emerald-900 dark:text-emerald-300">Official Clinical Record Approved</h4>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Official PDF document with complete clinical student documentation.</p>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Official PDF document with complete multi-page clinical student documentation.</p>
             </div>
           </div>
 
@@ -298,7 +307,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               onClick={handleDownloadPDF}
               disabled={downloading || loading}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
-              title="Generate & Download Official PDF Document"
+              title="Generate & Download Official Multi-Page PDF Document"
             >
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               <span>{downloading ? 'Generating PDF...' : 'Download PDF'}</span>
@@ -306,7 +315,42 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           </div>
         </div>
 
-        {/* PRINTABLE CONTAINER */}
+        {/* PAGE NAVIGATION & JUMP TOOLBAR */}
+        <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900 text-white text-xs border border-slate-800 shadow-md">
+          <div className="flex items-center gap-2 font-bold text-emerald-400">
+            <FileCheck2 className="w-4.5 h-4.5 shrink-0" />
+            <span>📄 Complete 5-Page Clinical Case Document</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { num: 1, label: 'Page 1: Demographics' },
+              { num: 2, label: 'Page 2: Examination & Vitals' },
+              { num: 3, label: 'Page 3: Lab Reports' },
+              { num: 4, label: 'Page 4: Meds & Counselling' },
+              { num: 5, label: 'Page 5: Logbook & Signatures' }
+            ].map(p => (
+              <button
+                key={p.num}
+                type="button"
+                onClick={() => {
+                  const container = document.getElementById('official-clinical-case-pdf-container');
+                  if (container) {
+                    const pages = container.querySelectorAll('.pharmdverse-document-page');
+                    if (pages && pages[p.num - 1]) {
+                      pages[p.num - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }
+                }}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white transition-all whitespace-nowrap"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* PRINTABLE MULTI-PAGE CONTAINER */}
         <div className="max-h-[65vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0 print:border-none print:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-100 dark:bg-slate-900/50">
           {loading ? (
             <div className="py-16 text-center">

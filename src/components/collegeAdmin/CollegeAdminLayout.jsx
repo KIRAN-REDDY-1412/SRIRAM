@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2, TrendingUp, ChevronDown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
@@ -23,6 +23,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
   const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('dashboard');
   const [collegeAdminCaseFilter, setCollegeAdminCaseFilter] = useState('All');
+  const [selectedBatchFilter, setSelectedBatchFilter] = useState('All');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [college, setCollege] = useState(initialCollege);
   const [showLogoModal, setShowLogoModal] = useState(false);
@@ -56,8 +57,9 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
     loadFreshCollege();
   }, [initialCollege?.id]);
 
-  const handleNavigate = (tab, filter = 'All') => {
+  const handleNavigate = (tab, filter = 'All', batchFilter = 'All') => {
     setCollegeAdminCaseFilter(filter);
+    setSelectedBatchFilter(batchFilter);
     pushTab(tab);
     setMobileSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -152,18 +154,45 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               <span>Student Management</span>
             </button>
 
-            {/* Student Promotion */}
-            <button
-              onClick={() => handleNavigate('student-promotion')}
-              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                activeTab === 'student-promotion'
-                  ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4 shrink-0" />
-              <span>Student Promotion</span>
-            </button>
+            {/* Student Promotion & Registered Batches */}
+            <div className="space-y-1">
+              <button
+                onClick={() => handleNavigate('student-promotion', 'All', 'All')}
+                className={`w-full h-11 px-3.5 rounded-xl flex items-center justify-between transition-all ${
+                  activeTab === 'student-promotion'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="w-4 h-4 shrink-0" />
+                  <span>Student Promotion</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </button>
+
+              {/* Sub-menu Registered Batches */}
+              <div className="pl-9 pr-1 py-1 space-y-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block">
+                  Registered Batches:
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {['Y20', 'Y21', 'Y22', 'Y23', 'Y24', 'Y25'].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => handleNavigate('student-promotion', 'All', b)}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-bold font-mono transition-all border ${
+                        selectedBatchFilter === b && activeTab === 'student-promotion'
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-400 font-extrabold shadow-xs'
+                          : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Assignment Management */}
             <button
@@ -328,7 +357,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
           )}
 
           {activeTab === 'student-promotion' && (
-            <StudentPromotionView college={college} />
+            <StudentPromotionView college={college} initialBatch={selectedBatchFilter} />
           )}
 
           {activeTab === 'assign-students' && (

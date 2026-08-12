@@ -14,12 +14,20 @@ const NEXT_YEAR_MAP = {
   '6th Year': 'Graduated / Alumnus'
 };
 
-export const StudentPromotionView = ({ college }) => {
+const DEFAULT_REGISTERED_BATCHES = ['Y20', 'Y21', 'Y22', 'Y23', 'Y24', 'Y25'];
+
+export const StudentPromotionView = ({ college, initialBatch = 'All' }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBatch, setSelectedBatch] = useState('All');
+  const [selectedBatch, setSelectedBatch] = useState(initialBatch || 'All');
   const [selectedCurrentYear, setSelectedCurrentYear] = useState('All');
+
+  useEffect(() => {
+    if (initialBatch) {
+      setSelectedBatch(initialBatch);
+    }
+  }, [initialBatch]);
   
   // Selection state for batch promotion
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
@@ -47,8 +55,11 @@ export const StudentPromotionView = ({ college }) => {
     loadStudents();
   }, [college?.id]);
 
-  // Derived Batches and Years for filter options
-  const uniqueBatches = Array.from(new Set(students.map(s => s.batch).filter(Boolean))).sort();
+  // Derived Batches (includes registered college batches)
+  const uniqueBatches = Array.from(new Set([
+    ...students.map(s => s.batch).filter(Boolean),
+    ...DEFAULT_REGISTERED_BATCHES
+  ])).sort();
   const uniqueYears = Array.from(new Set(students.map(s => s.year).filter(Boolean)));
 
   // Filtered Students List

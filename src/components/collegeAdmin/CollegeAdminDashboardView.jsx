@@ -67,7 +67,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
   const summaryCards = [
     {
       id: 'approved_cases',
-      title: 'Approved Clinical Cases',
+      title: 'Approved Cases',
       count: approvedCount,
       filter: 'Approved',
       icon: CheckCircle2,
@@ -77,59 +77,15 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
       description: 'Officially approved clinical case logbook entries across all departments'
     },
     {
-      id: 'draft',
-      title: 'Draft Cases',
-      count: draftCount,
-      filter: 'Draft',
-      icon: FileEdit,
-      iconColor: 'text-slate-600 dark:text-slate-400',
-      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-      borderLeft: 'border-l-slate-400',
-      description: 'In-progress student drafts saved locally'
-    },
-    {
-      id: 'submitted',
-      title: 'Submitted Cases',
-      count: submittedCount,
-      filter: 'Submitted',
-      icon: Send,
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-      borderLeft: 'border-l-blue-500',
-      description: 'Submitted cases awaiting preceptor evaluation'
-    },
-    {
-      id: 'under_review',
-      title: 'Under Review Cases',
-      count: underReviewCount,
-      filter: 'Under Review',
-      icon: FileSearch,
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-      borderLeft: 'border-l-amber-500',
-      description: 'Cases currently undergoing active preceptor review'
-    },
-    {
-      id: 'returned',
-      title: 'Returned Cases',
-      count: returnedCount,
-      filter: 'Returned',
-      icon: RotateCcw,
-      iconColor: 'text-rose-600 dark:text-rose-400',
-      badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800',
-      borderLeft: 'border-l-rose-500',
-      description: 'Cases returned to students for required corrections'
-    },
-    {
-      id: 'approved',
-      title: 'Approved Cases',
-      count: approvedCount,
-      filter: 'Approved',
-      icon: CheckCircle2,
-      iconColor: 'text-emerald-600 dark:text-emerald-400',
-      badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-      borderLeft: 'border-l-emerald-500',
-      description: 'Fully approved and verified clinical logbook entries'
+      id: 'total_cases',
+      title: 'Total Cases',
+      count: totalCount,
+      filter: 'All',
+      icon: FolderKanban,
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
+      badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      borderLeft: 'border-l-indigo-500',
+      description: 'Total clinical cases created and recorded across all enrolled students'
     }
   ];
 
@@ -243,7 +199,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Click card to manage cases</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {summaryCards.map((card) => {
             const IconComp = card.icon;
             return (

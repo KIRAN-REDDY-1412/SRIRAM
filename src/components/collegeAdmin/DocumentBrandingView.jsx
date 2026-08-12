@@ -221,6 +221,152 @@ const SampleTwoPageDocument = ({ college, settings }) => {
   );
 };
 
+const SamplePptSlidePreview = ({ college, pptSettings }) => {
+  const [slideNum, setSlideNum] = useState(1);
+  const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY';
+  const hospitalName = college?.hospital_name || 'Lalitha Superspecialities Hospital';
+  const fontFamily = pptSettings?.font_family || 'Times New Roman';
+  const titleSize = pptSettings?.ppt_title_font_size || '22px';
+  const subHeadingSize = pptSettings?.ppt_subheading_font_size || '20px';
+  const bodySize = pptSettings?.ppt_body_font_size || '18px';
+  const footerText = pptSettings?.footer_text || 'Pharm.D Clinical Case Presentation • Confidential';
+
+  return (
+    <div className="space-y-4">
+      {/* Slide Navigation Bar */}
+      <div className="flex items-center justify-between p-3 bg-slate-900 text-white rounded-2xl text-xs font-bold shadow-md">
+        <div className="flex items-center gap-2">
+          <Presentation className="w-4 h-4 text-amber-400" />
+          <span>PPT Slide Format Preview ({pptSettings?.aspect_ratio || '16:9'}) • Theme: {pptSettings?.theme || 'Clinical Emerald'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSlideNum(prev => Math.max(1, prev - 1))}
+            disabled={slideNum === 1}
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-xs font-bold transition-colors"
+          >
+            ← Prev Slide
+          </button>
+          <span className="font-mono text-amber-300 px-1 font-bold">Slide {slideNum} of 3</span>
+          <button
+            type="button"
+            onClick={() => setSlideNum(prev => Math.min(3, prev + 1))}
+            disabled={slideNum === 3}
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-xs font-bold transition-colors"
+          >
+            Next Slide →
+          </button>
+        </div>
+      </div>
+
+      {/* Slide Screen Frame */}
+      <div className="border-4 border-slate-900 rounded-3xl p-6 bg-white shadow-2xl space-y-6 text-slate-900 min-h-[420px] flex flex-col justify-between" style={{ fontFamily }}>
+        {slideNum === 1 && (
+          <div className="space-y-5">
+            {/* Header Box */}
+            <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 text-center space-y-1">
+              <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
+                {collegeName}
+              </h2>
+              <p className="text-slate-600 italic font-semibold" style={{ fontSize: subHeadingSize }}>
+                (Autonomous) • {hospitalName}
+              </p>
+            </div>
+
+            {/* Case ID Banner */}
+            <div className="p-2.5 bg-slate-900 text-white rounded-xl text-center font-mono font-bold" style={{ fontSize: bodySize }}>
+              CASE ID : AMRMCP-2026-Y22PHD0316-0002
+            </div>
+
+            {/* Main Presentation Title */}
+            <div className="text-center space-y-2 py-2">
+              <h1 className="font-black text-emerald-700 uppercase tracking-tight" style={{ fontSize: `calc(${titleSize} + 4px)` }}>
+                CLINICAL CASE PRESENTATION
+              </h1>
+              <p className="font-bold text-slate-800" style={{ fontSize: subHeadingSize }}>
+                Final Diagnosis: IBD WITH TERMINAL ILETIS
+              </p>
+            </div>
+
+            {/* Student & Preceptor Metadata */}
+            {pptSettings?.show_student_preceptor !== false && (
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 text-center space-y-1" style={{ fontSize: bodySize }}>
+                <div>Presented By: <strong className="text-slate-900 font-bold">John Doe</strong> (Roll No: Y22PHD0316)</div>
+                <div>Evaluated & Approved By: <strong className="text-emerald-700 font-bold">Dr. A. Sharma, M.D.</strong></div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {slideNum === 2 && (
+          <div className="space-y-4">
+            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
+              <span>1. Patient Profile & Clinical Demographics</span>
+              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
+            </h2>
+
+            <table className="w-full text-left border-collapse border border-slate-300 rounded-xl overflow-hidden" style={{ fontSize: bodySize }}>
+              <tbody>
+                <tr className="border-b border-slate-300 bg-slate-100">
+                  <th className="p-2.5 font-bold border-r border-slate-300">Patient Initials</th>
+                  <td className="p-2.5">BB (46 Yrs / Male / IP: 123456789)</td>
+                </tr>
+                <tr className="border-b border-slate-300">
+                  <th className="p-2.5 font-bold border-r border-slate-300">Department & Ward</th>
+                  <td className="p-2.5">Gastroenterology (Female Medical Ward)</td>
+                </tr>
+                <tr className="border-b border-slate-300 bg-slate-100">
+                  <th className="p-2.5 font-bold border-r border-slate-300">Chief Complaints</th>
+                  <td className="p-2.5">Abdominal pain during defication for 3 days</td>
+                </tr>
+                <tr className="border-b border-slate-300">
+                  <th className="p-2.5 font-bold border-r border-slate-300">Past History</th>
+                  <td className="p-2.5">Medical: Appendectomy P/S | Medication: Nil</td>
+                </tr>
+                <tr>
+                  <th className="p-2.5 font-bold border-r border-slate-300 text-emerald-800">Final Diagnosis</th>
+                  <td className="p-2.5 font-bold text-emerald-700">IBD WITH TERMINAL ILETIS</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {slideNum === 3 && (
+          <div className="space-y-4">
+            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
+              <span>2. Counselling & Pharmacist Interventions</span>
+              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ fontSize: bodySize }}>
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 space-y-2">
+                <h3 className="font-bold text-amber-800 uppercase text-xs tracking-wider border-b pb-1 border-slate-200">Patient Counselling Record</h3>
+                <div>Counselling Provided To: <strong>Patient</strong></div>
+                <div>Mode & Time: <strong>Oral & Leaflet (15 min)</strong></div>
+                <div>Key Focus: <strong>Antibiotic compliance, glucose monitoring & hydration.</strong></div>
+              </div>
+
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 space-y-2">
+                <h3 className="font-bold text-indigo-800 uppercase text-xs tracking-wider border-b pb-1 border-slate-200">Pharmacist Intervention</h3>
+                <div>Problem Identified: <strong>Verified non-cross-reactivity with Ceftriaxone.</strong></div>
+                <div>Recommendation: <strong>Spaced oral antidiabetic vs IV infusion.</strong></div>
+                <div>Status: <strong className="text-emerald-700 font-bold">Accepted by Physician</strong></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="pt-3 border-t border-slate-300 text-center text-xs text-slate-500 font-medium">
+          {footerText}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const DocumentBrandingView = ({ college: initialCollege }) => {
   const [college, setCollege] = useState(initialCollege);
   const [loading, setLoading] = useState(true);
@@ -228,6 +374,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isPptPreviewModalOpen, setIsPptPreviewModalOpen] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   // PPT Format Settings State
@@ -356,6 +503,32 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         message: '✓ PPT Format Settings saved successfully!'
       });
     }, 400);
+  };
+
+  const handleRestorePptDefault = () => {
+    const def = {
+      theme: 'Clinical Emerald',
+      aspect_ratio: '16:9 (Widescreen)',
+      header_title: college?.college_name || college?.name || 'Pharmacy College',
+      footer_text: 'Pharm.D Clinical Case Presentation • Confidential',
+      font_family: 'Times New Roman',
+      ppt_title_font_size: '22px',
+      ppt_subheading_font_size: '20px',
+      ppt_body_font_size: '18px',
+      show_logo: true,
+      show_autonomous: true,
+      show_student_preceptor: true
+    };
+    setPptSettings(def);
+    try {
+      if (college?.id) {
+        localStorage.setItem(`pharmdverse_ppt_settings_${college.id}`, JSON.stringify(def));
+      }
+    } catch (e) {}
+    showPptNotify({
+      type: 'success',
+      message: '✓ PPT Format Settings restored to default.'
+    });
   };
 
   if (loading) {
@@ -897,7 +1070,25 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsPptPreviewModalOpen(true)}
+              className="px-3.5 py-2.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-xs"
+            >
+              <Eye className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>Preview PPT Slides</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRestorePptDefault}
+              className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4 text-slate-400" />
+              <span>Restore PPT Default</span>
+            </button>
+
             <InlineActionNotification notification={pptNotify} onClose={clearPptNotify} position="inline" />
             <button
               type="button"
@@ -1079,12 +1270,27 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         <ModalWrapper
           isOpen={isPreviewModalOpen}
           onClose={() => setIsPreviewModalOpen(false)}
-          title={`Full ${settings.paper_size} (${settings.orientation}) PDF Format Live Preview`}
+          title={`Full ${settings.paper_size} (${settings.orientation}) PDF Format Preview`}
           subtitle={`Exact rendering across all PharmDVerse clinical documentation modules (${settings.paper_size} - ${settings.orientation})`}
           maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
         >
           <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
             <SampleTwoPageDocument college={college} settings={settings} />
+          </div>
+        </ModalWrapper>
+      )}
+
+      {/* PREVIEW PPT SLIDES MODAL */}
+      {isPptPreviewModalOpen && (
+        <ModalWrapper
+          isOpen={isPptPreviewModalOpen}
+          onClose={() => setIsPptPreviewModalOpen(false)}
+          title={`PowerPoint Slide Format Preview (${pptSettings.aspect_ratio || '16:9'})`}
+          subtitle={`Theme: ${pptSettings.theme || 'Clinical Emerald'} • Font: ${pptSettings.font_family || 'Times New Roman'}`}
+          maxWidth="max-w-5xl"
+        >
+          <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
+            <SamplePptSlidePreview college={college} pptSettings={pptSettings} />
           </div>
         </ModalWrapper>
       )}

@@ -53,16 +53,16 @@ export const generateClinicalCasePPTX = async ({
 
   slide1.addShape(pptx.shapes.RECTANGLE, {
     x: 0.5,
-    y: 0.4,
+    y: 0.3,
     w: isWidescreen ? 12.3 : 9.0,
-    h: 1.2,
+    h: 1.0,
     fill: { color: 'F1F5F9' },
     line: { color: '0F172A', width: 1.5 }
   });
 
   slide1.addText(collegeName.toUpperCase(), {
     x: 0.6,
-    y: 0.55,
+    y: 0.4,
     w: isWidescreen ? 12.1 : 8.8,
     h: 0.4,
     fontFace,
@@ -74,11 +74,11 @@ export const generateClinicalCasePPTX = async ({
 
   slide1.addText(`(Autonomous) • ${hospitalName}`, {
     x: 0.6,
-    y: 0.95,
+    y: 0.8,
     w: isWidescreen ? 12.1 : 8.8,
     h: 0.3,
     fontFace,
-    fontSize: subHeadingFontSize - 4,
+    fontSize: Math.max(subHeadingFontSize - 4, 12),
     italic: true,
     color: '475569',
     align: 'center'
@@ -86,17 +86,17 @@ export const generateClinicalCasePPTX = async ({
 
   slide1.addShape(pptx.shapes.RECTANGLE, {
     x: 0.5,
-    y: 1.7,
+    y: 1.4,
     w: isWidescreen ? 12.3 : 9.0,
-    h: 0.5,
+    h: 0.4,
     fill: { color: '0F172A' }
   });
 
   slide1.addText(`CASE ID : ${caseId}`, {
     x: 0.6,
-    y: 1.75,
+    y: 1.42,
     w: isWidescreen ? 12.1 : 8.8,
-    h: 0.4,
+    h: 0.35,
     fontFace: 'Courier New',
     fontSize: bodyFontSize,
     bold: true,
@@ -106,9 +106,9 @@ export const generateClinicalCasePPTX = async ({
 
   slide1.addText('CLINICAL CASE PRESENTATION', {
     x: 0.6,
-    y: 2.5,
+    y: 1.9,
     w: isWidescreen ? 12.1 : 8.8,
-    h: 0.5,
+    h: 0.4,
     fontFace,
     fontSize: titleFontSize + 2,
     bold: true,
@@ -118,9 +118,9 @@ export const generateClinicalCasePPTX = async ({
 
   slide1.addText(`Final Diagnosis: ${finalDiagnosis}`, {
     x: 0.6,
-    y: 3.1,
+    y: 2.35,
     w: isWidescreen ? 12.1 : 8.8,
-    h: 0.6,
+    h: 0.4,
     fontFace,
     fontSize: subHeadingFontSize,
     bold: true,
@@ -131,9 +131,9 @@ export const generateClinicalCasePPTX = async ({
   if (pptSettings?.show_student_preceptor !== false && pptSettings?.ppt_show_student_preceptor !== false) {
     slide1.addShape(pptx.shapes.RECTANGLE, {
       x: 1.5,
-      y: 4.1,
+      y: 2.85,
       w: isWidescreen ? 10.3 : 7.0,
-      h: 2.2,
+      h: 1.4,
       fill: { color: darkBgColor },
       line: { color: 'CBD5E1', width: 1 }
     });
@@ -146,16 +146,16 @@ export const generateClinicalCasePPTX = async ({
       { text: `${preceptorName}`, options: { bold: true, fontSize: bodyFontSize + 2, color: emeraldColor } }
     ], {
       x: 1.8,
-      y: 4.3,
+      y: 2.95,
       w: isWidescreen ? 9.7 : 6.4,
-      h: 1.8,
+      h: 1.2,
       fontFace,
       align: 'center'
     });
   }
 
   slide1.addText(footerText, {
-    x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3,
+    x: 0.5, y: 4.5, w: isWidescreen ? 12.3 : 9.0, h: 0.3,
     fontFace, fontSize: 10, color: '64748B', align: 'center'
   });
 
@@ -180,7 +180,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.1, w: isWidescreen ? 12.3 : 9.0, colW: [3.2, isWidescreen ? 9.1 : 5.8],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide2.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide2.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 3: CHIEF COMPLAINTS & HISTORY
   const slide3 = pptx.addSlide();
@@ -202,7 +202,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.1, w: isWidescreen ? 12.3 : 9.0, colW: [3.2, isWidescreen ? 9.1 : 5.8],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide3.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide3.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 4: PAST MEDICAL & MEDICATION HISTORY (DETAILED)
   const slide4 = pptx.addSlide();
@@ -222,7 +222,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 3.6, w: isWidescreen ? 12.3 : 9.0, h: 1.8,
     fontFace, fontSize: 12, color: '0369A1', fill: { color: 'F0F9FF' }, line: { color: 'BAE6FD', width: 1 }
   });
-  slide4.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide4.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 5: CLINICAL EXAMINATION & VITALS LOG
   const slide5 = pptx.addSlide();
@@ -263,7 +263,7 @@ export const generateClinicalCasePPTX = async ({
   slide5.addTable([vitalsHeader, ...vitalsRows], {
     x: 0.5, y: 2.1, w: isWidescreen ? 12.3 : 9.0, border: { pt: 1, color: 'CBD5E1' }
   });
-  slide5.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide5.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 6: LABORATORY INVESTIGATIONS
   const slide6 = pptx.addSlide();
@@ -298,7 +298,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.0, w: isWidescreen ? 12.3 : 9.0, colW: [2.0, 3.2, 2.5, 2.5, isWidescreen ? 2.1 : 0.0],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide6.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide6.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 7: OTHER INVESTIGATIONS
   const slide7 = pptx.addSlide();
@@ -312,7 +312,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.1, w: isWidescreen ? 12.3 : 9.0, h: 4.8,
     fontFace, fontSize: 12, color: '0369A1', fill: { color: 'F0F9FF' }, line: { color: 'BAE6FD', width: 1.5 }
   });
-  slide7.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide7.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 8: DIAGNOSIS
   const slide8 = pptx.addSlide();
@@ -335,7 +335,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 3.3, w: isWidescreen ? 12.3 : 9.0, h: 2.2,
     fontFace, fontSize: 12, color: '1E293B', fill: { color: 'F8FAFC' }, line: { color: 'CBD5E1', width: 1 }
   });
-  slide8.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide8.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 9: TREATMENT / MEDICATION
   const slide9 = pptx.addSlide();
@@ -370,7 +370,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.0, w: isWidescreen ? 12.3 : 9.0, colW: [0.8, 4.2, 2.5, 2.0, isWidescreen ? 2.8 : 0.0],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide9.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide9.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 10: CLINICAL ASSESSMENT / PHARMACIST INTERVENTION & COUNSELLING
   const slide10 = pptx.addSlide();
@@ -392,7 +392,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.0, w: isWidescreen ? 12.3 : 9.0, colW: [3.5, isWidescreen ? 8.8 : 5.5],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide10.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide10.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // SLIDE 11: DISCHARGE SUMMARY & PRECEPTOR APPROVAL
   const slide11 = pptx.addSlide();
@@ -414,7 +414,7 @@ export const generateClinicalCasePPTX = async ({
     x: 0.5, y: 1.0, w: isWidescreen ? 12.3 : 9.0, colW: [3.5, isWidescreen ? 8.8 : 5.5],
     border: { pt: 1, color: 'CBD5E1' }
   });
-  slide11.addText(footerText, { x: 0.5, y: isWidescreen ? 6.8 : 6.9, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
+  slide11.addText(footerText, { x: 0.5, y: 4.8, w: isWidescreen ? 12.3 : 9.0, h: 0.3, fontFace, fontSize: 10, color: '64748B', align: 'center' });
 
   // Save presentation file directly
   const fileName = `${caseId}_Presentation.pptx`;

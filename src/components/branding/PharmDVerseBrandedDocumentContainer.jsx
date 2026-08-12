@@ -139,7 +139,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
         @media print {
           @page {
             size: ${paperSize} ${orientation.toLowerCase()};
-            margin: 10mm 12mm 10mm 12mm;
+            margin: 0mm;
           }
           html, body {
             height: auto !important;
@@ -148,6 +148,8 @@ export const PharmDVerseBrandedDocumentContainer = ({
             background: #ffffff !important;
             font-family: ${fontFamily} !important;
             color: ${textColor} !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           div, section, main {
             max-height: none !important;
@@ -163,6 +165,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
             visibility: visible !important;
           }
           #official-clinical-case-pdf-container {
+            display: block !important;
             position: static !important;
             width: 100% !important;
             height: auto !important;
@@ -173,15 +176,29 @@ export const PharmDVerseBrandedDocumentContainer = ({
             background: #ffffff !important;
           }
           .pharmdverse-document-page {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
             box-shadow: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: 0 !important;
-            max-height: none !important;
-            overflow: visible !important;
+            margin: 0 auto !important;
+            padding: ${marginTop} ${marginRight} ${marginBottom} ${marginLeft} !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            min-height: ${isLandscape ? '190mm' : '265mm'} !important;
+            height: ${isLandscape ? '190mm' : '265mm'} !important;
+            max-height: ${isLandscape ? '190mm' : '265mm'} !important;
+            overflow: hidden !important;
+            page-break-before: always !important;
             page-break-after: always !important;
+            break-before: page !important;
             break-after: page !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .pharmdverse-document-page:first-child,
+          .pharmdverse-document-page:first-of-type {
+            page-break-before: avoid !important;
+            break-before: avoid !important;
           }
           thead {
             display: ${shouldShowTableHeader ? 'table-header-group' : 'none'} !important;

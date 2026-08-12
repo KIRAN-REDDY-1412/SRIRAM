@@ -111,7 +111,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   return (
     <div
-      className={`pharmdverse-document-page bg-white shadow-xl relative overflow-hidden print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
+      className={`pharmdverse-document-page bg-white shadow-xl relative overflow-visible print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
         isLandscape 
           ? 'w-full max-w-5xl mx-auto min-h-[210mm] aspect-[297/210]' 
           : 'w-full max-w-3xl mx-auto min-h-[297mm]'

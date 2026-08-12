@@ -88,6 +88,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     if (!element) return;
 
     setDownloading(true);
+    let tempContainer = null;
     try {
       const pageElements = element.querySelectorAll('.pharmdverse-document-page');
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
@@ -102,20 +103,47 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
 
+      // Create an unconstrained off-screen container for 100% full height DOM capturing
+      tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = isLandscape ? '1123px' : '794px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.zIndex = '-9999';
+      document.body.appendChild(tempContainer);
+
       for (let i = 0; i < pagesToCapture.length; i++) {
         if (i > 0) pdf.addPage();
 
+        const clone = pagesToCapture[i].cloneNode(true);
+        clone.style.width = '100%';
+        clone.style.height = 'auto';
+        clone.style.margin = '0';
+        clone.style.boxShadow = 'none';
+        clone.style.overflow = 'visible';
+
+        tempContainer.innerHTML = '';
+        tempContainer.appendChild(clone);
+
+        // Allow DOM layout render
+        await new Promise(r => setTimeout(r, 100));
+
         let pageCanvas;
         try {
-          pageCanvas = await html2canvas(pagesToCapture[i], {
+          pageCanvas = await html2canvas(clone, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             logging: false,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: isLandscape ? 1123 : 794,
+            windowHeight: clone.scrollHeight || (isLandscape ? 794 : 1123)
           });
         } catch (cErr) {
-          pageCanvas = await html2canvas(pagesToCapture[i], {
+          pageCanvas = await html2canvas(clone, {
             scale: 1.5,
             useCORS: false,
             allowTaint: true,
@@ -124,8 +152,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           });
         }
 
-        const imgData = pageCanvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       }
 
       pdf.save(fileName);
@@ -133,6 +161,9 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       console.error('Failed to generate Official PDF:', err);
       alert('Could not download PDF directly. Please try again.');
     } finally {
+      if (tempContainer && document.body.contains(tempContainer)) {
+        document.body.removeChild(tempContainer);
+      }
       setDownloading(false);
     }
   };

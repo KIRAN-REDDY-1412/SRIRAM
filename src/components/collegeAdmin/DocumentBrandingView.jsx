@@ -1152,76 +1152,86 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </select>
           </div>
 
-          {/* PPT Font Family */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              PPT Font Family
-            </label>
-            <select
-              value={pptSettings.font_family || 'Times New Roman'}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, font_family: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
-            >
-              <option value="Times New Roman">Times New Roman (Recommended)</option>
-              <option value="Arial">Arial</option>
-              <option value="Calibri">Calibri</option>
-              <option value="Inter">Inter</option>
-              <option value="Roboto">Roboto</option>
-              <option value="Georgia">Georgia</option>
-            </select>
-          </div>
+          {/* PPT TYPOGRAPHY & FONT SIZES CARD */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3 col-span-1 md:col-span-2 lg:col-span-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Type className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>PPT Typography & Font Sizes</span>
+            </h4>
 
-          {/* Slide Title Font Size */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Slide Title Font Size
-            </label>
-            <select
-              value={pptSettings.ppt_title_font_size || '22px'}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_title_font_size: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
-            >
-              <option value="20px">20 px</option>
-              <option value="22px">22 px (Default)</option>
-              <option value="24px">24 px</option>
-              <option value="28px">28 px</option>
-              <option value="32px">32 px</option>
-            </select>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+              {/* Font Family Dropdown */}
+              <div className="md:col-span-2 space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Font Family (Font Style)
+                </label>
+                <select
+                  value={pptSettings.font_family || 'Times New Roman'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, font_family: e.target.value }))}
+                  className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
+                >
+                  <option value="Times New Roman">Times New Roman (Recommended)</option>
+                  <option value="Arial">Arial (Sans-serif)</option>
+                  <option value="Calibri">Calibri (Sans-serif)</option>
+                  <option value="Inter">Inter (Clean Modern)</option>
+                  <option value="Roboto">Roboto (Technical)</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                </select>
+              </div>
 
-          {/* Sub-heading Font Size */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Sub-heading Font Size
-            </label>
-            <select
-              value={pptSettings.ppt_subheading_font_size || '20px'}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_subheading_font_size: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
-            >
-              <option value="16px">16 px</option>
-              <option value="18px">18 px</option>
-              <option value="20px">20 px (Default)</option>
-              <option value="22px">22 px</option>
-              <option value="24px">24 px</option>
-            </select>
-          </div>
+              {/* 3-Column Font Size Selector */}
+              <div className="md:col-span-2 grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Title Size
+                  </label>
+                  <select
+                    value={pptSettings.ppt_title_font_size || '22px'}
+                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_title_font_size: e.target.value }))}
+                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                  >
+                    <option value="20px">20 px</option>
+                    <option value="22px">22 px (Default)</option>
+                    <option value="24px">24 px</option>
+                    <option value="28px">28 px</option>
+                    <option value="32px">32 px</option>
+                  </select>
+                </div>
 
-          {/* Body Text Font Size */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Body Text Font Size
-            </label>
-            <select
-              value={pptSettings.ppt_body_font_size || '18px'}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_body_font_size: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
-            >
-              <option value="14px">14 px</option>
-              <option value="16px">16 px</option>
-              <option value="18px">18 px (Default)</option>
-              <option value="20px">20 px</option>
-            </select>
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Heading Size
+                  </label>
+                  <select
+                    value={pptSettings.ppt_subheading_font_size || '20px'}
+                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_subheading_font_size: e.target.value }))}
+                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                  >
+                    <option value="16px">16 px</option>
+                    <option value="18px">18 px</option>
+                    <option value="20px">20 px (Default)</option>
+                    <option value="22px">22 px</option>
+                    <option value="24px">24 px</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Body Size
+                  </label>
+                  <select
+                    value={pptSettings.ppt_body_font_size || '18px'}
+                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_body_font_size: e.target.value }))}
+                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                  >
+                    <option value="14px">14 px</option>
+                    <option value="16px">16 px</option>
+                    <option value="18px">18 px (Default)</option>
+                    <option value="20px">20 px</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Header Title */}

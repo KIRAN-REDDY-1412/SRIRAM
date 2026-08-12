@@ -199,28 +199,37 @@ export const PharmDVerseBrandedDocumentContainer = ({
           }
         }
 
+        .pharmdverse-document-page,
+        .pharmdverse-document-page * {
+          font-family: ${fontFamily} !important;
+        }
+
+        .pharmdverse-document-page h3,
+        .pharmdverse-document-page h4,
+        .branded-heading,
+        .branded-heading * {
+          font-size: ${headingFontSize || '14px'} !important;
+          color: ${primaryColor} !important;
+        }
+
+        .pharmdverse-document-page p,
+        .pharmdverse-document-page table,
+        .pharmdverse-document-page td,
+        .pharmdverse-document-page th,
+        .pharmdverse-document-page div,
+        .pharmdverse-document-page span,
+        .pharmdverse-document-page label,
+        .pharmdverse-document-page strong,
+        .pharmdverse-document-page b,
+        .pharmdverse-document-page li,
         .branded-body,
-        .branded-body div,
-        .branded-body span,
-        .branded-body p,
-        .branded-body td,
-        .branded-body th,
-        .branded-body li,
-        .branded-body strong,
-        .branded-body label,
-        .branded-body a {
-          font-size: ${bodyFontSize} !important;
+        .branded-body * {
+          font-size: ${bodyFontSize || '12px'};
         }
 
         .branded-title,
         .branded-title * {
-          font-size: ${titleFontSize} !important;
-          color: ${primaryColor} !important;
-        }
-
-        .branded-heading,
-        .branded-heading * {
-          font-size: ${headingFontSize} !important;
+          font-size: ${titleFontSize || '16px'} !important;
           color: ${primaryColor} !important;
         }
 

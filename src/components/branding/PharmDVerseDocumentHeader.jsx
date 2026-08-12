@@ -65,19 +65,19 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         {/* CENTER: COLLEGE NAME (SINGLE LINE), AUTONOMOUS, HOSPITAL NAME */}
         <div className="flex-1 text-center px-1 sm:px-3 space-y-0.5 min-w-0">
           {showCollegeName && (
-            <h1 className="branded-title font-black uppercase tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+            <h1 className="branded-title font-black uppercase tracking-tight leading-tight text-center">
               {collegeName}
             </h1>
           )}
 
           {showAutonomous && isAutonomous && (
-            <div className="text-[10px] sm:text-xs font-bold italic text-indigo-900 tracking-wide whitespace-nowrap">
+            <div className="text-[10px] sm:text-xs font-bold italic text-indigo-900 tracking-wide">
               (Autonomous)
             </div>
           )}
 
           {showHospitalName && (
-            <h2 className="text-[10px] sm:text-xs md:text-sm font-extrabold uppercase text-slate-800 tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">
+            <h2 className="text-[11px] sm:text-xs md:text-sm font-extrabold uppercase text-slate-800 tracking-wider text-center">
               {hospitalName}
             </h2>
           )}

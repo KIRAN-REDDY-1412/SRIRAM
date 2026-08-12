@@ -462,6 +462,14 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     });
   };
 
+  const handleToggle = (key) => {
+    setSettings(prev => {
+      const updated = { ...prev, [key]: !prev[key] };
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
+      return updated;
+    });
+  };
+
   const handleRestoreDefault = () => {
     setSettings(DEFAULT_SETTINGS);
     window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: DEFAULT_SETTINGS }));

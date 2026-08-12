@@ -333,11 +333,10 @@ export const PreceptorStudentCasesView = ({ student, preceptor, initialFilter = 
                         {(c.status === 'Approved' || c.overall_case_status === 'Approved') && (
                           <button
                             onClick={() => setSelectedCaseForPDF(c)}
-                            className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                            className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-all"
                             title="Download Approved Official PDF"
                           >
                             <Download className="w-3.5 h-3.5" />
-                            <span>Approved PDF</span>
                           </button>
                         )}
                       </div>

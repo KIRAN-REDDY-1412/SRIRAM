@@ -101,15 +101,16 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
       <div className="border-4 border-slate-900 rounded-3xl p-6 bg-white shadow-2xl space-y-6 text-slate-900 min-h-[420px] flex flex-col justify-between" style={{ fontFamily }}>
         {slideNum === 1 && (
           <div className="space-y-5">
-            {/* Header Box with College Logo */}
+            {/* Header Box with Dual Logos (College Left, Hospital Right) */}
             <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 flex items-center justify-between gap-4">
+              {/* College Logo (Left) */}
               {pptSettings?.show_logo !== false && (college?.college_logo_url || college?.logo_url) ? (
                 <img src={college.college_logo_url || college.logo_url} alt="College Logo" className="w-14 h-14 object-contain rounded" />
               ) : (
-                <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold text-xs shrink-0">
-                  LOGO
-                </div>
+                <img src="/logo.png" alt="College Logo" className="w-14 h-14 object-contain rounded" />
               )}
+
+              {/* College & Hospital Name (Center) */}
               <div className="flex-1 text-center space-y-0.5">
                 <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
                   {collegeName}
@@ -118,6 +119,11 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
                   (Autonomous) • {hospitalName}
                 </p>
               </div>
+
+              {/* Hospital Logo (Right Side - Lalitha Group of Hospitals) */}
+              {pptSettings?.show_hospital_logo !== false && (
+                <img src={college?.hospital_logo_url || '/hospital-logo.jpg'} alt="Lalitha Hospital Logo" className="w-14 h-14 object-contain rounded" />
+              )}
             </div>
 
             {/* Case ID Banner */}

@@ -56,19 +56,47 @@ export const generateClinicalCasePPTX = async ({
   const slide1 = pptx.addSlide();
   slide1.background = { color: 'FFFFFF' };
 
-  // College Banner
+  // College Banner Header Box
   slide1.addShape(pptx.shapes.RECTANGLE, {
     x: startX, y: 0.3, w: contentW, h: 0.9,
     fill: { color: 'F1F5F9' }, line: { color: '0F172A', width: 1.5 }
   });
 
+  const collegeLogo = college?.college_logo_url || college?.logo_url || (typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '');
+  const hospitalLogo = college?.hospital_logo_url || (typeof window !== 'undefined' ? `${window.location.origin}/hospital-logo.jpg` : '');
+
+  // Left Side: College Logo
+  if (pptSettings?.show_logo !== false && collegeLogo) {
+    try {
+      slide1.addImage({
+        path: collegeLogo,
+        x: startX + 0.1, y: 0.35, w: 0.8, h: 0.8
+      });
+    } catch (e) {
+      console.warn('Could not embed college logo in PPT:', e);
+    }
+  }
+
+  // Right Side: Hospital Logo (Lalitha Group of Hospitals)
+  if (pptSettings?.show_hospital_logo !== false && hospitalLogo) {
+    try {
+      slide1.addImage({
+        path: hospitalLogo,
+        x: startX + contentW - 0.9, y: 0.35, w: 0.8, h: 0.8
+      });
+    } catch (e) {
+      console.warn('Could not embed hospital logo in PPT:', e);
+    }
+  }
+
+  // Center Text: College Name & Hospital Subtitle
   slide1.addText(collegeName.toUpperCase(), {
-    x: startX + 0.1, y: 0.35, w: contentW - 0.2, h: 0.4,
-    fontFace, fontSize: titleFontSize - 2, bold: true, color: primaryColor, align: 'center'
+    x: startX + 1.0, y: 0.35, w: contentW - 2.0, h: 0.4,
+    fontFace, fontSize: titleFontSize - 3, bold: true, color: primaryColor, align: 'center'
   });
 
   slide1.addText(`(Autonomous) • ${hospitalName}`, {
-    x: startX + 0.1, y: 0.75, w: contentW - 0.2, h: 0.3,
+    x: startX + 1.0, y: 0.75, w: contentW - 2.0, h: 0.3,
     fontFace, fontSize: Math.max(subHeadingFontSize - 4, 11), italic: true, color: '475569', align: 'center'
   });
 

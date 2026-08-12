@@ -141,6 +141,30 @@ export const PharmDVerseBrandedDocumentContainer = ({
             size: ${paperSize} ${orientation.toLowerCase()};
             margin: ${marginTop} ${marginRight} ${marginBottom} ${marginLeft};
           }
+          body * {
+            visibility: hidden !important;
+          }
+          #official-clinical-case-pdf-container,
+          #official-clinical-case-pdf-container *,
+          .pharmdverse-document-page,
+          .pharmdverse-document-page * {
+            visibility: visible !important;
+          }
+          #official-clinical-case-pdf-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+          .pharmdverse-document-page {
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            page-break-after: always !important;
+            break-after: page !important;
+          }
           body {
             background-color: #ffffff !important;
             font-family: ${fontFamily} !important;

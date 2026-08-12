@@ -6,6 +6,31 @@ import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromS
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 
+const convertUrlToBase64 = (url) => {
+  return new Promise((resolve) => {
+    if (!url || typeof url !== 'string' || url.startsWith('data:')) {
+      return resolve(url);
+    }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width || 120;
+        canvas.height = img.naturalHeight || img.height || 120;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        resolve(dataURL);
+      } catch (e) {
+        resolve(url);
+      }
+    };
+    img.onerror = () => resolve(url);
+    img.src = url;
+  });
+};
+
 export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, student, preceptor, college }) => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -36,11 +61,20 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       if (brandRes.success && brandRes.settings) {
         setBranding(brandRes.settings);
       }
-      if (collegeRes.success && collegeRes.college) {
-        setCollegeData(collegeRes.college);
-      } else {
-        setCollegeData(college);
+
+      const targetCollege = (collegeRes.success && collegeRes.college) ? collegeRes.college : college;
+      if (targetCollege) {
+        const [cLogo, hLogo] = await Promise.all([
+          convertUrlToBase64(targetCollege.college_logo_url || targetCollege.logo_url),
+          convertUrlToBase64(targetCollege.hospital_logo_url)
+        ]);
+        setCollegeData({
+          ...targetCollege,
+          college_logo_url: cLogo || targetCollege.college_logo_url || targetCollege.logo_url,
+          hospital_logo_url: hLogo || targetCollege.hospital_logo_url
+        });
       }
+
       setLoading(false);
     };
 
@@ -60,7 +94,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       const pdf = new jsPDF({
         orientation: isLandscape ? 'landscape' : 'portrait',
         unit: 'mm',
-        format: branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4'
+        format: branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4',
+        compress: true
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -69,22 +104,34 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
       for (let i = 0; i < pagesToCapture.length; i++) {
         if (i > 0) pdf.addPage();
-        const pageCanvas = await html2canvas(pagesToCapture[i], {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff'
-        });
 
-        const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        let pageCanvas;
+        try {
+          pageCanvas = await html2canvas(pagesToCapture[i], {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+          });
+        } catch (cErr) {
+          pageCanvas = await html2canvas(pagesToCapture[i], {
+            scale: 1.5,
+            useCORS: false,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#ffffff'
+          });
+        }
+
+        const imgData = pageCanvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       }
 
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
-      window.print();
+      alert('Could not download PDF directly. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -175,7 +222,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     >
       <div className="space-y-4 text-xs">
         {/* TOP ACTION BAR */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 no-print">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
@@ -184,14 +231,26 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             </div>
           </div>
 
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloading || loading}
-            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
-          >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span>Download {fileName}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-slate-700 font-extrabold text-xs flex items-center gap-2 transition-all"
+              title="Print Document directly"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading || loading}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
+            >
+              {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <span>Download {fileName}</span>
+            </button>
+          </div>
         </div>
 
         {/* PRINTABLE CONTAINER */}

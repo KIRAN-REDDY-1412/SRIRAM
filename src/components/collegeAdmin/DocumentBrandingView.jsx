@@ -837,165 +837,60 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             </div>
           </div>
 
-          {/* SECTIONS 5 & 6: PAGE SETUP, MARGINS & TYPOGRAPHY */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            {/* SECTION 5: PAGE SETUP & MARGINS */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <Printer className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                Page & Margins
-              </h4>
+          {/* PDF TYPOGRAPHY & FONT SIZES CARD */}
+          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+              <Type className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>PDF Typography & Font Sizes</span>
+            </h4>
 
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Paper Size</label>
-                  <select value={settings.paper_size} onChange={(e) => handleChange('paper_size', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                    <option value="A4">A4</option>
-                    <option value="Letter">Letter</option>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+              <div className="md:col-span-2 space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Font Family (Font Type)</label>
+                <select value={settings.font_family} onChange={(e) => handleChange('font_family', e.target.value)} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
+                  <option value="Times New Roman">Times New Roman (Serif)</option>
+                  <option value="Calibri">Calibri (Sans-serif)</option>
+                  <option value="Arial">Arial (Sans-serif)</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                  <option value="Inter">Inter (Clean Modern)</option>
+                  <option value="Roboto">Roboto (Technical)</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 grid grid-cols-3 gap-2 text-[10px]">
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Title Pt</label>
+                  <select value={settings.title_font_size} onChange={(e) => handleChange('title_font_size', e.target.value)} className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white text-center">
+                    <option value="10pt">10pt</option>
+                    <option value="11pt">11pt</option>
+                    <option value="12pt">12pt</option>
+                    <option value="14pt">14pt</option>
+                    <option value="16pt">16pt</option>
+                    <option value="18pt">18pt</option>
                   </select>
                 </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Orientation</label>
-                  <select value={settings.orientation} onChange={(e) => handleChange('orientation', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                    <option value="Portrait">Portrait</option>
-                    <option value="Landscape">Landscape</option>
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Heading Pt</label>
+                  <select value={settings.heading_font_size} onChange={(e) => handleChange('heading_font_size', e.target.value)} className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white text-center">
+                    <option value="10pt">10pt</option>
+                    <option value="11pt">11pt</option>
+                    <option value="12pt">12pt</option>
+                    <option value="14pt">14pt</option>
+                    <option value="16pt">16pt</option>
                   </select>
                 </div>
-
-                <div className="pt-1 grid grid-cols-2 gap-1.5 text-[10px]">
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Margin Top</label>
-                    <select
-                      value={settings.margin_top || '15mm'}
-                      onChange={(e) => handleChange('margin_top', e.target.value)}
-                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
-                    >
-                      <option value="5mm">5 mm</option>
-                      <option value="10mm">10 mm</option>
-                      <option value="15mm">15 mm (Default)</option>
-                      <option value="20mm">20 mm</option>
-                      <option value="25mm">25 mm</option>
-                      <option value="30mm">30 mm</option>
-                      <option value="35mm">35 mm</option>
-                      <option value="40mm">40 mm</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Margin Bottom</label>
-                    <select
-                      value={settings.margin_bottom || '15mm'}
-                      onChange={(e) => handleChange('margin_bottom', e.target.value)}
-                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
-                    >
-                      <option value="5mm">5 mm</option>
-                      <option value="10mm">10 mm</option>
-                      <option value="15mm">15 mm (Default)</option>
-                      <option value="20mm">20 mm</option>
-                      <option value="25mm">25 mm</option>
-                      <option value="30mm">30 mm</option>
-                      <option value="35mm">35 mm</option>
-                      <option value="40mm">40 mm</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Margin Left</label>
-                    <select
-                      value={settings.margin_left || '15mm'}
-                      onChange={(e) => handleChange('margin_left', e.target.value)}
-                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
-                    >
-                      <option value="5mm">5 mm</option>
-                      <option value="10mm">10 mm</option>
-                      <option value="15mm">15 mm (Default)</option>
-                      <option value="20mm">20 mm</option>
-                      <option value="25mm">25 mm</option>
-                      <option value="30mm">30 mm</option>
-                      <option value="35mm">35 mm</option>
-                      <option value="40mm">40 mm</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Margin Right</label>
-                    <select
-                      value={settings.margin_right || '15mm'}
-                      onChange={(e) => handleChange('margin_right', e.target.value)}
-                      className="w-full h-7 px-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-mono text-slate-900 dark:text-white font-bold"
-                    >
-                      <option value="5mm">5 mm</option>
-                      <option value="10mm">10 mm</option>
-                      <option value="15mm">15 mm (Default)</option>
-                      <option value="20mm">20 mm</option>
-                      <option value="25mm">25 mm</option>
-                      <option value="30mm">30 mm</option>
-                      <option value="35mm">35 mm</option>
-                      <option value="40mm">40 mm</option>
-                    </select>
-                  </div>
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Body Pt</label>
+                  <select value={settings.body_font_size} onChange={(e) => handleChange('body_font_size', e.target.value)} className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white text-center">
+                    <option value="10pt">10pt</option>
+                    <option value="11pt">11pt</option>
+                    <option value="12pt">12pt</option>
+                    <option value="14pt">14pt</option>
+                    <option value="16pt">16pt</option>
+                  </select>
                 </div>
               </div>
             </div>
-
-            {/* SECTION 6: TYPOGRAPHY & FONT SIZES */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <Type className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Typography & Font Sizes
-              </h4>
-
-              <div className="space-y-2 text-xs">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-0.5">Font Family (Font Type)</label>
-                  <select value={settings.font_family} onChange={(e) => handleChange('font_family', e.target.value)} className="w-full h-8 px-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                    <option value="Times New Roman">Times New Roman (Serif)</option>
-                    <option value="Calibri">Calibri (Sans-serif)</option>
-                    <option value="Arial">Arial (Sans-serif)</option>
-                    <option value="Georgia">Georgia (Serif)</option>
-                    <option value="Inter">Inter (Clean Modern)</option>
-                    <option value="Roboto">Roboto (Technical)</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5 text-[10px]">
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Title Pt</label>
-                    <select value={settings.title_font_size} onChange={(e) => handleChange('title_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                      <option value="10pt">10pt</option>
-                      <option value="11pt">11pt</option>
-                      <option value="12pt">12pt</option>
-                      <option value="14pt">14pt</option>
-                      <option value="16pt">16pt</option>
-                      <option value="18pt">18pt</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Heading Pt</label>
-                    <select value={settings.heading_font_size} onChange={(e) => handleChange('heading_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                      <option value="10pt">10pt</option>
-                      <option value="11pt">11pt</option>
-                      <option value="12pt">12pt</option>
-                      <option value="14pt">14pt</option>
-                      <option value="16pt">16pt</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-0.5">Body Pt</label>
-                    <select value={settings.body_font_size} onChange={(e) => handleChange('body_font_size', e.target.value)} className="w-full h-7 px-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 font-bold text-slate-900 dark:text-white">
-                      <option value="10pt">10pt</option>
-                      <option value="11pt">11pt</option>
-                      <option value="12pt">12pt</option>
-                      <option value="14pt">14pt</option>
-                      <option value="16pt">16pt</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </div>
 
           {/* SECTION 7: PDF MULTI-PAGE CONTROLS & SIGNATURES */}

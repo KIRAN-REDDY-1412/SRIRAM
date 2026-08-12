@@ -120,12 +120,13 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             windowWidth: isLandscape ? 1123 : 850,
             onclone: (clonedDoc, clonedEl) => {
               if (clonedEl) {
-                clonedEl.style.maxHeight = 'none';
-                clonedEl.style.height = 'auto';
-                clonedEl.style.overflow = 'visible';
+                clonedEl.style.width = isLandscape ? '297mm' : '210mm';
+                clonedEl.style.minHeight = isLandscape ? '210mm' : '297mm';
+                clonedEl.style.height = isLandscape ? '210mm' : '297mm';
+                clonedEl.style.maxHeight = isLandscape ? '210mm' : '297mm';
                 clonedEl.style.margin = '0';
-                clonedEl.style.padding = '10mm 12mm';
                 clonedEl.style.boxShadow = 'none';
+                clonedEl.style.transform = 'none';
               }
             }
           });

@@ -307,14 +307,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           ) : (
             <div id="official-clinical-case-pdf-container" className="space-y-6">
               
-              {/* PAGE 1 OF 2 */}
+              {/* PAGE 1 OF 3: PATIENT PROFILE & VITAL SIGNS */}
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
                 caseId={caseId}
                 student={student}
                 preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name}
-                pageNumber="1 of 2"
+                pageNumber="1 of 3"
                 showSignatures={false}
               >
                 <div className="space-y-4 text-xs">
@@ -380,84 +380,83 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                           </table>
                         </div>
                       )}
-
-                      {/* LAB INVESTIGATIONS TABLE */}
-                      {labs.length > 0 && (
-                        <div className="space-y-1 pt-1">
-                          <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
-                            Laboratory Investigations
-                          </strong>
-                          <table className="w-full text-left border border-collapse text-[10px] branded-border">
-                            <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
-                              <tr>
-                                <th className="p-1.5 border-r branded-border">Category</th>
-                                <th className="p-1.5 border-r branded-border">Parameter Name</th>
-                                <th className="p-1.5 border-r branded-border">Observed Value</th>
-                                <th className="p-1.5">Reference Range</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y branded-border">
-                              {labs.map((l, idx) => (
-                                <tr key={idx} className="border-b branded-border">
-                                  <td className="p-1.5 border-r branded-border">{l.category || 'General'}</td>
-                                  <td className="p-1.5 border-r font-bold branded-border">{l.parameter_name}</td>
-                                  <td className="p-1.5 border-r font-mono font-bold branded-border">{l.test_value} {l.unit || ''}</td>
-                                  <td className="p-1.5 border-r branded-border">{l.reference_range || '—'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {/* PRESCRIBED PHARMACOTHERAPY TABLE */}
-                      {drugs.length > 0 && (
-                        <div className="space-y-1 pt-1">
-                          <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
-                            Prescribed Pharmacotherapy Log
-                          </strong>
-                          <table className="w-full text-left border border-collapse text-[10px] branded-border">
-                            <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
-                              <tr>
-                                <th className="p-1.5 border-r branded-border">S.No</th>
-                                <th className="p-1.5 border-r branded-border">Brand & Generic Name</th>
-                                <th className="p-1.5 border-r branded-border">Dose & Route</th>
-                                <th className="p-1.5">Frequency</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y branded-border">
-                              {drugs.map((d, idx) => (
-                                <tr key={idx} className="border-b branded-border">
-                                  <td className="p-1.5 border-r text-center font-mono branded-border">{d.s_no || idx + 1}</td>
-                                  <td className="p-1.5 border-r font-bold branded-border">
-                                    {d.trade_name} {d.generic_name ? `(${d.generic_name})` : ''}
-                                  </td>
-                                  <td className="p-1.5 border-r branded-border">{d.dose} ({d.route_of_admin || 'Oral'})</td>
-                                  <td className="p-1.5 font-mono font-bold branded-border">{d.frequency || 'OD'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
                     </div>
                   )}
 
                 </div>
               </PharmDVerseBrandedDocumentContainer>
 
-              {/* PAGE 2 OF 2 */}
+              {/* PAGE 2 OF 3: CLINICAL INVESTIGATIONS & PHARMACOTHERAPY & COUNSELLING */}
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
                 caseId={caseId}
                 student={student}
-                preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Assigned Faculty Preceptor'}
-                pageNumber="2 of 2"
-                isLastPage={true}
-                showSignatures={true}
+                preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name}
+                pageNumber="2 of 3"
+                showSignatures={false}
               >
                 <div className="space-y-4 text-xs">
+
+                  {/* LAB INVESTIGATIONS TABLE */}
+                  {labs.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
+                        Laboratory Investigations
+                      </strong>
+                      <table className="w-full text-left border border-collapse text-[10px] branded-border">
+                        <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                          <tr>
+                            <th className="p-1.5 border-r branded-border">Category</th>
+                            <th className="p-1.5 border-r branded-border">Parameter Name</th>
+                            <th className="p-1.5 border-r branded-border">Observed Value</th>
+                            <th className="p-1.5">Reference Range</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y branded-border">
+                          {labs.map((l, idx) => (
+                            <tr key={idx} className="border-b branded-border">
+                              <td className="p-1.5 border-r branded-border">{l.category || 'General'}</td>
+                              <td className="p-1.5 border-r font-bold branded-border">{l.parameter_name}</td>
+                              <td className="p-1.5 border-r font-mono font-bold branded-border">{l.test_value} {l.unit || ''}</td>
+                              <td className="p-1.5 border-r branded-border">{l.reference_range || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* PRESCRIBED PHARMACOTHERAPY TABLE */}
+                  {drugs.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <strong className="block text-[11px] font-extrabold uppercase branded-subheading">
+                        Prescribed Pharmacotherapy Log
+                      </strong>
+                      <table className="w-full text-left border border-collapse text-[10px] branded-border">
+                        <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
+                          <tr>
+                            <th className="p-1.5 border-r branded-border">S.No</th>
+                            <th className="p-1.5 border-r branded-border">Brand & Generic Name</th>
+                            <th className="p-1.5 border-r branded-border">Dose & Route</th>
+                            <th className="p-1.5">Frequency</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y branded-border">
+                          {drugs.map((d, idx) => (
+                            <tr key={idx} className="border-b branded-border">
+                              <td className="p-1.5 border-r text-center font-mono branded-border">{d.s_no || idx + 1}</td>
+                              <td className="p-1.5 border-r font-bold branded-border">
+                                {d.trade_name} {d.generic_name ? `(${d.generic_name})` : ''}
+                              </td>
+                              <td className="p-1.5 border-r branded-border">{d.dose} ({d.route_of_admin || 'Oral'})</td>
+                              <td className="p-1.5 font-mono font-bold branded-border">{d.frequency || 'OD'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
                   {/* MODULE 2: PATIENT COUNSELLING */}
                   {counselling.id && (
@@ -532,6 +531,22 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                       </div>
                     </div>
                   )}
+
+                </div>
+              </PharmDVerseBrandedDocumentContainer>
+
+              {/* PAGE 3 OF 3: SPECIALIZED DOCUMENTATION & SIGNATURES */}
+              <PharmDVerseBrandedDocumentContainer
+                college={finalCollegeObj}
+                branding={branding}
+                caseId={caseId}
+                student={student}
+                preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Assigned Faculty Preceptor'}
+                pageNumber="3 of 3"
+                isLastPage={true}
+                showSignatures={true}
+              >
+                <div className="space-y-4 text-xs">
 
                   {/* MODULE 4: DRUG INFORMATION REQUEST */}
                   {dir.id && (

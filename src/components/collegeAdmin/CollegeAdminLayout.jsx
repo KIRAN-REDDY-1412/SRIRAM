@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2 } from 'lucide-react';
+import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2, TrendingUp } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 
@@ -8,6 +8,7 @@ import { AddPreceptorView } from './AddPreceptorView';
 import { PreceptorListView } from './PreceptorListView';
 import { AddStudentView } from './AddStudentView';
 import { StudentListView } from './StudentListView';
+import { StudentPromotionView } from './StudentPromotionView';
 import { AssignStudentsView } from './AssignStudentsView';
 import { AssignmentListView } from './AssignmentListView';
 import { DocumentBrandingView } from './DocumentBrandingView';
@@ -149,6 +150,19 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
             >
               <GraduationCap className="w-4 h-4 shrink-0" />
               <span>Student Management</span>
+            </button>
+
+            {/* Student Promotion */}
+            <button
+              onClick={() => handleNavigate('student-promotion')}
+              className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
+                activeTab === 'student-promotion'
+                  ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 shrink-0" />
+              <span>Student Promotion</span>
             </button>
 
             {/* Assignment Management */}
@@ -311,6 +325,10 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               college={college}
               onAddNew={() => handleNavigate('add-student')}
             />
+          )}
+
+          {activeTab === 'student-promotion' && (
+            <StudentPromotionView college={college} />
           )}
 
           {activeTab === 'assign-students' && (

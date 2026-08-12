@@ -1415,6 +1415,30 @@ export const deleteStudentFromSupabase = async (studentId) => {
   }
 };
 
+export const promoteStudentsBatchInSupabase = async (studentIds, targetYear, targetAcademicYear) => {
+  try {
+    if (!studentIds || studentIds.length === 0) return { success: false, error: 'No students selected for promotion.' };
+    
+    const payload = {
+      year: targetYear
+    };
+    if (targetAcademicYear) {
+      payload.academic_year = targetAcademicYear;
+    }
+
+    const { data, error } = await supabase
+      .from('students')
+      .update(payload)
+      .in('id', studentIds)
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, count: data?.length || studentIds.length, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
 // ====================================================================
 // REGISTRATION REQUEST & COLLEGE CORE SERVICES
 // ====================================================================

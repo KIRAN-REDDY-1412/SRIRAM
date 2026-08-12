@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, User, GraduationCap, Building2, LogOut, Sun, Moon, Menu, X, ShieldCheck, UserCheck, ClipboardList, FileText, FileCheck2, TrendingUp, ChevronDown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
+import { fetchCollegeByIdFromSupabase, fetchStudentsFromSupabase } from '../../services/supabaseService';
 
 import { CollegeAdminDashboardView } from './CollegeAdminDashboardView';
 import { AddPreceptorView } from './AddPreceptorView';
@@ -24,6 +24,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
   const { activeTab, setActiveTab, pushTab, showLeaveModal, setShowLeaveModal } = useWorkspaceHistory('dashboard');
   const [collegeAdminCaseFilter, setCollegeAdminCaseFilter] = useState('All');
   const [selectedBatchFilter, setSelectedBatchFilter] = useState('All');
+  const [activeStudentBatches, setActiveStudentBatches] = useState([]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [college, setCollege] = useState(initialCollege);
   const [showLogoModal, setShowLogoModal] = useState(false);
@@ -44,7 +45,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
     return () => window.removeEventListener('pharmdverse_college_updated', handleCollegeUpdated);
   }, []);
 
-  // ALSO FETCH FRESH COLLEGE RECORD DIRECTLY FROM SUPABASE ON MOUNT
+  // FETCH FRESH COLLEGE RECORD DIRECTLY FROM SUPABASE ON MOUNT
   useEffect(() => {
     const loadFreshCollege = async () => {
       if (initialCollege?.id) {
@@ -56,6 +57,22 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
     };
     loadFreshCollege();
   }, [initialCollege?.id]);
+
+  // DYNAMICALLY FETCH ACTUAL REGISTERED ACTIVE STUDENT BATCHES FOR THIS COLLEGE
+  useEffect(() => {
+    const loadActiveBatches = async () => {
+      if (college?.id) {
+        const res = await fetchStudentsFromSupabase(college.id);
+        if (res.success && res.students) {
+          const batches = Array.from(new Set(res.students.map(s => s.batch).filter(Boolean))).sort();
+          setActiveStudentBatches(batches);
+        } else {
+          setActiveStudentBatches([]);
+        }
+      }
+    };
+    loadActiveBatches();
+  }, [college?.id, activeTab]);
 
   const handleNavigate = (tab, filter = 'All', batchFilter = 'All') => {
     setCollegeAdminCaseFilter(filter);
@@ -171,27 +188,29 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
                 <ChevronDown className="w-3.5 h-3.5 opacity-60" />
               </button>
 
-              {/* Sub-menu Registered Batches */}
-              <div className="pl-9 pr-1 py-1 space-y-1.5">
-                <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block">
-                  Registered Batches:
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {['Y20', 'Y21', 'Y22', 'Y23', 'Y24', 'Y25'].map(b => (
-                    <button
-                      key={b}
-                      onClick={() => handleNavigate('student-promotion', 'All', b)}
-                      className={`px-2 py-0.5 rounded-md text-[11px] font-bold font-mono transition-all border ${
-                        selectedBatchFilter === b && activeTab === 'student-promotion'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-400 font-extrabold shadow-xs'
-                          : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {b}
-                    </button>
-                  ))}
+              {/* Sub-menu Registered Active Student Batches */}
+              {activeStudentBatches.length > 0 && (
+                <div className="pl-9 pr-1 py-1 space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider block">
+                    Active Student Batches:
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {activeStudentBatches.map(b => (
+                      <button
+                        key={b}
+                        onClick={() => handleNavigate('student-promotion', 'All', b)}
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-bold font-mono transition-all border ${
+                          selectedBatchFilter === b && activeTab === 'student-promotion'
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-400 font-extrabold shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Assignment Management */}

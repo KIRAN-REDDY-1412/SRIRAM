@@ -111,10 +111,10 @@ export const PharmDVerseBrandedDocumentContainer = ({
 
   return (
     <div
-      className={`pharmdverse-document-page bg-white shadow-xl relative overflow-visible print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-between ${
+      className={`pharmdverse-document-page bg-white shadow-xl relative overflow-visible print:shadow-none print:m-0 print:w-full print:max-w-none print:break-after-page page-break transition-all duration-300 flex flex-col justify-start space-y-4 ${
         isLandscape 
           ? 'w-full max-w-5xl mx-auto min-h-[210mm] aspect-[297/210]' 
-          : 'w-full max-w-3xl mx-auto min-h-[297mm]'
+          : 'w-full max-w-3xl mx-auto min-h-[270mm]'
       } ${
         zebraStriping ? '[&_tbody_tr:nth-child(even)]:bg-slate-100/70' : '[&_tbody_tr]:bg-white'
       } ${
@@ -139,7 +139,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
         @media print {
           @page {
             size: ${paperSize} ${orientation.toLowerCase()};
-            margin: ${marginTop} ${marginRight} ${marginBottom} ${marginLeft};
+            margin: 10mm 12mm 10mm 12mm;
           }
           html, body {
             height: auto !important;
@@ -174,9 +174,10 @@ export const PharmDVerseBrandedDocumentContainer = ({
           }
           .pharmdverse-document-page {
             box-shadow: none !important;
-            margin: 0 auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
             height: auto !important;
-            min-height: 270mm !important;
+            min-height: 0 !important;
             max-height: none !important;
             overflow: visible !important;
             page-break-after: always !important;

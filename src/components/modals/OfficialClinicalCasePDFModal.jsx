@@ -123,6 +123,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
                 clonedEl.style.height = 'auto';
                 clonedEl.style.overflow = 'visible';
                 clonedEl.style.margin = '0';
+                clonedEl.style.padding = '10mm 12mm';
                 clonedEl.style.boxShadow = 'none';
               }
             }

@@ -430,11 +430,9 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         </div>
       )}
 
-      {/* SPLIT LAYOUT: FORM INPUTS + INSTANT PERMANENT LIVE PREVIEW PANEL */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* LEFT COLUMN: BRANDING CONTROLS */}
-        <div className="lg:col-span-7 space-y-6">
+      {/* FULL-WIDTH CONFIGURATION PANELS */}
+      <div className="space-y-6 max-w-5xl mx-auto">
+        <div className="space-y-6">
           
           {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY WITH MANDATORY MESSAGE) */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
@@ -884,23 +882,6 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
 
         </div>
 
-        {/* RIGHT COLUMN: INSTANT PERMANENT REAL-TIME LIVE PREVIEW PANEL */}
-        <div className="lg:col-span-5 space-y-3 sticky top-24 self-start">
-          <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-2 text-xs font-extrabold">
-              <MonitorPlay className="w-4 h-4 text-emerald-400" />
-              <span>Print Preview ({settings.paper_size} - {settings.orientation})</span>
-            </div>
-            <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md font-bold">
-              2-PAGE A4 PREVIEW
-            </span>
-          </div>
-
-          <div className="border border-slate-300 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-100 dark:bg-slate-950 max-h-[80vh] overflow-y-auto p-2 scale-[0.92] origin-top">
-            <SampleTwoPageDocument college={college} settings={settings} />
-          </div>
-        </div>
-
       </div>
 
       {/* PPT FORMAT CONFIGURATION SECTION */}
@@ -960,6 +941,78 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
             >
               <option value="16:9 (Widescreen)">16:9 (Widescreen - Modern HDTV)</option>
               <option value="4:3 (Standard)">4:3 (Standard Projector)</option>
+            </select>
+          </div>
+
+          {/* PPT Font Family */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              PPT Font Family
+            </label>
+            <select
+              value={pptSettings.font_family || 'Times New Roman'}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, font_family: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+            >
+              <option value="Times New Roman">Times New Roman (Recommended)</option>
+              <option value="Arial">Arial</option>
+              <option value="Calibri">Calibri</option>
+              <option value="Inter">Inter</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Georgia">Georgia</option>
+            </select>
+          </div>
+
+          {/* Slide Title Font Size */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Slide Title Font Size
+            </label>
+            <select
+              value={pptSettings.ppt_title_font_size || '22px'}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_title_font_size: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
+            >
+              <option value="20px">20 px</option>
+              <option value="22px">22 px (Default)</option>
+              <option value="24px">24 px</option>
+              <option value="28px">28 px</option>
+              <option value="32px">32 px</option>
+            </select>
+          </div>
+
+          {/* Sub-heading Font Size */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Sub-heading Font Size
+            </label>
+            <select
+              value={pptSettings.ppt_subheading_font_size || '20px'}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_subheading_font_size: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
+            >
+              <option value="16px">16 px</option>
+              <option value="18px">18 px</option>
+              <option value="20px">20 px (Default)</option>
+              <option value="22px">22 px</option>
+              <option value="24px">24 px</option>
+            </select>
+          </div>
+
+          {/* Body Text Font Size */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Body Text Font Size
+            </label>
+            <select
+              value={pptSettings.ppt_body_font_size || '18px'}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_body_font_size: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white font-mono"
+            >
+              <option value="14px">14 px</option>
+              <option value="16px">16 px</option>
+              <option value="18px">18 px (Default)</option>
+              <option value="20px">20 px</option>
             </select>
           </div>
 

@@ -119,11 +119,27 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             backgroundColor: '#ffffff',
             windowWidth: isLandscape ? 1123 : 850,
             onclone: (clonedDoc, clonedEl) => {
+              // Unclip all scroll containers in cloned document so html2canvas renders complete pages without truncating
+              const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto');
+              allScrollables.forEach(s => {
+                s.style.maxHeight = 'none';
+                s.style.overflow = 'visible';
+                s.style.height = 'auto';
+              });
+
+              const container = clonedDoc.getElementById('official-clinical-case-pdf-container');
+              if (container) {
+                container.style.maxHeight = 'none';
+                container.style.overflow = 'visible';
+                container.style.height = 'auto';
+              }
+
               if (clonedEl) {
                 clonedEl.style.width = isLandscape ? '297mm' : '210mm';
                 clonedEl.style.minHeight = isLandscape ? '210mm' : '297mm';
-                clonedEl.style.height = isLandscape ? '210mm' : '297mm';
-                clonedEl.style.maxHeight = isLandscape ? '210mm' : '297mm';
+                clonedEl.style.height = 'auto';
+                clonedEl.style.maxHeight = 'none';
+                clonedEl.style.overflow = 'visible';
                 clonedEl.style.margin = '0';
                 clonedEl.style.boxShadow = 'none';
                 clonedEl.style.transform = 'none';

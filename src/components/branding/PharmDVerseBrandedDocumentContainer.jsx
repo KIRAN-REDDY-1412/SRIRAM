@@ -185,9 +185,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
             width: 100% !important;
             box-sizing: border-box !important;
             min-height: ${isLandscape ? '190mm' : '265mm'} !important;
-            height: ${isLandscape ? '190mm' : '265mm'} !important;
-            max-height: ${isLandscape ? '190mm' : '265mm'} !important;
-            overflow: hidden !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
             page-break-before: always !important;
             page-break-after: always !important;
             break-before: page !important;

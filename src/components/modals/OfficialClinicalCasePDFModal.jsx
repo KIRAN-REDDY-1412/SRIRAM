@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer, Presentation } from 'lucide-react';
+import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
@@ -178,10 +178,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     }
   };
 
-  const handlePrintPDF = () => {
-    window.print();
-  };
-
   const [exportingPPT, setExportingPPT] = useState(false);
   const handleDownloadPPT = async () => {
     setExportingPPT(true);
@@ -298,16 +294,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrintPDF}
-              disabled={loading}
-              className="px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-extrabold text-xs flex items-center gap-2 transition-all shadow-xs"
-              title="Print directly or Save as PDF via Browser Print Dialog"
-            >
-              <Printer className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-              <span>Print / Save PDF</span>
-            </button>
-
-            <button
               onClick={handleDownloadPPT}
               disabled={exportingPPT || loading}
               className="px-4 py-2.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-extrabold text-xs flex items-center gap-2 transition-all disabled:opacity-50 shadow-xs"
@@ -326,41 +312,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               <span>{downloading ? 'Generating PDF...' : 'Download PDF'}</span>
             </button>
-          </div>
-        </div>
-
-        {/* PAGE NAVIGATION & JUMP TOOLBAR */}
-        <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900 text-white text-xs border border-slate-800 shadow-md">
-          <div className="flex items-center gap-2 font-bold text-emerald-400">
-            <FileCheck2 className="w-4.5 h-4.5 shrink-0" />
-            <span>📄 Complete 5-Page Clinical Case Document</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {[
-              { num: 1, label: 'Page 1: Demographics' },
-              { num: 2, label: 'Page 2: Examination & Vitals' },
-              { num: 3, label: 'Page 3: Lab Reports' },
-              { num: 4, label: 'Page 4: Meds & Counselling' },
-              { num: 5, label: 'Page 5: Logbook & Signatures' }
-            ].map(p => (
-              <button
-                key={p.num}
-                type="button"
-                onClick={() => {
-                  const container = document.getElementById('official-clinical-case-pdf-container');
-                  if (container) {
-                    const pages = container.querySelectorAll('.pharmdverse-document-page');
-                    if (pages && pages[p.num - 1]) {
-                      pages[p.num - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }
-                }}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white transition-all whitespace-nowrap"
-              >
-                {p.label}
-              </button>
-            ))}
           </div>
         </div>
 

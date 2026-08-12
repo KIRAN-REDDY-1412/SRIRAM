@@ -248,10 +248,10 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
             <button
               onClick={() => setShowPDF(true)}
               className="px-3.5 py-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
-              title="View & Download Official Branded PDF"
+              title="View & Download Official PDF"
             >
               <FileCheck2 className="w-4 h-4" />
-              <span>View Branded PDF</span>
+              <span>View Official PDF</span>
             </button>
 
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold">

@@ -227,7 +227,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
               <h4 className="font-bold text-emerald-900 dark:text-emerald-300">Official Clinical Record Approved</h4>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Branded PDF document with complete clinical student documentation.</p>
+              <p className="text-[11px] text-emerald-700 dark:text-emerald-400">Official PDF document with complete clinical student documentation.</p>
             </div>
           </div>
 

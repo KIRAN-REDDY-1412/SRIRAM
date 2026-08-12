@@ -177,17 +177,17 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               <span>Clinical Case Management</span>
             </button>
 
-            {/* Document Branding */}
+            {/* PDF & PPT Format */}
             <button
-              onClick={() => handleNavigate('document-branding')}
+              onClick={() => handleNavigate('pdf-format')}
               className={`w-full h-11 px-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                activeTab === 'document-branding'
+                activeTab === 'pdf-format' || activeTab === 'document-branding'
                   ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <FileText className="w-4 h-4 shrink-0" />
-              <span>📄 Document Branding</span>
+              <span>📄 PDF Format</span>
             </button>
 
             {/* My Profile */}
@@ -332,7 +332,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
             <ClinicalCaseManagementView college={college} initialFilter={collegeAdminCaseFilter} />
           )}
 
-          {activeTab === 'document-branding' && (
+          {(activeTab === 'pdf-format' || activeTab === 'document-branding') && (
             <DocumentBrandingView college={college} />
           )}
 

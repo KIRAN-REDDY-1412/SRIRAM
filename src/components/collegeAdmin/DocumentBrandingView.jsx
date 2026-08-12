@@ -230,8 +230,29 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
+  // PPT Format Settings State
+  const [pptSettings, setPptSettings] = useState({
+    theme: 'Clinical Emerald',
+    aspect_ratio: '16:9 (Widescreen)',
+    header_title: initialCollege?.college_name || initialCollege?.name || '',
+    footer_text: 'Pharm.D Clinical Case Presentation • Confidential',
+    show_logo: true,
+    show_autonomous: true,
+    show_student_preceptor: true
+  });
+  const [pptSaving, setPptSaving] = useState(false);
+  const [pptNotify, showPptNotify, clearPptNotify] = useInlineNotification();
+
+  const [brandNotify, showBrandNotify, clearBrandNotify] = useInlineNotification();
+
   useEffect(() => {
     setCollege(initialCollege);
+    if (initialCollege?.college_name || initialCollege?.name) {
+      setPptSettings(prev => ({
+        ...prev,
+        header_title: prev.header_title || initialCollege.college_name || initialCollege.name
+      }));
+    }
   }, [initialCollege]);
 
   // LIVE SYNCHRONIZATION FOR COLLEGE IDENTITY
@@ -249,22 +270,34 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     if (!college?.id) return;
     setLoading(true);
 
-    const [brandingRes, collegeRes] = await Promise.all([
+    // Load PPT settings from localStorage if available
+    try {
+      const savedPpt = localStorage.getItem(`pharmdverse_ppt_settings_${college.id}`);
+      if (savedPpt) {
+        setPptSettings(JSON.parse(savedPpt));
+      }
+    } catch (e) {}
+
+    const [res, colRes] = await Promise.all([
       fetchDocumentBrandingSettingsFromSupabase(college.id),
       fetchCollegeByIdFromSupabase(college.id)
     ]);
 
-    if (collegeRes.success && collegeRes.college) {
-      setCollege(collegeRes.college);
+    if (colRes.success && colRes.college) {
+      setCollege(colRes.college);
     }
 
-    if (brandingRes.success && brandingRes.settings) {
-      const loadedSettings = {
+    if (res.success && res.settings) {
+      setSettings({
         ...DEFAULT_SETTINGS,
-        ...brandingRes.settings
-      };
-      setSettings(loadedSettings);
-      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: loadedSettings }));
+        ...res.settings,
+        show_college_logo: res.settings.show_college_logo ?? true,
+        show_college_name: res.settings.show_college_name ?? true,
+        show_autonomous: res.settings.show_autonomous ?? true,
+        show_hospital_logo: res.settings.show_hospital_logo ?? true,
+        show_hospital_name: res.settings.show_hospital_name ?? true,
+        watermark_enabled: res.settings.watermark_enabled ?? true
+      });
     } else {
       setSettings(DEFAULT_SETTINGS);
     }
@@ -275,63 +308,62 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     loadBranding();
   }, [college?.id]);
 
-  const handleToggle = (key) => {
-    const nextVal = !settings[key];
-    const updated = { ...settings, [key]: nextVal };
-    setSettings(updated);
-    window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
-  };
-
   const handleChange = (key, value) => {
-    const updated = { ...settings, [key]: value };
-    setSettings(updated);
-    window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
+    setSettings(prev => {
+      const updated = { ...prev, [key]: value };
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updated }));
+      return updated;
+    });
   };
 
   const handleRestoreDefault = () => {
-    if (window.confirm('Are you sure you want to restore default branding settings?')) {
-      setSettings(DEFAULT_SETTINGS);
-      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: DEFAULT_SETTINGS }));
-    }
+    setSettings(DEFAULT_SETTINGS);
+    window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: DEFAULT_SETTINGS }));
   };
 
-  // Inline Notification Hook
-  const { notification: brandNotify, showNotification: showBrandNotify, clearNotification: clearBrandNotify } = useInlineNotification();
-
-  const handleSave = async (e) => {
-    if (e) e.preventDefault();
+  const handleSave = async () => {
     if (!college?.id) return;
-
     setSaving(true);
-    clearBrandNotify();
+    setErrorMsg('');
+    setSuccessMsg('');
 
     const res = await saveOrUpdateDocumentBrandingSettingsInSupabase(college.id, settings);
     setSaving(false);
 
     if (res.success) {
-      const updatedSettings = { ...DEFAULT_SETTINGS, ...res.settings };
-      setSettings(updatedSettings);
-
-      // BROADCAST LIVE SYNCHRONIZATION EVENT TO ALL OPEN MODALS AND PREVIEWS
-      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: updatedSettings }));
-
+      window.dispatchEvent(new CustomEvent('pharmdverse_branding_updated', { detail: settings }));
       showBrandNotify({
         type: 'success',
-        message: '✓ Document Branding Settings saved successfully!'
+        message: '✓ PDF Format Settings saved successfully!'
       });
     } else {
       showBrandNotify({
         type: 'error',
-        message: res.error || '✖ Failed to save Document Branding Settings.'
+        message: res.error || '✖ Failed to save PDF Format Settings.'
       });
     }
+  };
+
+  const handleSavePptFormat = () => {
+    if (!college?.id) return;
+    setPptSaving(true);
+    setTimeout(() => {
+      try {
+        localStorage.setItem(`pharmdverse_ppt_settings_${college.id}`, JSON.stringify(pptSettings));
+      } catch (e) {}
+      setPptSaving(false);
+      showPptNotify({
+        type: 'success',
+        message: '✓ PPT Format Settings saved successfully!'
+      });
+    }, 400);
   };
 
   if (loading) {
     return (
       <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800">
         <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-2" />
-        <p className="text-xs font-semibold text-slate-500">Loading Document Branding Settings...</p>
+        <p className="text-xs font-semibold text-slate-500">Loading PDF & PPT Format Settings...</p>
       </div>
     );
   }
@@ -344,10 +376,10 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <span>Document Branding Configuration</span>
+            <span>PDF Format Configuration</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Centralized PDF & Print Preview branding for all clinical documentation modules in <strong className="text-slate-800 dark:text-slate-200">{college?.college_name || college?.name}</strong>.
+            Centralized PDF & Print Format Settings for all clinical documentation modules in <strong className="text-slate-800 dark:text-slate-200">{college?.college_name || college?.name}</strong>.
           </p>
         </div>
 
@@ -379,7 +411,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 disabled:opacity-50"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? 'Saving...' : 'Save Branding'}</span>
+              <span>{saving ? 'Saving...' : 'Save PDF Format'}</span>
             </button>
           </div>
         </div>
@@ -872,12 +904,130 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
 
       </div>
 
+      {/* PPT FORMAT CONFIGURATION SECTION */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <Presentation className="w-5 h-5 text-amber-500" />
+              <span>PPT Format Configuration</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Customize presentation slides layout, header, themes, and presentation export formats for student case presentations.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <InlineActionNotification notification={pptNotify} onClose={clearPptNotify} position="inline" />
+            <button
+              type="button"
+              onClick={handleSavePptFormat}
+              disabled={pptSaving}
+              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-amber-600/20 transition-all disabled:opacity-50"
+            >
+              {pptSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>{pptSaving ? 'Saving...' : 'Save PPT Format'}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* PPT Theme */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Presentation Theme
+            </label>
+            <select
+              value={pptSettings.theme}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, theme: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+            >
+              <option value="Clinical Emerald">Clinical Emerald (Recommended)</option>
+              <option value="Modern Navy">Modern Navy</option>
+              <option value="Academic Indigo">Academic Indigo</option>
+              <option value="Classic White">Classic Minimal White</option>
+            </select>
+          </div>
+
+          {/* Slide Aspect Ratio */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Slide Aspect Ratio
+            </label>
+            <select
+              value={pptSettings.aspect_ratio}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, aspect_ratio: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+            >
+              <option value="16:9 (Widescreen)">16:9 (Widescreen - Modern HDTV)</option>
+              <option value="4:3 (Standard)">4:3 (Standard Projector)</option>
+            </select>
+          </div>
+
+          {/* Header Title */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Title Slide Header
+            </label>
+            <input
+              type="text"
+              value={pptSettings.header_title}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, header_title: e.target.value }))}
+              placeholder="e.g. Lalitha College of Pharmacy"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+            />
+          </div>
+
+          {/* Footer Text */}
+          <div className="space-y-2 md:col-span-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Slide Footer Text
+            </label>
+            <input
+              type="text"
+              value={pptSettings.footer_text}
+              onChange={(e) => setPptSettings(prev => ({ ...prev, footer_text: e.target.value }))}
+              placeholder="e.g. Pharm.D Clinical Case Presentation • Confidential"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+            />
+          </div>
+
+          {/* Display Toggles */}
+          <div className="space-y-3">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              Slide Details & Visibility
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={pptSettings.show_logo}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_logo: e.target.checked }))}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>Include College Logo on Title Slide</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={pptSettings.show_student_preceptor}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_student_preceptor: e.target.checked }))}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>Include Student & Preceptor Details</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* PREVIEW FULL PAGE MODAL */}
       {isPreviewModalOpen && (
         <ModalWrapper
           isOpen={isPreviewModalOpen}
           onClose={() => setIsPreviewModalOpen(false)}
-          title={`Full ${settings.paper_size} (${settings.orientation}) Centralized Document Branding Preview`}
+          title={`Full ${settings.paper_size} (${settings.orientation}) PDF Format Live Preview`}
           subtitle={`Exact rendering across all PharmDVerse clinical documentation modules (${settings.paper_size} - ${settings.orientation})`}
           maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
         >

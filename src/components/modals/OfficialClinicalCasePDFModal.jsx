@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer } from 'lucide-react';
+import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Printer, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
+import { generateClinicalCasePPTX } from '../../utils/generateClinicalCasePPTX';
 
 const convertUrlToBase64 = (url) => {
   return new Promise((resolve) => {
@@ -149,6 +150,26 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     }
   };
 
+  const [exportingPPT, setExportingPPT] = useState(false);
+  const handleDownloadPPT = async () => {
+    setExportingPPT(true);
+    try {
+      await generateClinicalCasePPTX({
+        clinicalCase,
+        student,
+        preceptor,
+        college: finalCollegeObj,
+        caseModulesData,
+        pptSettings: branding
+      });
+    } catch (err) {
+      console.error('Failed to generate PPT presentation:', err);
+      alert('Could not export PPT presentation. Please try again.');
+    } finally {
+      setExportingPPT(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const profile = caseModulesData.profile || {};
@@ -255,12 +276,22 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             </button>
 
             <button
+              onClick={handleDownloadPPT}
+              disabled={exportingPPT || loading}
+              className="px-4 py-2.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-extrabold text-xs flex items-center gap-2 transition-all disabled:opacity-50 shadow-xs"
+              title="Download Editable PowerPoint Presentation (.pptx)"
+            >
+              {exportingPPT ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+              <span>{exportingPPT ? 'Exporting...' : 'Download PPT (.pptx)'}</span>
+            </button>
+
+            <button
               onClick={handleDownloadPDF}
               disabled={downloading || loading}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
             >
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              <span>Download {fileName}</span>
+              <span>Download PDF</span>
             </button>
           </div>
         </div>

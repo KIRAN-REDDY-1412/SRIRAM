@@ -28,9 +28,9 @@ const DEFAULT_SETTINGS = {
   margin_left: '15mm',
   margin_right: '15mm',
   font_family: 'Times New Roman',
-  title_font_size: '16pt',
-  heading_font_size: '14pt',
-  body_font_size: '12pt',
+  title_font_size: '18px',
+  heading_font_size: '14px',
+  body_font_size: '12px',
   primary_color: '#0f172a',
   secondary_color: '#0284c7',
   table_header_color: '#f1f5f9',
@@ -889,10 +889,10 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
           <div className="p-3 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
             <div className="flex items-center gap-2 text-xs font-extrabold">
               <MonitorPlay className="w-4 h-4 text-emerald-400" />
-              <span>Live Interactive PDF Preview ({settings.paper_size} - {settings.orientation})</span>
+              <span>Print Preview ({settings.paper_size} - {settings.orientation})</span>
             </div>
-            <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold animate-pulse">
-              REAL-TIME 2-PAGE LIVE
+            <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-md font-bold">
+              2-PAGE A4 PREVIEW
             </span>
           </div>
 

@@ -74,9 +74,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
     }
   };
   const fontFamily = getFontStack(rawFontFamily);
-  const titleFontSize = branding?.title_font_size || '18pt';
-  const headingFontSize = branding?.heading_font_size || '14pt';
-  const bodyFontSize = branding?.body_font_size || '12pt';
+  const titleFontSize = branding?.title_font_size || '18px';
+  const headingFontSize = branding?.heading_font_size || '14px';
+  const bodyFontSize = branding?.body_font_size || '12px';
 
   const primaryColor = branding?.primary_color || '#0f172a';
   const secondaryColor = branding?.secondary_color || '#0284c7';

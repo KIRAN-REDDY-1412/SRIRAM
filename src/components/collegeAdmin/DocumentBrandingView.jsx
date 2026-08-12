@@ -413,6 +413,8 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     header_title: initialCollege?.college_name || initialCollege?.name || '',
     footer_text: 'Pharm.D Clinical Case Presentation • Confidential',
     show_logo: true,
+    show_hospital_logo: true,
+    show_watermark: true,
     show_autonomous: true,
     show_student_preceptor: true
   });
@@ -473,6 +475,22 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
         show_hospital_name: res.settings.show_hospital_name ?? true,
         watermark_enabled: res.settings.watermark_enabled ?? true
       });
+
+      setPptSettings(prev => ({
+        ...prev,
+        theme: res.settings.ppt_theme || res.settings.theme || prev.theme,
+        aspect_ratio: res.settings.ppt_aspect_ratio || res.settings.aspect_ratio || prev.aspect_ratio,
+        font_family: res.settings.ppt_font_family || res.settings.font_family || prev.font_family,
+        ppt_title_font_size: res.settings.ppt_title_font_size || prev.ppt_title_font_size,
+        ppt_subheading_font_size: res.settings.ppt_subheading_font_size || prev.ppt_subheading_font_size,
+        ppt_body_font_size: res.settings.ppt_body_font_size || prev.ppt_body_font_size,
+        header_title: res.settings.ppt_header_title || res.settings.header_title || prev.header_title,
+        footer_text: res.settings.ppt_footer_text || res.settings.footer_text || prev.footer_text,
+        show_logo: res.settings.show_logo ?? res.settings.ppt_show_college_logo ?? prev.show_logo ?? true,
+        show_hospital_logo: res.settings.show_hospital_logo ?? res.settings.ppt_show_hospital_logo ?? prev.show_hospital_logo ?? true,
+        show_watermark: res.settings.show_watermark ?? res.settings.ppt_show_watermark ?? prev.show_watermark ?? true,
+        show_student_preceptor: res.settings.show_student_preceptor ?? res.settings.ppt_show_student_preceptor ?? prev.show_student_preceptor ?? true
+      }));
     } else {
       setSettings(DEFAULT_SETTINGS);
     }
@@ -1235,15 +1253,15 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
           </div>
 
           {/* Display Toggles */}
-          <div className="space-y-3">
+          <div className="space-y-3 col-span-1 md:col-span-2 lg:col-span-3">
             <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Slide Details & Visibility
+              Slide Details & Visibility Options
             </label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800">
               <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  checked={pptSettings.show_logo}
+                  checked={pptSettings.show_logo !== false}
                   onChange={(e) => setPptSettings(prev => ({ ...prev, show_logo: e.target.checked }))}
                   className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
                 />
@@ -1253,7 +1271,27 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  checked={pptSettings.show_student_preceptor}
+                  checked={pptSettings.show_hospital_logo !== false}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_hospital_logo: e.target.checked }))}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>Include Hospital Logo on Title Slide</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={pptSettings.show_watermark !== false}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_watermark: e.target.checked }))}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>Include Slide Background Watermark</span>
+              </label>
+
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={pptSettings.show_student_preceptor !== false}
                   onChange={(e) => setPptSettings(prev => ({ ...prev, show_student_preceptor: e.target.checked }))}
                   className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
                 />

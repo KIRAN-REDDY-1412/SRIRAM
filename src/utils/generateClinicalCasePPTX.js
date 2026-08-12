@@ -52,9 +52,22 @@ export const generateClinicalCasePPTX = async ({
   const dir = caseModulesData?.dir || {};
   const adr = caseModulesData?.adr || {};
 
+  const addWatermark = (slide) => {
+    if (pptSettings?.show_watermark !== false && pptSettings?.ppt_show_watermark !== false) {
+      try {
+        slide.addText(collegeName.toUpperCase(), {
+          x: startX, y: 2.2, w: contentW, h: 1.2,
+          fontFace, fontSize: 28, bold: true, color: 'E2E8F0',
+          align: 'center', rotate: 330
+        });
+      } catch (e) {}
+    }
+  };
+
   // SLIDE 1: COVER / TITLE SLIDE
   const slide1 = pptx.addSlide();
   slide1.background = { color: 'FFFFFF' };
+  addWatermark(slide1);
 
   // College Banner Header Box
   slide1.addShape(pptx.shapes.RECTANGLE, {

@@ -241,9 +241,8 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     show_student_preceptor: true
   });
   const [pptSaving, setPptSaving] = useState(false);
-  const [pptNotify, showPptNotify, clearPptNotify] = useInlineNotification();
-
-  const [brandNotify, showBrandNotify, clearBrandNotify] = useInlineNotification();
+  const { notification: pptNotify, showNotification: showPptNotify, clearNotification: clearPptNotify } = useInlineNotification();
+  const { notification: brandNotify, showNotification: showBrandNotify, clearNotification: clearBrandNotify } = useInlineNotification();
 
   useEffect(() => {
     setCollege(initialCollege);

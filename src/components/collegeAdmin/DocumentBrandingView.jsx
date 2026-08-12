@@ -1014,197 +1014,283 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* PPT Theme */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Presentation Theme
-            </label>
-            <select
-              value={pptSettings.theme}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, theme: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
-            >
-              <option value="Clinical Emerald">Clinical Emerald (Recommended)</option>
-              <option value="Modern Navy">Modern Navy</option>
-              <option value="Academic Indigo">Academic Indigo</option>
-              <option value="Classic White">Classic Minimal White</option>
-            </select>
+      {/* PPT FORMAT CONFIGURATION PANELS */}
+      <div className="space-y-6 max-w-5xl mx-auto pt-6 border-t border-slate-200 dark:border-slate-800">
+        
+        {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY) */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <Building className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Section 1: College & Hospital Identity
+            </h3>
+            <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-800">
+              Read Only
+            </span>
           </div>
 
-          {/* Slide Aspect Ratio */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Slide Aspect Ratio
-            </label>
-            <select
-              value={pptSettings.aspect_ratio}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, aspect_ratio: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
-            >
-              <option value="16:9 (Widescreen)">16:9 (Widescreen - Modern HDTV)</option>
-              <option value="4:3 (Standard)">4:3 (Standard Projector)</option>
-            </select>
+          <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-2.5 shadow-xs">
+            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>These details are managed from My College Profile.</span>
           </div>
 
-          {/* PPT TYPOGRAPHY & FONT SIZES CARD */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3 col-span-1 md:col-span-2 lg:col-span-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Type className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>PPT Typography & Font Sizes</span>
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-              {/* Font Family Dropdown */}
-              <div className="md:col-span-2 space-y-1">
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                  Font Family (Font Style)
-                </label>
-                <select
-                  value={pptSettings.font_family || 'Times New Roman'}
-                  onChange={(e) => setPptSettings(prev => ({ ...prev, font_family: e.target.value }))}
-                  className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
-                >
-                  <option value="Times New Roman">Times New Roman (Recommended)</option>
-                  <option value="Arial">Arial (Sans-serif)</option>
-                  <option value="Calibri">Calibri (Sans-serif)</option>
-                  <option value="Inter">Inter (Clean Modern)</option>
-                  <option value="Roboto">Roboto (Technical)</option>
-                  <option value="Georgia">Georgia (Serif)</option>
-                </select>
-              </div>
-
-              {/* 3-Column Font Size Selector */}
-              <div className="md:col-span-2 grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                    Title Size
-                  </label>
-                  <select
-                    value={pptSettings.ppt_title_font_size || '22px'}
-                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_title_font_size: e.target.value }))}
-                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
-                  >
-                    <option value="20px">20 px</option>
-                    <option value="22px">22 px (Default)</option>
-                    <option value="24px">24 px</option>
-                    <option value="28px">28 px</option>
-                    <option value="32px">32 px</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                    Heading Size
-                  </label>
-                  <select
-                    value={pptSettings.ppt_subheading_font_size || '20px'}
-                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_subheading_font_size: e.target.value }))}
-                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
-                  >
-                    <option value="16px">16 px</option>
-                    <option value="18px">18 px</option>
-                    <option value="20px">20 px (Default)</option>
-                    <option value="22px">22 px</option>
-                    <option value="24px">24 px</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                    Body Size
-                  </label>
-                  <select
-                    value={pptSettings.ppt_body_font_size || '18px'}
-                    onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_body_font_size: e.target.value }))}
-                    className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
-                  >
-                    <option value="14px">14 px</option>
-                    <option value="16px">16 px</option>
-                    <option value="18px">18 px (Default)</option>
-                    <option value="20px">20 px</option>
-                  </select>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs opacity-90">
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+              {college?.college_logo_url || college?.logoUrl ? (
+                <img src={college?.college_logo_url || college?.logoUrl} alt="College Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 font-bold flex items-center justify-center">CL</div>
+              )}
+              <div>
+                <span className="text-[10px] text-slate-400 block">College Name:</span>
+                <strong className="text-slate-900 dark:text-white font-bold">{college?.college_name || college?.name}</strong>
+                {Boolean(college?.is_autonomous ?? college?.isAutonomous) && (
+                  <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-bold italic">(Autonomous)</span>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Header Title */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Title Slide Header
-            </label>
-            <input
-              type="text"
-              value={pptSettings.header_title}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, header_title: e.target.value }))}
-              placeholder="e.g. Lalitha College of Pharmacy"
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
-            />
-          </div>
-
-          {/* Footer Text */}
-          <div className="space-y-2 md:col-span-2">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Slide Footer Text
-            </label>
-            <input
-              type="text"
-              value={pptSettings.footer_text}
-              onChange={(e) => setPptSettings(prev => ({ ...prev, footer_text: e.target.value }))}
-              placeholder="e.g. Pharm.D Clinical Case Presentation • Confidential"
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
-            />
-          </div>
-
-          {/* Display Toggles */}
-          <div className="space-y-3 col-span-1 md:col-span-2 lg:col-span-3">
-            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-              Slide Details & Visibility Options
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={pptSettings.show_logo !== false}
-                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_logo: e.target.checked }))}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
-                />
-                <span>Include College Logo on Title Slide</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={pptSettings.show_hospital_logo !== false}
-                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_hospital_logo: e.target.checked }))}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
-                />
-                <span>Include Hospital Logo on Title Slide</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={pptSettings.show_watermark !== false}
-                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_watermark: e.target.checked }))}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
-                />
-                <span>Include Slide Background Watermark</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={pptSettings.show_student_preceptor !== false}
-                  onChange={(e) => setPptSettings(prev => ({ ...prev, show_student_preceptor: e.target.checked }))}
-                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
-                />
-                <span>Include Student & Preceptor Details</span>
-              </label>
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+              {college?.hospital_logo_url || college?.hospitalLogoUrl ? (
+                <img src={college?.hospital_logo_url || college?.hospitalLogoUrl} alt="Hospital Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white" />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-700 font-bold flex items-center justify-center">HL</div>
+              )}
+              <div>
+                <span className="text-[10px] text-slate-400 block">Hospital Name:</span>
+                <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || 'Lalitha Superspecialities Hospital'}</strong>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* SECTION 2: HEADER DISPLAY SWITCHES */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <Sliders className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            Section 2: Header Display Switches
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            {[
+              { key: 'show_logo', label: 'Show College Logo' },
+              { key: 'show_college_name', label: 'Show College Name' },
+              { key: 'show_autonomous', label: 'Show Autonomous' },
+              { key: 'show_hospital_logo', label: 'Show Hospital Logo' },
+              { key: 'show_hospital_name', label: 'Show Hospital Name' },
+              { key: 'show_student_preceptor', label: 'Show Student & Preceptor Details' }
+            ].map((item) => {
+              const isEnabled = pptSettings[item.key] !== false;
+              return (
+                <div
+                  key={item.key}
+                  onClick={() => setPptSettings(prev => ({ ...prev, [item.key]: !isEnabled }))}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    isEnabled
+                      ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-400 dark:border-amber-800 font-bold text-slate-900 dark:text-white'
+                      : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-500'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                    isEnabled ? 'bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'
+                  }`}>
+                    {isEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SECTION 3: PPT WATERMARK */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Section 3: PPT Watermark
+            </h3>
+            <button
+              type="button"
+              onClick={() => setPptSettings(prev => ({ ...prev, show_watermark: !prev.show_watermark }))}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                pptSettings.show_watermark !== false ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600'
+              }`}
+            >
+              {pptSettings.show_watermark !== false ? 'Watermark Enabled' : 'Disabled'}
+            </button>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Watermark Line 1</label>
+                <input
+                  type="text"
+                  value={pptSettings.watermark_text_line1 || college?.college_code || 'PHARMDVERSE'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, watermark_text_line1: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Watermark Line 2</label>
+                <input
+                  type="text"
+                  value={pptSettings.watermark_text_line2 || 'Clinical Case Presentation'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, watermark_text_line2: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white font-medium"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: SLIDE SETUP & FOOTER */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <Layout className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Section 4: Slide Setup & Footer
+          </h3>
+
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Presentation Theme</label>
+                <select
+                  value={pptSettings.theme}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, theme: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
+                >
+                  <option value="Clinical Emerald">Clinical Emerald (Recommended)</option>
+                  <option value="Modern Navy">Modern Navy</option>
+                  <option value="Academic Indigo">Academic Indigo</option>
+                  <option value="Classic White">Classic Minimal White</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Slide Aspect Ratio</label>
+                <select
+                  value={pptSettings.aspect_ratio}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, aspect_ratio: e.target.value }))}
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
+                >
+                  <option value="16:9 (Widescreen)">16:9 (Widescreen - Modern HDTV)</option>
+                  <option value="4:3 (Standard)">4:3 (Standard Projector)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Title Slide Header</label>
+                <input
+                  type="text"
+                  value={pptSettings.header_title}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, header_title: e.target.value }))}
+                  placeholder="e.g. Lalitha College of Pharmacy"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Slide Footer Text</label>
+                <input
+                  type="text"
+                  value={pptSettings.footer_text}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, footer_text: e.target.value }))}
+                  placeholder="e.g. Pharm.D Clinical Case Presentation • Confidential"
+                  className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 5: PPT TYPOGRAPHY & FONT SIZES */}
+        <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-1.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+            <Type className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>PPT Typography & Font Sizes</span>
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+            {/* Font Family Dropdown */}
+            <div className="md:col-span-2 space-y-1">
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                Font Family (Font Style)
+              </label>
+              <select
+                value={pptSettings.font_family || 'Times New Roman'}
+                onChange={(e) => setPptSettings(prev => ({ ...prev, font_family: e.target.value }))}
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
+              >
+                <option value="Times New Roman">Times New Roman (Recommended)</option>
+                <option value="Arial">Arial (Sans-serif)</option>
+                <option value="Calibri">Calibri (Sans-serif)</option>
+                <option value="Inter">Inter (Clean Modern)</option>
+                <option value="Roboto">Roboto (Technical)</option>
+                <option value="Georgia">Georgia (Serif)</option>
+              </select>
+            </div>
+
+            {/* 3-Column Font Size Selector */}
+            <div className="md:col-span-2 grid grid-cols-3 gap-2 text-[10px]">
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Title Size
+                </label>
+                <select
+                  value={pptSettings.ppt_title_font_size || '22px'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_title_font_size: e.target.value }))}
+                  className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                >
+                  <option value="20px">20 px</option>
+                  <option value="22px">22 px (Default)</option>
+                  <option value="24px">24 px</option>
+                  <option value="28px">28 px</option>
+                  <option value="32px">32 px</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Heading Size
+                </label>
+                <select
+                  value={pptSettings.ppt_subheading_font_size || '20px'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_subheading_font_size: e.target.value }))}
+                  className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                >
+                  <option value="16px">16 px</option>
+                  <option value="18px">18 px</option>
+                  <option value="20px">20 px (Default)</option>
+                  <option value="22px">22 px</option>
+                  <option value="24px">24 px</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Body Size
+                </label>
+                <select
+                  value={pptSettings.ppt_body_font_size || '18px'}
+                  onChange={(e) => setPptSettings(prev => ({ ...prev, ppt_body_font_size: e.target.value }))}
+                  className="w-full h-10 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white font-mono text-center"
+                >
+                  <option value="14px">14 px</option>
+                  <option value="16px">16 px</option>
+                  <option value="18px">18 px (Default)</option>
+                  <option value="20px">20 px</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
       </div>
 
       {/* PREVIEW FULL PAGE MODAL */}

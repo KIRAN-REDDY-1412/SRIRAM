@@ -3,11 +3,7 @@ import { ClipboardList, Search, Filter, Eye, Download, ChevronLeft, ChevronRight
 import { fetchAllCollegeClinicalCasesFromSupabase, fetchCaseModuleStatusesMapFromSupabase, deleteClinicalCaseFromSupabase } from '../../services/supabaseService';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { ModalWrapper } from '../modals/ModalWrapper';
-import { PatientProfileFormView } from '../patientProfile/PatientProfileFormView';
-import { PatientCounsellingFormView } from '../patientCounselling/PatientCounsellingFormView';
-import { PharmacistInterventionFormView } from '../pharmacistIntervention/PharmacistInterventionFormView';
-import { DrugInformationFormView } from '../drugInformationRequest/DrugInformationFormView';
-import { ADRDocumentationFormView } from '../adrDocumentation/ADRDocumentationFormView';
+import { PreceptorReviewCaseView } from '../preceptor/PreceptorReviewCaseView';
 
 export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) => {
   const [cases, setCases] = useState([]);
@@ -111,6 +107,18 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
     }
     return <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
   };
+
+  if (selectedCaseForView) {
+    return (
+      <PreceptorReviewCaseView
+        clinicalCase={selectedCaseForView}
+        student={selectedCaseForView.students}
+        preceptor={selectedCaseForView.preceptors}
+        readOnly={true}
+        onBack={() => setSelectedCaseForView(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn pb-8">
@@ -315,66 +323,7 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
         </div>
       )}
 
-      {/* VIEW READ-ONLY CLINICAL CASE MODAL */}
-      {selectedCaseForView && (
-        <ModalWrapper
-          isOpen={Boolean(selectedCaseForView)}
-          onClose={() => setSelectedCaseForView(null)}
-          title={`Clinical Case ${selectedCaseForView.case_id}`}
-          subtitle={`Candidate: ${selectedCaseForView.students?.full_name || 'Student'} • Status: ${selectedCaseForView.overall_case_status || selectedCaseForView.status}`}
-          maxWidth="max-w-4xl"
-        >
-          <div className="space-y-4 text-xs">
-            {/* COLLEGE ADMIN VIEW MODE BANNER */}
-            <div className="p-3.5 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/30 flex items-start gap-3 shadow-xs">
-              <ShieldAlert className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <h4 className="text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                  COLLEGE ADMIN VIEW MODE
-                </h4>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-snug">
-                  This Clinical Case is available for viewing only. Editing, Review and Approval are not permitted.
-                </p>
-              </div>
-            </div>
 
-            {/* TABS */}
-            <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto">
-              {['profile', 'counselling', 'intervention', 'dir', 'adr'].map((tb) => (
-                <button
-                  key={tb}
-                  onClick={() => setActiveTabInViewModal(tb)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-extrabold capitalize transition-all ${
-                    activeTabInViewModal === tb
-                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  {tb === 'profile' ? 'Patient Profile' : tb === 'counselling' ? 'Patient Counselling' : tb === 'intervention' ? 'Intervention' : tb === 'dir' ? 'Drug Info' : 'ADR Log'}
-                </button>
-              ))}
-            </div>
-
-            <div className="max-h-[60vh] overflow-y-auto p-4 border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900">
-              {activeTabInViewModal === 'profile' && (
-                <PatientProfileFormView clinicalCase={selectedCaseForView} student={selectedCaseForView.students} isReadOnly={true} />
-              )}
-              {activeTabInViewModal === 'counselling' && (
-                <PatientCounsellingFormView clinicalCase={selectedCaseForView} student={selectedCaseForView.students} isReadOnly={true} />
-              )}
-              {activeTabInViewModal === 'intervention' && (
-                <PharmacistInterventionFormView clinicalCase={selectedCaseForView} student={selectedCaseForView.students} isReadOnly={true} />
-              )}
-              {activeTabInViewModal === 'dir' && (
-                <DrugInformationFormView clinicalCase={selectedCaseForView} student={selectedCaseForView.students} isReadOnly={true} />
-              )}
-              {activeTabInViewModal === 'adr' && (
-                <ADRDocumentationFormView clinicalCase={selectedCaseForView} student={selectedCaseForView.students} isReadOnly={true} />
-              )}
-            </div>
-          </div>
-        </ModalWrapper>
-      )}
 
       {/* OFFICIAL PDF DOWNLOAD MODAL */}
       {selectedCaseForPDF && (

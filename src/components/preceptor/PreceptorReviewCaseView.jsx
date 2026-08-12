@@ -11,7 +11,7 @@ import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { OfficialClinicalCasePDFModal } from '../modals/OfficialClinicalCasePDFModal';
 import { FileCheck2 } from 'lucide-react';
 
-export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBack, onReviewComplete }) => {
+export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBack, onReviewComplete, readOnly = false }) => {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'counselling' | 'intervention' | 'dir' | 'adr'
   const [submitting, setSubmitting] = useState(false);
   const [modStatus, setModStatus] = useState({});
@@ -256,7 +256,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
 
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold">
               <Lock className="w-4 h-4" />
-              <span className="hidden sm:inline">Preceptor Review Mode (Read-Only)</span>
+              <span className="hidden sm:inline">{readOnly ? 'College Admin View Mode (Read-Only)' : 'Preceptor Review Mode (Read-Only)'}</span>
             </div>
           </div>
         </div>
@@ -384,145 +384,147 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
       </div>
 
       {/* PRECEPTOR EVALUATION & REVIEW ACTION CONTROL PANEL */}
-      {(clinicalCase.status === 'Approved' || clinicalCase.overall_case_status === 'Approved') ? (
-        /* APPROVED CASE — Show confirmation panel only */
-        <div className="p-6 rounded-3xl bg-emerald-950/60 border-2 border-emerald-500/30 shadow-xl space-y-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-            <h3 className="text-base font-extrabold text-emerald-300 tracking-tight">Clinical Case Approved</h3>
-          </div>
-          <p className="text-xs text-emerald-200/80 font-semibold leading-relaxed">
-            This Clinical Case has been reviewed and approved. Student documentation is now locked. Use the Download Approved PDF option from the case listing to generate the official record.
-          </p>
-          {clinicalCase.overall_preceptor_comments && (
-            <div className="mt-3 p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/50">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Faculty Comments</p>
-              <p className="text-xs text-emerald-100/90 font-semibold">{clinicalCase.overall_preceptor_comments}</p>
+      {!readOnly && (
+        (clinicalCase.status === 'Approved' || clinicalCase.overall_case_status === 'Approved') ? (
+          /* APPROVED CASE — Show confirmation panel only */
+          <div className="p-6 rounded-3xl bg-emerald-950/60 border-2 border-emerald-500/30 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              <h3 className="text-base font-extrabold text-emerald-300 tracking-tight">Clinical Case Approved</h3>
             </div>
-          )}
-        </div>
-      ) : (
-        /* PENDING / SUBMITTED / RETURNED — Show full review controls */
-        <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl space-y-6 border border-slate-800 relative">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
-            <MessageSquare className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-extrabold tracking-tight">Preceptor Clinical Review Control Panel</h3>
-          </div>
-
-          {/* RETURN FOR CORRECTIONS CHECKBOXES */}
-          <div className="space-y-3">
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Return for Corrections (Select forms that require student revisions):
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold">
-              <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={returnedForms.patient_profile}
-                  onChange={() => handleCheckboxToggle('patient_profile')}
-                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
-                />
-                <span>Patient Profile</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={returnedForms.patient_counselling}
-                  onChange={() => handleCheckboxToggle('patient_counselling')}
-                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
-                />
-                <span>Patient Counselling</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={returnedForms.pharmacist_intervention}
-                  onChange={() => handleCheckboxToggle('pharmacist_intervention')}
-                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
-                />
-                <span>Pharmacist Intervention</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={returnedForms.drug_information_request}
-                  onChange={() => handleCheckboxToggle('drug_information_request')}
-                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
-                />
-                <span>Drug Information Request</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={returnedForms.adr_documentation}
-                  onChange={() => handleCheckboxToggle('adr_documentation')}
-                  className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
-                />
-                <span>ADR Documentation</span>
-              </label>
-            </div>
-          </div>
-
-          {/* FACULTY COMMENTS TEXTAREA */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Faculty Comments *
-            </label>
-
-            <textarea
-              rows={4}
-              value={comments}
-              onChange={(e) => {
-                setComments(e.target.value);
-                setCommentError('');
-              }}
-              placeholder="Enter preceptor feedback, clinical evaluation notes, or specific instructions for corrections..."
-              className={`w-full p-4 text-xs rounded-2xl text-white placeholder-slate-400 focus:outline-none font-sans transition-all ${
-                commentError
-                  ? 'border-2 border-rose-500 ring-2 ring-rose-500/30 bg-rose-950/20'
-                  : 'bg-slate-800/90 border border-slate-700 focus:ring-2 focus:ring-cyan-500/50'
-              }`}
-            />
-
-            {commentError && (
-              <p className="text-xs font-bold text-rose-400 flex items-center gap-1 mt-1">
-                <AlertCircle className="w-3.5 h-3.5" />
-                <span>{commentError}</span>
-              </p>
+            <p className="text-xs text-emerald-200/80 font-semibold leading-relaxed">
+              This Clinical Case has been reviewed and approved. Student documentation is now locked. Use the Download Approved PDF option from the case listing to generate the official record.
+            </p>
+            {clinicalCase.overall_preceptor_comments && (
+              <div className="mt-3 p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/50">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Faculty Comments</p>
+                <p className="text-xs text-emerald-100/90 font-semibold">{clinicalCase.overall_preceptor_comments}</p>
+              </div>
             )}
           </div>
+        ) : (
+          /* PENDING / SUBMITTED / RETURNED — Show full review controls */
+          <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl space-y-6 border border-slate-800 relative">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+              <MessageSquare className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-base font-extrabold tracking-tight">Preceptor Clinical Review Control Panel</h3>
+            </div>
 
-          {/* ACTION NOTIFICATION IMMEDIATELY ABOVE BUTTONS */}
-          <InlineActionNotification notification={notification} onClose={clearNotification} position="inline" />
+            {/* RETURN FOR CORRECTIONS CHECKBOXES */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Return for Corrections (Select forms that require student revisions):
+              </label>
 
-          {/* FINAL DECISION BUTTONS */}
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleReturnCase}
-              className="w-full sm:w-auto h-[48px] px-6 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Return Clinical Case</span>
-            </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs font-semibold">
+                <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={returnedForms.patient_profile}
+                    onChange={() => handleCheckboxToggle('patient_profile')}
+                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
+                  />
+                  <span>Patient Profile</span>
+                </label>
 
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleApproveCase}
-              className="w-full sm:w-auto h-[48px] px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Approve Clinical Case</span>
-            </button>
+                <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={returnedForms.patient_counselling}
+                    onChange={() => handleCheckboxToggle('patient_counselling')}
+                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
+                  />
+                  <span>Patient Counselling</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={returnedForms.pharmacist_intervention}
+                    onChange={() => handleCheckboxToggle('pharmacist_intervention')}
+                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
+                  />
+                  <span>Pharmacist Intervention</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={returnedForms.drug_information_request}
+                    onChange={() => handleCheckboxToggle('drug_information_request')}
+                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
+                  />
+                  <span>Drug Information Request</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-500/50 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={returnedForms.adr_documentation}
+                    onChange={() => handleCheckboxToggle('adr_documentation')}
+                    className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 bg-slate-900 border-slate-700"
+                  />
+                  <span>ADR Documentation</span>
+                </label>
+              </div>
+            </div>
+
+            {/* FACULTY COMMENTS TEXTAREA */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Faculty Comments *
+              </label>
+
+              <textarea
+                rows={4}
+                value={comments}
+                onChange={(e) => {
+                  setComments(e.target.value);
+                  setCommentError('');
+                }}
+                placeholder="Enter preceptor feedback, clinical evaluation notes, or specific instructions for corrections..."
+                className={`w-full p-4 text-xs rounded-2xl text-white placeholder-slate-400 focus:outline-none font-sans transition-all ${
+                  commentError
+                    ? 'border-2 border-rose-500 ring-2 ring-rose-500/30 bg-rose-950/20'
+                    : 'bg-slate-800/90 border border-slate-700 focus:ring-2 focus:ring-cyan-500/50'
+                }`}
+              />
+
+              {commentError && (
+                <p className="text-xs font-bold text-rose-400 flex items-center gap-1 mt-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{commentError}</span>
+                </p>
+              )}
+            </div>
+
+            {/* ACTION NOTIFICATION IMMEDIATELY ABOVE BUTTONS */}
+            <InlineActionNotification notification={notification} onClose={clearNotification} position="inline" />
+
+            {/* FINAL DECISION BUTTONS */}
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleReturnCase}
+                className="w-full sm:w-auto h-[48px] px-6 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-rose-600/20 transition-all disabled:opacity-50"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Return Clinical Case</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleApproveCase}
+                className="w-full sm:w-auto h-[48px] px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Approve Clinical Case</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* OFFICIAL BRANDED PDF MODAL */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Search, Award, Briefcase, Building2, CheckSquare, Square, Trash2, Calendar, FileText, Save, RotateCcw, X, Loader2, CheckCircle2, AlertTriangle, User } from 'lucide-react';
-import { fetchPreceptorsFromSupabase, fetchStudentsFromSupabase, assignStudentsToPreceptorInSupabase } from '../../services/supabaseService';
+import { fetchPreceptorsFromSupabase, fetchStudentsFromSupabase, fetchAssignmentsFromSupabase, assignStudentsToPreceptorInSupabase } from '../../services/supabaseService';
 
 export const AssignStudentsView = ({ college, onCancel, onSuccess }) => {
   const [preceptors, setPreceptors] = useState([]);
@@ -25,13 +25,35 @@ export const AssignStudentsView = ({ college, onCancel, onSuccess }) => {
     const loadInitialData = async () => {
       if (!college) return;
       setLoading(true);
-      const [precRes, studRes] = await Promise.all([
+      const [precRes, studRes, assignRes] = await Promise.all([
         fetchPreceptorsFromSupabase(college.id),
-        fetchStudentsFromSupabase(college.id)
+        fetchStudentsFromSupabase(college.id),
+        fetchAssignmentsFromSupabase(college.id)
       ]);
 
-      if (precRes.success) setPreceptors(precRes.data.filter(p => p.status === 'Active'));
-      if (studRes.success) setStudents(studRes.data.filter(s => s.status === 'Active'));
+      if (precRes.success) {
+        const activePrec = (precRes.data || precRes.preceptors || []).filter(p => p.status === 'Active');
+        setPreceptors(activePrec);
+      }
+
+      let assignedStudentIds = new Set();
+      if (assignRes.success && assignRes.data) {
+        assignedStudentIds = new Set(
+          assignRes.data
+            .filter(a => a.status === 'Active')
+            .map(a => a.student_id)
+        );
+      }
+
+      if (studRes.success) {
+        const allActiveStudents = studRes.data || studRes.students || [];
+        // Only keep unassigned active students (candidates with NO active preceptor assignment)
+        const unassignedStudents = allActiveStudents.filter(
+          s => s.status === 'Active' && !assignedStudentIds.has(s.id)
+        );
+        setStudents(unassignedStudents);
+      }
+
       setLoading(false);
     };
 
@@ -203,10 +225,15 @@ export const AssignStudentsView = ({ college, onCancel, onSuccess }) => {
         {/* 2. STUDENT SELECTION (STRICTLY ROLL NUMBER SEARCH) */}
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              2. Student Selection (Strictly by Roll Number)
-            </h3>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>2. Select Unassigned Students (Strictly by Roll Number)</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                {students.length} Unassigned Candidates
+              </span>
+            </div>
 
             {/* Select All / Remove Selected Controls */}
             <div className="flex items-center gap-2">

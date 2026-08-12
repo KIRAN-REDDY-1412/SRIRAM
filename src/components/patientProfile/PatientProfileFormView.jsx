@@ -102,7 +102,7 @@ const evaluateTestValueStatus = (valStr, refRangeStr) => {
   return 'none';
 };
 
-export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false }) => {
+export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false, isReturned = false }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -1087,17 +1087,42 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
         </div>
       </div>
 
-      {/* 8. PRESCRIBED MEDICATIONS (RULE 4 IMPLEMENTATION) */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+      {/* 8. PRESCRIBED MEDICATIONS */}
+      <div className={`p-5 rounded-3xl bg-white dark:bg-slate-900 border transition-all shadow-xs space-y-4 ${
+        isReturned ? 'border-2 border-violet-400 dark:border-violet-700 bg-violet-50/20 dark:bg-violet-950/20' : 'border-slate-200/80 dark:border-slate-800'
+      }`}>
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            8. Prescribed Medications
-          </h3>
-          <button type="button" onClick={handleAddDrugRow} className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1">
-            <Plus className="w-3.5 h-3.5" /> Add Drug Row
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <Pill className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>8. Prescribed Medications</span>
+            </h3>
+            {isReturned && (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-violet-600 text-white flex items-center gap-1 shadow-xs border border-violet-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                ⚡ STUDENT REVISIONS APPLIED
+              </span>
+            )}
+          </div>
+
+          {!isReadOnly && (
+            <button type="button" onClick={handleAddDrugRow} className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" /> Add Drug Row
+            </button>
+          )}
         </div>
+
+        {isReturned && (
+          <div className="p-3 rounded-2xl bg-violet-50 dark:bg-violet-950/60 border border-violet-300 dark:border-violet-800 text-xs font-bold text-violet-900 dark:text-violet-200 flex items-center justify-between shadow-xs">
+            <span className="flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
+              <span>Prescribed medications list updated by candidate upon form return. Review all listed rows below.</span>
+            </span>
+            <span className="px-2 py-0.5 rounded bg-violet-600 text-white text-[10px] uppercase font-black">
+              Updated List ({prescribedDrugs.length} Drugs)
+            </span>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -1111,12 +1136,12 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
                 <th className="p-2">Freq</th>
                 <th className="p-2">Start Date</th>
                 <th className="p-2">Stop Date</th>
-                <th className="p-2 text-center">Action</th>
+                {!isReadOnly && <th className="p-2 text-center">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {prescribedDrugs.map((d, idx) => (
-                <tr key={idx}>
+                <tr key={idx} className={isReturned ? 'bg-violet-50/40 dark:bg-violet-950/20 border-l-4 border-l-violet-500' : ''}>
                   <td className="p-2 font-mono font-bold text-center">{idx + 1}</td>
                   <td className="p-2">
                     <input

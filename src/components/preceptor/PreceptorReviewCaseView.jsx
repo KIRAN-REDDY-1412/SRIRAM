@@ -123,7 +123,27 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
   // Detect if this case was previously returned and is now resubmitted
   const isResubmission = clinicalCase?.returned_at && (clinicalCase?.status === 'Submitted' || clinicalCase?.status === 'Under Review');
 
-  const renderStatusBadge = (statusStr) => {
+  const isFormReturnedAndRevised = (formKey) => {
+    if (!clinicalCase?.returned_forms) return false;
+    const forms = Array.isArray(clinicalCase.returned_forms) ? clinicalCase.returned_forms : [];
+    return forms.some(f => {
+      if (typeof f !== 'string') return false;
+      const cleanF = f.toLowerCase().replace(/[\s_]+/g, '');
+      const cleanKey = formKey.toLowerCase().replace(/[\s_]+/g, '');
+      return cleanF.includes(cleanKey) || cleanKey.includes(cleanF);
+    });
+  };
+
+  const renderStatusBadge = (statusStr, formKey) => {
+    const isRevised = isFormReturnedAndRevised(formKey);
+    if (isRevised && (clinicalCase?.status === 'Submitted' || clinicalCase?.status === 'Under Review')) {
+      return (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-violet-600 text-white flex items-center gap-1 shadow-xs border border-violet-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          ⚡ REVISED
+        </span>
+      );
+    }
     if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
       return (
         <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
@@ -299,7 +319,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           >
             <Stethoscope className="w-4 h-4" />
             <span>Patient Profile</span>
-            {renderStatusBadge(modStatus.profileStatus)}
+            {renderStatusBadge(modStatus.profileStatus, 'patient_profile')}
           </button>
         )}
 
@@ -314,7 +334,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           >
             <HeartHandshake className="w-4 h-4" />
             <span>Patient Counselling</span>
-            {renderStatusBadge(modStatus.counsellingStatus)}
+            {renderStatusBadge(modStatus.counsellingStatus, 'patient_counselling')}
           </button>
         )}
 
@@ -329,7 +349,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           >
             <ShieldAlert className="w-4 h-4" />
             <span>Pharmacist Intervention</span>
-            {renderStatusBadge(modStatus.interventionStatus)}
+            {renderStatusBadge(modStatus.interventionStatus, 'pharmacist_intervention')}
           </button>
         )}
 
@@ -344,7 +364,7 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           >
             <FileSearch className="w-4 h-4" />
             <span>Drug Information Request</span>
-            {renderStatusBadge(modStatus.dirStatus)}
+            {renderStatusBadge(modStatus.dirStatus, 'drug_information_request')}
           </button>
         )}
 
@@ -359,27 +379,27 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
           >
             <AlertTriangle className="w-4 h-4" />
             <span>ADR Documentation</span>
-            {renderStatusBadge(modStatus.adrStatus)}
+            {renderStatusBadge(modStatus.adrStatus, 'adr_documentation')}
           </button>
         )}
       </div>
 
-      {/* ACTIVE FORM DISPLAY (READ-ONLY) */}
+      {/* ACTIVE FORM DISPLAY (READ-ONLY WITH REVISION HIGHLIGHTING) */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
         {activeTab === 'profile' && (
-          <PatientProfileFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} />
+          <PatientProfileFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_profile')} />
         )}
         {activeTab === 'counselling' && (
-          <PatientCounsellingFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} />
+          <PatientCounsellingFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_counselling')} />
         )}
         {activeTab === 'intervention' && (
-          <PharmacistInterventionFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} />
+          <PharmacistInterventionFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('pharmacist_intervention')} />
         )}
         {activeTab === 'dir' && (
-          <DrugInformationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} />
+          <DrugInformationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('drug_information_request')} />
         )}
         {activeTab === 'adr' && (
-          <ADRDocumentationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} />
+          <ADRDocumentationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('adr_documentation')} />
         )}
       </div>
 

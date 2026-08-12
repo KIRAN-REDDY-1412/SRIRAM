@@ -178,6 +178,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     }
   };
 
+  const handlePrintPDF = () => {
+    window.print();
+  };
+
   const [exportingPPT, setExportingPPT] = useState(false);
   const handleDownloadPPT = async () => {
     setExportingPPT(true);
@@ -293,6 +297,16 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrintPDF}
+              disabled={loading}
+              className="px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-extrabold text-xs flex items-center gap-2 transition-all shadow-xs"
+              title="Print directly or Save as PDF via Browser Print Dialog"
+            >
+              <Printer className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <span>Print / Save PDF</span>
+            </button>
+
             <button
               onClick={handleDownloadPPT}
               disabled={exportingPPT || loading}

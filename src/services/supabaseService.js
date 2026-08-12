@@ -190,9 +190,19 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
       zebra_striping: settingsPayload.zebra_striping ?? false,
       repeat_table_header: settingsPayload.repeat_table_header ?? true,
       repeat_header: settingsPayload.repeat_header ?? true,
-      repeat_footer: settingsPayload.repeat_footer ?? true,
       show_student_signature: settingsPayload.show_student_signature ?? true,
-      show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true
+      show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true,
+      ppt_theme: settingsPayload.ppt_theme || settingsPayload.theme || 'Clinical Emerald',
+      ppt_aspect_ratio: settingsPayload.ppt_aspect_ratio || settingsPayload.aspect_ratio || '16:9 (Widescreen)',
+      ppt_header_title: settingsPayload.ppt_header_title || settingsPayload.header_title || '',
+      ppt_footer_text: settingsPayload.ppt_footer_text || settingsPayload.footer_text || 'Pharm.D Clinical Case Presentation • Confidential',
+      ppt_font_family: settingsPayload.ppt_font_family || settingsPayload.font_family || 'Times New Roman',
+      ppt_title_font_size: settingsPayload.ppt_title_font_size || settingsPayload.title_font_size || '22px',
+      ppt_subheading_font_size: settingsPayload.ppt_subheading_font_size || settingsPayload.subheading_font_size || '20px',
+      ppt_body_font_size: settingsPayload.ppt_body_font_size || settingsPayload.body_font_size || '18px',
+      ppt_show_logo: settingsPayload.ppt_show_logo ?? settingsPayload.show_logo ?? true,
+      ppt_show_autonomous: settingsPayload.ppt_show_autonomous ?? settingsPayload.show_autonomous ?? true,
+      ppt_show_student_preceptor: settingsPayload.ppt_show_student_preceptor ?? settingsPayload.show_student_preceptor ?? true
     };
 
     let activePayload = { ...payload };

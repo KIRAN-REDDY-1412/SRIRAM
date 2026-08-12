@@ -5,6 +5,8 @@ import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { ModalWrapper } from '../modals/ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
+import { ClinicalCaseDocumentRenderer } from '../branding/ClinicalCaseDocumentRenderer';
+import { SAMPLE_CLINICAL_CASE_DATA } from '../../utils/sampleClinicalCaseDATA';
 
 const DEFAULT_SETTINGS = {
   show_college_logo: true,
@@ -46,178 +48,13 @@ const DEFAULT_SETTINGS = {
 
 const SampleTwoPageDocument = ({ college, settings }) => {
   return (
-    <div className="space-y-6">
-      {/* PAGE 1 OF 2 */}
-      <PharmDVerseBrandedDocumentContainer
-        college={college}
-        branding={settings}
-        documentTitle="Patient Profile Documentation"
-        caseId="AMRMCP-2026-000001"
-        student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
-        preceptorName="Dr. Preceptor"
-        pageNumber="1 of 2"
-        showSignatures={false}
-      >
-        <div className="space-y-4 text-xs">
-          {/* Section 1: Patient Demographics */}
-          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-2">
-            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
-              1. Patient Demographics & Profile
-            </strong>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
-              <div>Patient Name: <span className="font-bold">John Doe</span></div>
-              <div>Age / Gender: <span className="font-bold">45 yrs / Male</span></div>
-              <div>IP / OP No: <span className="font-bold font-mono">IP-98765</span></div>
-              <div>Ward / Unit: <span>Male Medical Ward (Unit-3)</span></div>
-              <div>Date of Admission: <span className="font-mono font-bold">01/08/2026</span></div>
-              <div>Attending Physician: <span>Dr. A. Sharma, M.D.</span></div>
-            </div>
-            <div className="pt-1 text-[11px] border-t branded-border space-y-1">
-              <div><strong>Chief Complaints:</strong> High grade fever, breathlessness, and cough with rusty sputum for 3 days.</div>
-              <div><strong>Past History:</strong> Hypertension (5 yrs), T2DM (3 yrs). Known Allergy: Penicillin (Skin Rash).</div>
-              <div><strong>Provisional Diagnosis:</strong> Severe Community Acquired Pneumonia (CAP) with Uncontrolled T2DM.</div>
-            </div>
-          </div>
-
-          {/* Section 2: Laboratory Investigations */}
-          <div className="space-y-1 text-xs">
-            <strong className="block font-extrabold uppercase text-[11px] border-b pb-1 branded-heading branded-border">
-              2. Key Laboratory Investigations
-            </strong>
-            <table className="w-full text-left border border-collapse text-[10px] branded-border">
-              <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
-                <tr>
-                  <th className="p-1.5 border-r branded-border">Investigation Parameter</th>
-                  <th className="p-1.5 border-r branded-border">Observed Value</th>
-                  <th className="p-1.5 border-r branded-border">Reference Range</th>
-                  <th className="p-1.5">Clinical Inference</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y branded-border">
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Hemoglobin (Hb %)</td>
-                  <td className="p-1.5 border-r font-mono font-bold branded-border">12.4 gm%</td>
-                  <td className="p-1.5 border-r branded-border">11 - 16.5 gm%</td>
-                  <td className="p-1.5 font-bold" style={{ color: settings?.secondary_color || '#0284c7' }}>Normal Range</td>
-                </tr>
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Total WBC Count</td>
-                  <td className="p-1.5 border-r font-mono font-bold text-rose-600 branded-border">14,800 /mm³</td>
-                  <td className="p-1.5 border-r branded-border">4000 - 10000 /mm³</td>
-                  <td className="p-1.5 text-rose-600 font-bold">Leukocytosis (Infection)</td>
-                </tr>
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Serum Creatinine</td>
-                  <td className="p-1.5 border-r font-mono font-bold branded-border">1.1 mg/dL</td>
-                  <td className="p-1.5 border-r branded-border">0.6 - 1.2 mg/dL</td>
-                  <td className="p-1.5 font-bold" style={{ color: settings?.secondary_color || '#0284c7' }}>Normal Renal Function</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 border-r font-bold branded-border">Random Blood Sugar (RBS)</td>
-                  <td className="p-1.5 border-r font-mono font-bold text-amber-600 branded-border">240 mg/dL</td>
-                  <td className="p-1.5 border-r branded-border">70 - 140 mg/dL</td>
-                  <td className="p-1.5 text-amber-600 font-bold">Hyperglycemia</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Section 3: Prescribed Medications */}
-          <div className="space-y-1 text-xs">
-            <strong className="block font-extrabold uppercase text-[11px] border-b pb-1 branded-heading branded-border">
-              3. Prescribed Pharmacotherapy Log
-            </strong>
-            <table className="w-full text-left border border-collapse text-[10px] branded-border">
-              <thead className="font-bold uppercase text-[9px] border-b branded-header-bg branded-border">
-                <tr>
-                  <th className="p-1.5 border-r branded-border">Brand & Generic Name</th>
-                  <th className="p-1.5 border-r branded-border">Dose & Route</th>
-                  <th className="p-1.5 border-r branded-border">Frequency</th>
-                  <th className="p-1.5">Indication</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y branded-border">
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Inj. Ceftriaxone 1g (Cefzone)</td>
-                  <td className="p-1.5 border-r branded-border">1 g IV</td>
-                  <td className="p-1.5 border-r font-mono branded-border">BD (Q12H)</td>
-                  <td className="p-1.5">Pneumonia Management</td>
-                </tr>
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Tab. Azithromycin 500mg (Azithral)</td>
-                  <td className="p-1.5 border-r branded-border">500 mg PO</td>
-                  <td className="p-1.5 border-r font-mono branded-border">OD (Q24H)</td>
-                  <td className="p-1.5">Atypical Antibiotic Cover</td>
-                </tr>
-                <tr className="border-b branded-border">
-                  <td className="p-1.5 border-r font-bold branded-border">Tab. Metformin 500mg (Glycomet)</td>
-                  <td className="p-1.5 border-r branded-border">500 mg PO</td>
-                  <td className="p-1.5 border-r font-mono branded-border">BD (Q12H)</td>
-                  <td className="p-1.5">Glycemic Control</td>
-                </tr>
-                <tr>
-                  <td className="p-1.5 border-r font-bold branded-border">Tab. Paracetamol 650mg (Dolo)</td>
-                  <td className="p-1.5 border-r branded-border">650 mg PO</td>
-                  <td className="p-1.5 border-r font-mono branded-border">TID SOS</td>
-                  <td className="p-1.5">Antipyretic / Analgesic</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </PharmDVerseBrandedDocumentContainer>
-
-      {/* PAGE 2 OF 2 */}
-      <PharmDVerseBrandedDocumentContainer
-        college={college}
-        branding={settings}
-        documentTitle="Clinical Case Logbook Record"
-        caseId="AMRMCP-2026-000001"
-        student={{ full_name: 'Kiran Reddy', roll_number: '202601' }}
-        preceptorName="Dr. Preceptor"
-        pageNumber="2 of 2"
-        isLastPage={true}
-        showSignatures={true}
-      >
-        <div className="space-y-4 text-xs">
-          {/* Section 4: Patient Counselling Record */}
-          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
-            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
-              4. Patient Counselling Record
-            </strong>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div>Date: <span className="font-mono font-bold">04/08/2026</span></div>
-              <div>Mode: <span>Oral & Leaflet</span></div>
-              <div className="col-span-2">Focus: <span>Antibiotic regimen compliance, blood glucose monitoring, and hydration.</span></div>
-              <div className="col-span-2">Barriers & Action: <span>Mild language barrier resolved using pictorial dosage schedule.</span></div>
-            </div>
-          </div>
-
-          {/* Section 5: Pharmacist Intervention Log */}
-          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
-            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
-              5. Clinical Pharmacist Intervention
-            </strong>
-            <div className="text-[11px] space-y-1">
-              <div><strong>Problem Identified:</strong> Patient allergic to Penicillins; verified non-cross-reactivity with Ceftriaxone.</div>
-              <div><strong>Recommendation:</strong> Spaced administration of oral antidiabetic drug relative to antibiotic IV infusion.</div>
-              <div><strong>Physician Acceptance:</strong> Discussed with Dr. A. Sharma; recommendation accepted and recorded.</div>
-            </div>
-          </div>
-
-          {/* Section 6: Adverse Drug Reaction Log */}
-          <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1.5">
-            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
-              6. Adverse Drug Reaction (ADR) Monitoring
-            </strong>
-            <div className="text-[11px] space-y-1">
-              <div><strong>Reaction Title:</strong> Mild gastric irritation post Metformin ingestion.</div>
-              <div><strong>Causality Rating:</strong> Possible (Naranjo Algorithm Score: 4). Advice: Take after food.</div>
-            </div>
-          </div>
-        </div>
-      </PharmDVerseBrandedDocumentContainer>
-    </div>
+    <ClinicalCaseDocumentRenderer
+      caseData={SAMPLE_CLINICAL_CASE_DATA}
+      branding={settings}
+      college={college}
+      student={SAMPLE_CLINICAL_CASE_DATA.student}
+      preceptor={SAMPLE_CLINICAL_CASE_DATA.preceptor}
+    />
   );
 };
 
@@ -664,19 +501,29 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     }
   };
 
-  const handleSavePptFormat = () => {
+  const handleSavePptFormat = async () => {
     if (!college?.id) return;
     setPptSaving(true);
-    setTimeout(() => {
-      try {
-        localStorage.setItem(`pharmdverse_ppt_settings_${college.id}`, JSON.stringify(pptSettings));
-      } catch (e) {}
-      setPptSaving(false);
+    
+    // Save to Supabase (and local storage backup)
+    const combinedPayload = { ...settings, ...pptSettings };
+    const res = await saveOrUpdateDocumentBrandingSettingsInSupabase(college.id, combinedPayload);
+    try {
+      localStorage.setItem(`pharmdverse_ppt_settings_${college.id}`, JSON.stringify(pptSettings));
+    } catch (e) {}
+
+    setPptSaving(false);
+    if (res.success) {
       showPptNotify({
         type: 'success',
         message: '✓ PPT Format Settings saved successfully!'
       });
-    }, 400);
+    } else {
+      showPptNotify({
+        type: 'error',
+        message: res.error || '✖ Failed to save PPT Format Settings.'
+      });
+    }
   };
 
   const handleRestorePptDefault = () => {

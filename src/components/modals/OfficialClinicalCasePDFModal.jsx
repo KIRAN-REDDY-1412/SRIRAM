@@ -11,7 +11,7 @@ const convertUrlToBase64 = (url) => {
     if (!url || typeof url !== 'string' || url.startsWith('data:')) {
       return resolve(url);
     }
-    const img = new Image();
+    const img = new window.Image();
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
       try {

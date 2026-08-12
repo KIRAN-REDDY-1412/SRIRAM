@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ModalWrapper } from './ModalWrapper';
 import { useColleges } from '../../context/CollegeContext';
-import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, Image, Upload, Loader2, CheckCircle2, KeyRound, Eye, EyeOff, Lock } from 'lucide-react';
+import { Building2, MapPin, Award, User, Save, CreditCard, Trash2, AlertTriangle, ImageIcon, Upload, Loader2, CheckCircle2, KeyRound, Eye, EyeOff, Lock } from 'lucide-react';
 
 export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, isFullPage = false }) => {
   const { uploadCollegeLogo, activeColleges } = useColleges();
@@ -287,7 +287,7 @@ export const EditCollegeModal = ({ isOpen, onClose, college, onSave, onDelete, i
       {/* SECTION 1: COLLEGE BRANDING */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <Image className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           College Identity & Logos
         </h4>
 

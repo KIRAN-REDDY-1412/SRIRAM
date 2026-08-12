@@ -187,7 +187,7 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
               }`}
             >
               <FileText className="w-4 h-4 shrink-0" />
-              <span>PDF Format</span>
+              <span>PDF & PPT Format</span>
             </button>
 
             {/* My Profile */}

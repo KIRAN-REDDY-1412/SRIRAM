@@ -208,7 +208,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle="PATIENT PROFILE & CLINICAL DEMOGRAPHICS"
                 caseId={caseId}
                 student={student}
                 preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name}
@@ -348,7 +347,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <PharmDVerseBrandedDocumentContainer
                 college={finalCollegeObj}
                 branding={branding}
-                documentTitle="PATIENT CLINICAL DOCUMENTATION LOGS"
                 caseId={caseId}
                 student={student}
                 preceptorName={clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Assigned Faculty Preceptor'}

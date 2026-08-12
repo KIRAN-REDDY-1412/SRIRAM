@@ -30,11 +30,73 @@ export const ClinicalCaseDocumentRenderer = ({
   const adr = modules.adr || {};
 
   const caseId = cCase.case_id || 'AMRMCP-2026-000001';
-  const preceptorName = cCase.assigned_preceptor_name || cPreceptor.full_name || 'Dr. Faculty Preceptor';
-  const finalDiagnosis = cCase.final_diagnosis || cCase.diagnosis || profile.diagnosis || 'Clinical Case Presentation';
+  const preceptorName = cCase.assigned_preceptor_name || cPreceptor.full_name || 'Faculty Preceptor';
+  const finalDiagnosis = cCase.final_diagnosis || cCase.diagnosis || profile.final_diagnosis || profile.provisional_diagnosis || 'Clinical Case Presentation';
 
   const secondaryCol = branding?.secondary_color || '#0284c7';
-  const primaryCol = branding?.primary_color || '#0f172a';
+
+  // Extract Profile Demographics & History
+  const pName = profile.patient_name || cCase.patient_name || 'N/A';
+  const pAge = profile.age || cCase.age || 'N/A';
+  const pGender = profile.gender || cCase.gender || 'N/A';
+  const pIpOp = profile.ip_op_number || profile.ip_no || profile.ip_op_no || cCase.ip_op_number || 'N/A';
+  const pWard = profile.ward ? `${profile.ward} ${profile.bed_number ? `(Bed: ${profile.bed_number})` : ''}` : (cCase.ward || 'N/A');
+  const pDept = profile.department || cCase.department || 'N/A';
+  const pDoa = profile.date_of_admission || profile.doa || 'N/A';
+  const pDod = profile.date_of_discharge || profile.dod || profile.doc || 'N/A';
+  const pPhysician = profile.attending_physician || profile.physician || 'Attending Consultant';
+
+  const pHwt = (profile.height || profile.weight || profile.bmi)
+    ? `Ht: ${profile.height || '—'} cm | Wt: ${profile.weight || '—'} kg | BMI: ${profile.bmi || '—'}`
+    : null;
+
+  const pAllergies = (profile.allergy_drugs || profile.allergy_food || profile.allergies)
+    ? `Drug Allergies: ${profile.allergy_drugs || 'None'} | Food Allergies: ${profile.allergy_food || 'None'}`
+    : null;
+
+  const pSocial = profile.social_history || [
+    profile.smoker_pack_day ? `Smoker (${profile.smoker_pack_day}/day)` : null,
+    profile.alcoholic_amount_day ? `Alcoholic (${profile.alcoholic_amount_day})` : null,
+    profile.marital_status
+  ].filter(Boolean).join(', ') || 'Non-smoker, Non-alcoholic, Balanced diet.';
+
+  const pGeneralExam = profile.general_examination || [
+    profile.cyanosis ? `Cyanosis: ${profile.cyanosis}` : null,
+    profile.icterus ? `Icterus: ${profile.icterus}` : null,
+    profile.pallor ? `Pallor: ${profile.pallor}` : null
+  ].filter(Boolean).join(' | ') || 'Conscious and coherent. No acute distress.';
+
+  const pSystemicExam = profile.systemic_examination || [
+    profile.cvs ? `CVS: ${profile.cvs}` : null,
+    profile.rs ? `RS: ${profile.rs}` : null,
+    profile.gi ? `GI: ${profile.gi}` : null,
+    profile.cns ? `CNS: ${profile.cns}` : null
+  ].filter(Boolean).join(' | ') || 'CVS: S1S2 heard. RS: NVBS. GI: Soft. CNS: Intact.';
+
+  // Extract Counselling Data
+  const cProvidedTo = counselling.counselling_provided_to || counselling.patient_type || 'Patient';
+  const cMode = counselling.counselling_mode || counselling.counselling_aids_used || 'Oral';
+  const cTime = counselling.time_taken || counselling.counselling_time || '15 min';
+  const cDisease = counselling.disease_counselled || finalDiagnosis;
+  const cFocus = counselling.focus_points || (Array.isArray(counselling.points_covered) ? counselling.points_covered.join(', ') : counselling.points_covered) || 'Compliance and dietary instructions provided.';
+  const cBarriers = counselling.barriers_action || counselling.barrier_overcome || counselling.barrier_details || counselling.major_barriers_involved || 'None.';
+
+  // Extract Intervention Data
+  const iProblem = intervention.problem_identified || intervention.description_of_problem || (Array.isArray(intervention.prescription_problems) ? intervention.prescription_problems.join(', ') : intervention.prescription_problems) || 'None.';
+  const iAction = intervention.intervention_provided || (Array.isArray(intervention.action_taken) ? intervention.action_taken.join(', ') : intervention.action_taken) || 'None.';
+  const iRecs = (Array.isArray(intervention.recommendations) ? intervention.recommendations.join(', ') : intervention.recommendations) || '';
+  const iAccepted = intervention.physician_acceptance || (intervention.accepted === true || intervention.accepted === 'Yes' ? 'Accepted & Implemented' : intervention.accepted === false || intervention.accepted === 'No' ? 'Not Accepted' : 'Accepted & Implemented');
+
+  // Extract DIR Data
+  const dirEnquirer = dir.enquirer_name ? `${dir.enquirer_name} (${dir.enquirer_category || dir.professional_status || dir.designation || 'Physician'})` : null;
+  const dirRefs = [dir.ref_textbooks, dir.ref_journals, dir.ref_micromedex, dir.ref_clinirex, dir.ref_others].filter(Boolean).join(', ');
+
+  // Extract ADR Data
+  const adrDrug = adr.suspected_drug || (Array.isArray(adr.suspected_medications) && adr.suspected_medications[0] ? (adr.suspected_medications[0].drug_name || adr.suspected_medications[0].brand_name) : '') || 'N/A';
+  const adrTitle = adr.reaction_title || adr.reaction_description || 'No ADR reported.';
+  const adrCausality = adr.initial_causality_opinion || adr.reaction_severity || 'Unlikely';
+  const adrScore = adr.naranjo_score || adr.causality_score || 'N/A';
+  const adrOutcome = adr.patient_outcome || 'Resolved';
 
   return (
     <div id="official-clinical-case-pdf-container" className="space-y-8 print:space-y-0">
@@ -59,15 +121,25 @@ export const ClinicalCaseDocumentRenderer = ({
               1. Patient Demographics & Profile
             </strong>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px]">
-              <div>Patient Name: <span className="font-bold text-slate-900">{profile.patient_name || 'N/A'}</span></div>
-              <div>Age / Gender: <span className="font-bold text-slate-900">{profile.age ? `${profile.age} Yrs` : 'N/A'} / {profile.gender || 'N/A'}</span></div>
-              <div>IP / OP No: <span className="font-bold font-mono text-slate-900">{profile.ip_op_number || 'N/A'}</span></div>
-              <div>Ward / Bed No: <span>{profile.ward || 'N/A'}</span></div>
-              <div>Date of Admission: <span className="font-mono font-bold">{profile.date_of_admission || 'N/A'}</span></div>
-              <div>Attending Physician: <span className="font-bold">{profile.attending_physician || 'Dr. Physician'}</span></div>
+              <div>Patient Name: <span className="font-bold text-slate-900">{pName}</span></div>
+              <div>Age / Gender: <span className="font-bold text-slate-900">{pAge} Yrs / {pGender}</span></div>
+              <div>IP / OP No: <span className="font-bold font-mono text-slate-900">{pIpOp}</span></div>
+              <div>Ward / Bed No: <span>{pWard}</span></div>
+              <div>Department: <span className="font-bold">{pDept}</span></div>
+              <div>Date of Admission: <span className="font-mono font-bold">{pDoa}</span></div>
+              {pDod !== 'N/A' && <div>Date of Discharge: <span className="font-mono font-bold">{pDod}</span></div>}
+              <div>Attending Physician: <span className="font-bold">{pPhysician}</span></div>
+              {pHwt && <div className="col-span-2 text-slate-700 font-medium">{pHwt}</div>}
             </div>
+
+            {pAllergies && (
+              <div className="pt-1 text-[11px] text-rose-700 font-semibold border-t border-rose-200">
+                ⚠️ {pAllergies}
+              </div>
+            )}
+
             <div className="pt-2 text-[11px] border-t branded-border space-y-1.5 leading-relaxed">
-              <div><strong className="text-slate-900">Chief Complaints:</strong> {profile.chief_complaints || 'None recorded.'}</div>
+              <div><strong className="text-slate-900">Chief Complaints:</strong> {profile.chief_complaints || cCase.chief_complaints || 'None recorded.'}</div>
               <div><strong className="text-slate-900">Past Medical History:</strong> {profile.past_medical_history || 'No significant past medical history.'}</div>
               <div><strong className="text-slate-900">Past Medication History:</strong> {profile.past_medication_history || 'No long-term medications.'}</div>
             </div>
@@ -83,9 +155,9 @@ export const ClinicalCaseDocumentRenderer = ({
             </div>
             <div className="border p-3 rounded-lg bg-slate-50/40 branded-border space-y-1 text-[11px]">
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[10px]" style={{ color: secondaryCol }}>
-                Social History
+                Social & Lifestyle History
               </strong>
-              <div className="font-medium">{profile.social_history || 'Non-smoker, Non-alcoholic, Balanced diet.'}</div>
+              <div className="font-medium">{pSocial}</div>
             </div>
           </div>
 
@@ -112,8 +184,8 @@ export const ClinicalCaseDocumentRenderer = ({
               Clinical Examinations
             </strong>
             <div className="space-y-1.5 leading-relaxed">
-              <div><strong className="text-slate-900">General Examination:</strong> {profile.general_examination || 'Patient conscious and coherent. Cyanosis: Absent, Icterus: Absent, Pallor: Absent, Edema: Absent.'}</div>
-              <div><strong className="text-slate-900">Systemic Examination:</strong> {profile.systemic_examination || 'CVS: S1S2 heard. RS: NVBS. GI: Soft. CNS: Intact.'}</div>
+              <div><strong className="text-slate-900">General Examination:</strong> {pGeneralExam}</div>
+              <div><strong className="text-slate-900">Systemic Examination:</strong> {pSystemicExam}</div>
             </div>
           </div>
 
@@ -159,8 +231,13 @@ export const ClinicalCaseDocumentRenderer = ({
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-800 block">
               Official Diagnostic Opinion
             </span>
+            {profile.provisional_diagnosis && (
+              <div className="text-[11px] font-semibold text-slate-650">
+                Provisional Diagnosis: {profile.provisional_diagnosis}
+              </div>
+            )}
             <h3 className="text-sm font-black text-emerald-900 uppercase">
-              {finalDiagnosis}
+              Final Diagnosis: {finalDiagnosis}
             </h3>
           </div>
 
@@ -222,7 +299,7 @@ export const ClinicalCaseDocumentRenderer = ({
               <strong className="block font-bold uppercase text-[10px] text-sky-900 border-b border-sky-200 pb-0.5">
                 Radiological & Special Diagnostic Findings
               </strong>
-              <div className="leading-relaxed font-serif">{profile.other_investigations}</div>
+              <div className="leading-relaxed font-serif whitespace-pre-line">{profile.other_investigations}</div>
             </div>
           )}
 
@@ -263,8 +340,8 @@ export const ClinicalCaseDocumentRenderer = ({
                   drugs.map((d, idx) => (
                     <tr key={idx} className="border-b branded-border">
                       <td className="p-1.5 border-r text-center font-mono font-bold branded-border">{d.s_no || idx + 1}</td>
-                      <td className="p-1.5 border-r font-bold branded-border">{d.trade_name} {d.generic_name ? `(${d.generic_name})` : ''}</td>
-                      <td className="p-1.5 border-r branded-border">{d.dose || 'N/A'} ({d.route_of_admin || 'Oral'})</td>
+                      <td className="p-1.5 border-r font-bold branded-border">{d.trade_name || d.brand_name} {d.generic_name ? `(${d.generic_name})` : ''}</td>
+                      <td className="p-1.5 border-r branded-border">{d.dose || 'N/A'} ({d.route_of_admin || d.route || 'Oral'})</td>
                       <td className="p-1.5 border-r font-mono font-bold branded-border">{d.frequency || 'OD'}</td>
                       <td className="p-1.5">{d.indication || 'Symptomatic Management'}</td>
                     </tr>
@@ -284,11 +361,11 @@ export const ClinicalCaseDocumentRenderer = ({
               4. Patient Counselling Record
             </strong>
             <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div>Counselled Provided To: <span className="font-bold">{counselling.counselling_provided_to || 'Patient'}</span></div>
-              <div>Mode & Time: <span className="font-bold">{counselling.counselling_mode || 'Oral'} ({counselling.time_taken || '15 min'})</span></div>
-              <div className="col-span-2">Disease & Meds Counselled: <span>{counselling.disease_counselled || finalDiagnosis}</span></div>
-              <div className="col-span-2"><strong className="text-slate-900">Key Focus & Advice:</strong> {counselling.focus_points || 'Compliance and dietary instructions provided.'}</div>
-              <div className="col-span-2"><strong className="text-slate-900">Barriers & Action:</strong> {counselling.barriers_action || 'None.'}</div>
+              <div>Counselled Provided To: <span className="font-bold">{cProvidedTo}</span></div>
+              <div>Mode & Duration: <span className="font-bold">{cMode} ({cTime})</span></div>
+              <div className="col-span-2">Disease & Meds Counselled: <span>{cDisease}</span></div>
+              <div className="col-span-2"><strong className="text-slate-900">Key Focus & Advice:</strong> {cFocus}</div>
+              <div className="col-span-2"><strong className="text-slate-900">Barriers & Action:</strong> {cBarriers}</div>
             </div>
           </div>
 
@@ -298,9 +375,9 @@ export const ClinicalCaseDocumentRenderer = ({
               5. Clinical Pharmacist Intervention
             </strong>
             <div className="space-y-1">
-              <div><strong className="text-slate-900">Problem Identified:</strong> {intervention.problem_identified || 'None.'}</div>
-              <div><strong className="text-slate-900">Recommendation:</strong> {intervention.intervention_provided || 'None.'}</div>
-              <div><strong className="text-slate-900">Physician Acceptance:</strong> <span className="font-bold" style={{ color: secondaryCol }}>{intervention.physician_acceptance || 'Accepted & Implemented.'}</span></div>
+              <div><strong className="text-slate-900">Problem Identified:</strong> {iProblem}</div>
+              <div><strong className="text-slate-900">Action & Recommendation:</strong> {iAction} {iRecs ? `— ${iRecs}` : ''}</div>
+              <div><strong className="text-slate-900">Physician Acceptance:</strong> <span className="font-bold" style={{ color: secondaryCol }}>{iAccepted}</span></div>
             </div>
           </div>
 
@@ -323,15 +400,16 @@ export const ClinicalCaseDocumentRenderer = ({
         <div className="space-y-4 text-xs">
           
           {/* Section 6: Drug Information Request (DIR) */}
-          {dir.details_of_enquiry && (
+          {(dir.details_of_enquiry || dirEnquirer) && (
             <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
                 6. Drug Information Request (DIR)
               </strong>
               <div className="space-y-1">
-                <div>Enquirer: <span className="font-bold">{dir.enquirer_name} ({dir.enquirer_category})</span></div>
-                <div><strong className="text-slate-900">Details of Enquiry:</strong> {dir.details_of_enquiry}</div>
-                <div><strong className="text-slate-900">Response Provided:</strong> {dir.information_provided}</div>
+                {dirEnquirer && <div>Enquirer: <span className="font-bold">{dirEnquirer}</span></div>}
+                {dir.details_of_enquiry && <div><strong className="text-slate-900">Details of Enquiry:</strong> {dir.details_of_enquiry}</div>}
+                {dir.information_provided && <div><strong className="text-slate-900">Response Provided:</strong> {dir.information_provided}</div>}
+                {dirRefs && <div><strong className="text-slate-900">References Consulted:</strong> {dirRefs}</div>}
               </div>
             </div>
           )}
@@ -342,9 +420,9 @@ export const ClinicalCaseDocumentRenderer = ({
               7. Adverse Drug Reaction (ADR) Monitoring Log
             </strong>
             <div className="space-y-1">
-              <div>Suspected Drug & Reaction: <span className="font-bold">{adr.suspected_drug || 'N/A'} — {adr.reaction_title || 'No ADR reported.'}</span></div>
-              <div>Causality & Severity: <span>{adr.initial_causality_opinion || 'Unlikely'} (Score: {adr.naranjo_score || 'N/A'})</span></div>
-              <div>Outcome: <span className="font-bold">{adr.patient_outcome || 'Resolved'}</span></div>
+              <div>Suspected Drug & Reaction: <span className="font-bold">{adrDrug} — {adrTitle}</span></div>
+              <div>Causality & Severity: <span>{adrCausality} (Score: {adrScore})</span></div>
+              <div>Outcome: <span className="font-bold">{adrOutcome}</span></div>
             </div>
           </div>
 
@@ -354,7 +432,7 @@ export const ClinicalCaseDocumentRenderer = ({
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
                 Discharge Summary & Hospital Course
               </strong>
-              <div className="leading-relaxed">{profile.discharge_summary}</div>
+              <div className="leading-relaxed whitespace-pre-line">{profile.discharge_summary}</div>
             </div>
           )}
 

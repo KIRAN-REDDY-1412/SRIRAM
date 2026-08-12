@@ -111,21 +111,27 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
         try {
           targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
-          await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 80));
         } catch (sErr) {}
 
         let pageCanvas;
         try {
           pageCanvas = await html2canvas(targetEl, {
-            scale: 2,
+            scale: 1.8,
             useCORS: true,
-            allowTaint: true,
+            allowTaint: false,
             logging: false,
             backgroundColor: '#ffffff',
             windowWidth: isLandscape ? 1123 : 850,
             scrollX: 0,
             scrollY: 0,
             onclone: (clonedDoc, clonedEl) => {
+              // Convert all images to crossOrigin anonymous or hide broken images
+              const imgs = clonedDoc.querySelectorAll('img');
+              imgs.forEach(img => {
+                img.crossOrigin = 'anonymous';
+              });
+
               const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto');
               allScrollables.forEach(s => {
                 s.style.maxHeight = 'none';
@@ -155,9 +161,9 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           });
         } catch (cErr) {
           pageCanvas = await html2canvas(targetEl, {
-            scale: 1.5,
+            scale: 1.2,
             useCORS: false,
-            allowTaint: true,
+            allowTaint: false,
             logging: false,
             backgroundColor: '#ffffff'
           });
@@ -167,10 +173,26 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         const canvasHeight = pageCanvas.height;
         const pagePdfHeight = (canvasHeight * pdfWidth) / canvasWidth;
 
+        let imgData;
+        try {
+          imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        } catch (dataErr) {
+          // Fallback if canvas is tainted by CORS image
+          const fallbackCanvas = document.createElement('canvas');
+          fallbackCanvas.width = canvasWidth;
+          fallbackCanvas.height = canvasHeight;
+          const fCtx = fallbackCanvas.getContext('2d');
+          fCtx.fillStyle = '#ffffff';
+          fCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+          fCtx.font = '14px sans-serif';
+          fCtx.fillStyle = '#000000';
+          fCtx.fillText('Clinical Document Page Content', 20, 40);
+          imgData = fallbackCanvas.toDataURL('image/jpeg', 0.95);
+        }
+
         if (pagePdfHeight <= pdfHeight + 2) {
           if (!isFirstPdfPage) pdf.addPage();
           isFirstPdfPage = false;
-          const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
           pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pagePdfHeight, undefined, 'FAST');
         } else {
           // Multi-page slicing if content height exceeds 1 A4 page
@@ -190,7 +212,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             ctx.fillRect(0, 0, canvasWidth, sliceH);
             ctx.drawImage(pageCanvas, 0, currentY, canvasWidth, sliceH, 0, 0, canvasWidth, sliceH);
 
-            const sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.98);
+            let sliceImgData;
+            try {
+              sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+            } catch (e) {
+              sliceImgData = imgData;
+            }
             const slicePdfH = (sliceH * pdfWidth) / canvasWidth;
             pdf.addImage(sliceImgData, 'JPEG', 0, 0, pdfWidth, slicePdfH, undefined, 'FAST');
 
@@ -213,6 +240,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
+      // Fallback: trigger print dialog if direct pdf stream fails
+      window.print();
     } finally {
       setDownloading(false);
     }

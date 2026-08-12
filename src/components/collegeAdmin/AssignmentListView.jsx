@@ -557,7 +557,7 @@ export const AssignmentListView = ({ college, onAddNew }) => {
               </button>
 
               <button
-                onClick={handleConfirmDelete}
+                onClick={handleConfirmRemove}
                 disabled={actionLoading}
                 className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-1.5"
               >

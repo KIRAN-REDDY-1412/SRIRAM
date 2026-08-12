@@ -75,17 +75,6 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
       badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
       borderLeft: 'border-l-emerald-500',
       description: 'Officially approved clinical case logbook entries across all departments'
-    },
-    {
-      id: 'total_cases',
-      title: 'Total Cases',
-      count: totalCount,
-      filter: 'All',
-      icon: FolderKanban,
-      iconColor: 'text-indigo-600 dark:text-indigo-400',
-      badgeBg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
-      borderLeft: 'border-l-indigo-500',
-      description: 'Total clinical cases created and recorded across all enrolled students'
     }
   ];
 
@@ -199,7 +188,7 @@ export const CollegeAdminDashboardView = ({ college, onNavigate }) => {
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Click card to manage cases</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 max-w-xl gap-6">
           {summaryCards.map((card) => {
             const IconComp = card.icon;
             return (

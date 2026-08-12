@@ -7,6 +7,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
   documentTitle,
   caseId,
   student,
+  preceptor,
   preceptorName,
   children,
   pageNumber = '1 of 1',
@@ -323,8 +324,11 @@ export const PharmDVerseBrandedDocumentContainer = ({
                 <div className="pt-1 w-48 text-center border-t" style={{ borderColor: borderCol }}>
                   Preceptor Signature
                   <span className="block text-[10px] font-mono font-normal" style={{ color: secondaryColor }}>
-                    {preceptorName || 'Assigned Faculty Preceptor'}
+                    {preceptor?.full_name || preceptorName || 'Faculty Preceptor'}
                   </span>
+                  {preceptor?.designation && (
+                    <span className="block text-[9px] font-mono text-slate-500">{preceptor.designation}</span>
+                  )}
                   <span className="block text-[9px] font-mono text-slate-400">Date: {currentDateTimeStr}</span>
                 </div>
               ) : <div className="w-48" />}

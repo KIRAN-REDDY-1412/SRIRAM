@@ -104,15 +104,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
 
-      for (let i = 0; i < pagesToCapture.length; i++) {
-        if (i > 0) pdf.addPage();
+      let isFirstPdfPage = true;
 
+      for (let i = 0; i < pagesToCapture.length; i++) {
         const targetEl = pagesToCapture[i];
 
-        // Ensure target page element is scrolled into view for html2canvas
         try {
           targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
-          await new Promise(r => setTimeout(r, 120));
+          await new Promise(r => setTimeout(r, 100));
         } catch (sErr) {}
 
         let pageCanvas;
@@ -127,7 +126,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             scrollX: 0,
             scrollY: 0,
             onclone: (clonedDoc, clonedEl) => {
-              // Unclip all scroll containers in cloned document so html2canvas renders complete pages without truncating
               const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto');
               allScrollables.forEach(s => {
                 s.style.maxHeight = 'none';
@@ -165,14 +163,56 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           });
         }
 
-        const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+        const canvasWidth = pageCanvas.width;
+        const canvasHeight = pageCanvas.height;
+        const pagePdfHeight = (canvasHeight * pdfWidth) / canvasWidth;
+
+        if (pagePdfHeight <= pdfHeight + 2) {
+          if (!isFirstPdfPage) pdf.addPage();
+          isFirstPdfPage = false;
+          const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pagePdfHeight, undefined, 'FAST');
+        } else {
+          // Multi-page slicing if content height exceeds 1 A4 page
+          const sliceHeightPx = Math.floor((canvasWidth * pdfHeight) / pdfWidth);
+          let currentY = 0;
+
+          while (currentY < canvasHeight) {
+            if (!isFirstPdfPage) pdf.addPage();
+            isFirstPdfPage = false;
+
+            const sliceH = Math.min(sliceHeightPx, canvasHeight - currentY);
+            const sliceCanvas = document.createElement('canvas');
+            sliceCanvas.width = canvasWidth;
+            sliceCanvas.height = sliceH;
+            const ctx = sliceCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasWidth, sliceH);
+            ctx.drawImage(pageCanvas, 0, currentY, canvasWidth, sliceH, 0, 0, canvasWidth, sliceH);
+
+            const sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.98);
+            const slicePdfH = (sliceH * pdfWidth) / canvasWidth;
+            pdf.addImage(sliceImgData, 'JPEG', 0, 0, pdfWidth, slicePdfH, undefined, 'FAST');
+
+            currentY += sliceHeightPx;
+          }
+        }
+      }
+
+      // Stamp dynamic page numbers on all generated PDF pages
+      const totalPdfPages = pdf.getNumberOfPages();
+      if (branding?.show_page_number !== false) {
+        for (let p = 1; p <= totalPdfPages; p++) {
+          pdf.setPage(p);
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(`Page ${p} of ${totalPdfPages}`, pdfWidth - 25, pdfHeight - 6);
+        }
       }
 
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
-      window.print();
     } finally {
       setDownloading(false);
     }

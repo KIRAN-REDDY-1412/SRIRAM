@@ -141,6 +141,18 @@ export const PharmDVerseBrandedDocumentContainer = ({
             size: ${paperSize} ${orientation.toLowerCase()};
             margin: ${marginTop} ${marginRight} ${marginBottom} ${marginLeft};
           }
+          html, body {
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+            font-family: ${fontFamily} !important;
+            color: ${textColor} !important;
+          }
+          div, section, main {
+            max-height: none !important;
+            overflow: visible !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -155,6 +167,9 @@ export const PharmDVerseBrandedDocumentContainer = ({
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
@@ -162,13 +177,12 @@ export const PharmDVerseBrandedDocumentContainer = ({
           .pharmdverse-document-page {
             box-shadow: none !important;
             margin: 0 auto !important;
+            height: auto !important;
+            min-height: 270mm !important;
+            max-height: none !important;
+            overflow: visible !important;
             page-break-after: always !important;
             break-after: page !important;
-          }
-          body {
-            background-color: #ffffff !important;
-            font-family: ${fontFamily} !important;
-            color: ${textColor} !important;
           }
           thead {
             display: ${shouldShowTableHeader ? 'table-header-group' : 'none'} !important;

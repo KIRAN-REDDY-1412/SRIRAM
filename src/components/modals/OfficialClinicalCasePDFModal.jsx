@@ -266,7 +266,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         </div>
 
         {/* PRINTABLE CONTAINER */}
-        <div className="max-h-[65vh] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-100 dark:bg-slate-900/50">
+        <div className="max-h-[65vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0 print:border-none print:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-100 dark:bg-slate-900/50">
           {loading ? (
             <div className="py-16 text-center">
               <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />

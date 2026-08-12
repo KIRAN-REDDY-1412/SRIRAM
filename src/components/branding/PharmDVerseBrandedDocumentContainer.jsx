@@ -163,9 +163,7 @@ export const PharmDVerseBrandedDocumentContainer = ({
             visibility: visible !important;
           }
           #official-clinical-case-pdf-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: static !important;
             width: 100% !important;
             height: auto !important;
             max-height: none !important;

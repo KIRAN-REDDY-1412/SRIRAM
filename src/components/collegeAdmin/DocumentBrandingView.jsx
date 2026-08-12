@@ -101,14 +101,23 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
       <div className="border-4 border-slate-900 rounded-3xl p-6 bg-white shadow-2xl space-y-6 text-slate-900 min-h-[420px] flex flex-col justify-between" style={{ fontFamily }}>
         {slideNum === 1 && (
           <div className="space-y-5">
-            {/* Header Box */}
-            <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 text-center space-y-1">
-              <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
-                {collegeName}
-              </h2>
-              <p className="text-slate-600 italic font-semibold" style={{ fontSize: subHeadingSize }}>
-                (Autonomous) • {hospitalName}
-              </p>
+            {/* Header Box with College Logo */}
+            <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 flex items-center justify-between gap-4">
+              {pptSettings?.show_logo !== false && (college?.college_logo_url || college?.logo_url) ? (
+                <img src={college.college_logo_url || college.logo_url} alt="College Logo" className="w-14 h-14 object-contain rounded" />
+              ) : (
+                <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center font-bold text-xs shrink-0">
+                  LOGO
+                </div>
+              )}
+              <div className="flex-1 text-center space-y-0.5">
+                <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
+                  {collegeName}
+                </h2>
+                <p className="text-slate-600 italic font-semibold" style={{ fontSize: subHeadingSize }}>
+                  (Autonomous) • {hospitalName}
+                </p>
+              </div>
             </div>
 
             {/* Case ID Banner */}
@@ -126,11 +135,22 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
               </p>
             </div>
 
-            {/* Student & Preceptor Metadata */}
+            {/* Student & Preceptor Metadata - Split Left (Preceptor) / Right (Submitted By) */}
             {pptSettings?.show_student_preceptor !== false && (
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 text-center space-y-1" style={{ fontSize: bodySize }}>
-                <div>Presented By: <strong className="text-slate-900 font-bold">John Doe</strong> (Roll No: Y22PHD0316)</div>
-                <div>Evaluated & Approved By: <strong className="text-emerald-700 font-bold">Dr. A. Sharma, M.D.</strong></div>
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 grid grid-cols-2 gap-4 text-xs" style={{ fontSize: bodySize }}>
+                {/* LEFT SIDE: PRECEPTOR */}
+                <div className="text-left space-y-1 border-r border-slate-200 pr-3">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Evaluated & Approved By:</span>
+                  <strong className="text-emerald-700 font-extrabold text-sm block">Dr. A. Sharma, M.D.</strong>
+                  <span className="text-[11px] text-slate-600 block">Faculty Preceptor / Evaluator</span>
+                </div>
+
+                {/* RIGHT SIDE: SUBMITTED BY STUDENT */}
+                <div className="text-right space-y-1 pl-3">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Submitted / Presented By:</span>
+                  <strong className="text-slate-900 font-extrabold text-sm block">John Doe</strong>
+                  <span className="text-[11px] text-slate-600 block font-mono">Roll No: Y22PHD0316</span>
+                </div>
               </div>
             )}
           </div>

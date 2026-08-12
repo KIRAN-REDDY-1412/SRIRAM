@@ -94,22 +94,31 @@ export const generateClinicalCasePPTX = async ({
     fontFace, fontSize: subHeadingFontSize + 1, bold: true, color: primaryColor, align: 'center'
   });
 
-  // Presented By Card
+  // Student & Preceptor Metadata Card (Left: Preceptor, Right: Submitted By Student)
   if (pptSettings?.show_student_preceptor !== false && pptSettings?.ppt_show_student_preceptor !== false) {
     slide1.addShape(pptx.shapes.RECTANGLE, {
-      x: startX + 1.0, y: 2.65, w: contentW - 2.0, h: 1.6,
+      x: startX, y: 2.65, w: contentW, h: 1.6,
       fill: { color: darkBgColor }, line: { color: 'CBD5E1', width: 1 }
     });
 
+    // LEFT COLUMN: Evaluated & Approved By (Preceptor)
     slide1.addText([
-      { text: 'Presented By: ', options: { bold: true, fontSize: bodyFontSize, color: '334155' } },
-      { text: `${studentName} `, options: { bold: true, fontSize: bodyFontSize + 1, color: primaryColor } },
-      { text: `(Roll No: ${rollNumber})\n\n`, options: { fontSize: bodyFontSize - 1, color: '475569' } },
-      { text: 'Evaluated & Approved By: ', options: { bold: true, fontSize: bodyFontSize, color: '334155' } },
-      { text: `${preceptorName}`, options: { bold: true, fontSize: bodyFontSize + 1, color: emeraldColor } }
+      { text: 'Evaluated & Approved By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
+      { text: `${preceptorName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: emeraldColor } },
+      { text: 'Faculty Preceptor / Evaluator', options: { fontSize: bodyFontSize - 2, color: '475569' } }
     ], {
-      x: startX + 1.1, y: 2.75, w: contentW - 2.2, h: 1.4,
-      fontFace, align: 'center'
+      x: startX + 0.3, y: 2.75, w: 4.0, h: 1.4,
+      fontFace, align: 'left'
+    });
+
+    // RIGHT COLUMN: Submitted / Presented By (Student)
+    slide1.addText([
+      { text: 'Submitted / Presented By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
+      { text: `${studentName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: primaryColor } },
+      { text: `Roll No: ${rollNumber}`, options: { fontSize: bodyFontSize - 2, color: '475569' } }
+    ], {
+      x: startX + 4.7, y: 2.75, w: 4.0, h: 1.4,
+      fontFace, align: 'right'
     });
   }
 

@@ -41,11 +41,8 @@ export const StudentPromotionView = ({ college, initialBatch = 'All' }) => {
     if (!college?.id) return;
     setLoading(true);
     const res = await fetchStudentsFromSupabase(college.id);
-    if (res.success && res.students) {
-      setStudents(res.students);
-    } else {
-      setStudents([]);
-    }
+    const studentList = res.data || res.students || [];
+    setStudents(studentList);
     setLoading(false);
   };
 

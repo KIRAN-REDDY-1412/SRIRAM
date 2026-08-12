@@ -63,12 +63,9 @@ export const CollegeAdminLayout = ({ college: initialCollege, onLogout }) => {
     const loadActiveBatches = async () => {
       if (college?.id) {
         const res = await fetchStudentsFromSupabase(college.id);
-        if (res.success && res.students) {
-          const batches = Array.from(new Set(res.students.map(s => s.batch).filter(Boolean))).sort();
-          setActiveStudentBatches(batches);
-        } else {
-          setActiveStudentBatches([]);
-        }
+        const studentList = res.data || res.students || [];
+        const batches = Array.from(new Set(studentList.map(s => s.batch).filter(Boolean))).sort();
+        setActiveStudentBatches(batches);
       }
     };
     loadActiveBatches();

@@ -1338,10 +1338,10 @@ export const fetchStudentsFromSupabase = async (collegeId) => {
     if (collegeId) query = query.eq('college_id', collegeId);
 
     const { data, error } = await query;
-    if (error) return { success: false, data: [], error: error.message };
-    return { success: true, data: data || [] };
+    if (error) return { success: false, data: [], students: [], error: error.message };
+    return { success: true, data: data || [], students: data || [] };
   } catch (err) {
-    return { success: false, data: [], error: err.message };
+    return { success: false, data: [], students: [], error: err.message };
   }
 };
 

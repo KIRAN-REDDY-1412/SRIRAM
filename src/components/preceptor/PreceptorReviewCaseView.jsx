@@ -387,19 +387,19 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
       {/* ACTIVE FORM DISPLAY (READ-ONLY WITH REVISION HIGHLIGHTING) */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
         {activeTab === 'profile' && (
-          <PatientProfileFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_profile')} />
+          <PatientProfileFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_profile')} snapshotAtReturn={clinicalCase?.snapshot_at_return?.profile} />
         )}
         {activeTab === 'counselling' && (
-          <PatientCounsellingFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_counselling')} />
+          <PatientCounsellingFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('patient_counselling')} snapshotAtReturn={clinicalCase?.snapshot_at_return?.counselling} />
         )}
         {activeTab === 'intervention' && (
-          <PharmacistInterventionFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('pharmacist_intervention')} />
+          <PharmacistInterventionFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('pharmacist_intervention')} snapshotAtReturn={clinicalCase?.snapshot_at_return?.intervention} />
         )}
         {activeTab === 'dir' && (
-          <DrugInformationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('drug_information_request')} />
+          <DrugInformationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('drug_information_request')} snapshotAtReturn={clinicalCase?.snapshot_at_return?.dir} />
         )}
         {activeTab === 'adr' && (
-          <ADRDocumentationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('adr_documentation')} />
+          <ADRDocumentationFormView clinicalCase={clinicalCase} student={student} isReadOnly={true} isReturned={isFormReturnedAndRevised('adr_documentation')} snapshotAtReturn={clinicalCase?.snapshot_at_return?.adr} />
         )}
       </div>
 

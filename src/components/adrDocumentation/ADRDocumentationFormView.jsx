@@ -55,7 +55,22 @@ const ACTION_TAKEN_OPTIONS = ['Drug Withdrawn', 'Dose Reduced', 'Continued', 'Un
 const DECHALLENGE_OPTIONS = ['Positive', 'Negative', 'Not Done', 'Unknown'];
 const RECHALLENGE_OPTIONS = ['Positive', 'Negative', 'Not Done', 'Unknown'];
 
-export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false }) => {
+import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
+
+const ModifiedFieldBadge = ({ isModified, oldValue }) => {
+  if (!isModified) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-slate-900 border border-amber-400 shadow-xs ml-2"
+      title={oldValue ? `Previous value before return: "${typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue}"` : 'Modified by student after return'}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-ping" />
+      ⚡ MODIFIED BY STUDENT
+    </span>
+  );
+};
+
+export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false, snapshotAtReturn = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -141,6 +156,53 @@ export const ADRDocumentationFormView = ({ clinicalCase, student, onBack, isRead
   const [studentRemarks, setStudentRemarks] = useState('');
   const [preceptorReview, setPreceptorReview] = useState('');
   const [facultyComments, setFacultyComments] = useState('');
+
+  const currentAdrObj = React.useMemo(() => ({
+    adr_number: adrNumber,
+    reporting_date: reportingDate,
+    patient_initials: patientInitials,
+    hospital_reg_number: hospitalRegNumber,
+    age, gender, weight, department,
+    reaction_title: reactionTitle,
+    reaction_category: reactionCategory,
+    reaction_description: reactionDescription,
+    reaction_started_at: reactionStartedAt,
+    reaction_ended_at: reactionEndedAt,
+    reaction_duration: reactionDuration,
+    reaction_outcome: reactionOutcome,
+    clinical_management: clinicalManagement,
+    suspected_drugs: suspectedDrugs,
+    concomitant_drugs: concomitantDrugs,
+    relevant_medical_conditions: relevantMedicalConditions,
+    pregnancy_lactation_status: pregnancyLactationStatus,
+    renal_status: renalStatus,
+    hepatic_status: hepaticStatus,
+    lifestyle_factors: lifestyleFactors,
+    additional_clinical_notes: additionalClinicalNotes,
+    reaction_severity: reactionSeverity,
+    reaction_seriousness: reactionSeriousness,
+    patient_outcome: patientOutcome,
+    action_taken_on_suspected_drug: actionTakenOnSuspectedDrug,
+    rechallenge_information: rechallengeInformation,
+    dechallenge_information: dechallengeInformation,
+    initial_causality_opinion: initialCausalityOpinion,
+    clinical_remarks: clinicalRemarks,
+    student_remarks: studentRemarks
+  }), [
+    adrNumber, reportingDate, patientInitials, hospitalRegNumber, age, gender, weight, department,
+    reactionTitle, reactionCategory, reactionDescription, reactionStartedAt, reactionEndedAt,
+    reactionDuration, reactionOutcome, clinicalManagement, suspectedDrugs, concomitantDrugs,
+    relevantMedicalConditions, pregnancyLactationStatus, renalStatus, hepaticStatus, lifestyleFactors,
+    additionalClinicalNotes, reactionSeverity, reactionSeriousness, patientOutcome,
+    actionTakenOnSuspectedDrug, rechallengeInformation, dechallengeInformation,
+    initialCausalityOpinion, clinicalRemarks, studentRemarks
+  ]);
+
+  const diffMap = React.useMemo(() => {
+    const snap = snapshotAtReturn || clinicalCase?.snapshot_at_return?.adr;
+    if (!snap) return {};
+    return computeModuleDiffs(currentAdrObj, snap, 'adr');
+  }, [currentAdrObj, snapshotAtReturn, clinicalCase?.snapshot_at_return?.adr]);
 
   // Meta
   const [existingReportId, setExistingReportId] = useState(null);

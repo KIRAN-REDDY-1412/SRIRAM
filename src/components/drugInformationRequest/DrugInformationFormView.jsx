@@ -92,7 +92,22 @@ const FREQUENTLY_USED_REFERENCES = [
   "Stockley's Drug Interactions"
 ];
 
-export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false }) => {
+import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
+
+const ModifiedFieldBadge = ({ isModified, oldValue }) => {
+  if (!isModified) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-slate-900 border border-amber-400 shadow-xs ml-2"
+      title={oldValue ? `Previous value before return: "${typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue}"` : 'Modified by student after return'}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-ping" />
+      ⚡ MODIFIED BY STUDENT
+    </span>
+  );
+};
+
+export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false, snapshotAtReturn = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -139,6 +154,37 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const currentDirObj = React.useMemo(() => ({
+    request_date: requestDate,
+    request_time: requestTime,
+    enquirer_select: enquirerSelect,
+    enquirer_name_other: enquirerNameOther,
+    designation, phone_no: phoneNo, unit_ward: unitWard, professional_status: professionalStatus,
+    details_of_enquiry: detailsOfEnquiry,
+    question_category: questionCategory,
+    category_other: categoryOther,
+    purpose_of_enquiry: purposeOfEnquiry,
+    purpose_other: purposeOther,
+    timeframe_needed: timeframeNeeded,
+    patient_specific: patientSpecific,
+    response_date: responseDate,
+    response_time: responseTime,
+    information_provided: informationProvided,
+    reply_mode: replyMode,
+    references
+  }), [
+    requestDate, requestTime, enquirerSelect, enquirerNameOther, designation, phoneNo, unitWard,
+    professionalStatus, detailsOfEnquiry, questionCategory, categoryOther, purposeOfEnquiry,
+    purposeOther, timeframeNeeded, patientSpecific, responseDate, responseTime, informationProvided,
+    replyMode, references
+  ]);
+
+  const diffMap = React.useMemo(() => {
+    const snap = snapshotAtReturn || clinicalCase?.snapshot_at_return?.dir;
+    if (!snap) return {};
+    return computeModuleDiffs(currentDirObj, snap, 'dir');
+  }, [currentDirObj, snapshotAtReturn, clinicalCase?.snapshot_at_return?.dir]);
 
   // Helper: Placeholder Focus Handlers
   const handleFocusPlaceholder = (e) => {

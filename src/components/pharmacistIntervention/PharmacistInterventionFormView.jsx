@@ -24,7 +24,22 @@ const ALL_RECOMMENDATIONS = [
   'Drug', 'Dose', 'Duration', 'Form/Route', 'Schedule'
 ];
 
-export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, isReadOnly = false }) => {
+import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
+
+const ModifiedFieldBadge = ({ isModified, oldValue }) => {
+  if (!isModified) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-slate-900 border border-amber-400 shadow-xs ml-2"
+      title={oldValue ? `Previous value before return: "${typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue}"` : 'Modified by student after return'}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-ping" />
+      ⚡ MODIFIED BY STUDENT
+    </span>
+  );
+};
+
+export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, isReadOnly = false, snapshotAtReturn = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -81,6 +96,32 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const currentInterventionObj = React.useMemo(() => ({
+    date_of_intervention: dateOfIntervention,
+    present_diagnosis: presentDiagnosis,
+    prescription_details: prescriptionDetails,
+    prescription_problems: prescriptionProblems,
+    other_problem: otherProblem,
+    problem_description: problemDescription,
+    actions_taken: actionsTaken,
+    recommendations: recommendations,
+    significance_level: significanceLevel,
+    intervention_outcome: interventionOutcome,
+    outcome_comments: outcomeComments,
+    references_text: referencesText,
+    follow_up: followUp
+  }), [
+    dateOfIntervention, presentDiagnosis, prescriptionDetails, prescriptionProblems,
+    otherProblem, problemDescription, actionsTaken, recommendations,
+    significanceLevel, interventionOutcome, outcomeComments, referencesText, followUp
+  ]);
+
+  const diffMap = React.useMemo(() => {
+    const snap = snapshotAtReturn || clinicalCase?.snapshot_at_return?.intervention;
+    if (!snap) return {};
+    return computeModuleDiffs(currentInterventionObj, snap, 'intervention');
+  }, [currentInterventionObj, snapshotAtReturn, clinicalCase?.snapshot_at_return?.intervention]);
 
   const todayDateStr = new Date().toISOString().split('T')[0];
 

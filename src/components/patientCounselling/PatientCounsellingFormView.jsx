@@ -45,7 +45,22 @@ const parseTo24Hour = (time12Str) => {
   return `${hourStr}:${m || '00'}`;
 };
 
-export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isReadOnly = false }) => {
+import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
+
+const ModifiedFieldBadge = ({ isModified, oldValue }) => {
+  if (!isModified) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-slate-900 border border-amber-400 shadow-xs ml-2"
+      title={oldValue ? `Previous value before return: "${typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue}"` : 'Modified by student after return'}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-ping" />
+      ⚡ MODIFIED BY STUDENT
+    </span>
+  );
+};
+
+export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isReadOnly = false, snapshotAtReturn = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -100,6 +115,41 @@ export const PatientCounsellingFormView = ({ clinicalCase, student, onBack, isRe
 
   // PDF Preview Modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const currentCounsellingObj = React.useMemo(() => ({
+    counselling_date: counsellingDate,
+    counselling_time: counsellingTimeRaw,
+    patient_type: patientType,
+    ip_op_number: ipOpNumber,
+    unit_ward: unitWard,
+    age, sex, allergies,
+    patient_name: patientName,
+    disease_counselled: diseaseCounselled,
+    medications_counselled: medicationsCounselled,
+    points_covered: pointsCovered,
+    major_barriers_involved: majorBarriersInvolved,
+    barrier_details: barrierDetails,
+    barrier_overcome: barrierOvercome,
+    time_taken: timeTaken,
+    counselling_provided_to: counsellingProvidedTo,
+    representative_reasons: representativeReasons,
+    representative_other_reason: representativeOtherReason,
+    counselling_aids_used: counsellingAidsUsed,
+    counselling_material_provided: counsellingMaterialProvided,
+    understanding_ascertained: understandingAscertained
+  }), [
+    counsellingDate, counsellingTimeRaw, patientType, ipOpNumber, unitWard, age, sex, allergies,
+    patientName, diseaseCounselled, medicationsCounselled, pointsCovered,
+    majorBarriersInvolved, barrierDetails, barrierOvercome, timeTaken, counsellingProvidedTo,
+    representativeReasons, representativeOtherReason, counsellingAidsUsed, counsellingMaterialProvided,
+    understandingAscertained
+  ]);
+
+  const diffMap = React.useMemo(() => {
+    const snap = snapshotAtReturn || clinicalCase?.snapshot_at_return?.counselling;
+    if (!snap) return {};
+    return computeModuleDiffs(currentCounsellingObj, snap, 'counselling');
+  }, [currentCounsellingObj, snapshotAtReturn, clinicalCase?.snapshot_at_return?.counselling]);
 
   useEffect(() => {
     const loadCounsellingAndProfileData = async () => {

@@ -2259,20 +2259,46 @@ export const returnClinicalCaseByPreceptorFromSupabase = async (clinicalCase, pr
     const caseId = clinicalCase.id;
     const now = new Date().toISOString();
 
+    // Capture pre-return snapshots of all 5 modules for all-field diff tracking
+    let snapshotAtReturn = {};
+    try {
+      const [profRes, counsRes, interRes, dirRes, adrRes] = await Promise.all([
+        supabase.from('patient_profiles').select('*').eq('clinical_case_id', caseId).maybeSingle(),
+        supabase.from('patient_counselling').select('*').eq('clinical_case_id', caseId).maybeSingle(),
+        supabase.from('pharmacist_interventions').select('*').eq('clinical_case_id', caseId).maybeSingle(),
+        supabase.from('drug_information_requests').select('*').eq('clinical_case_id', caseId).maybeSingle(),
+        supabase.from('adr_reports').select('*').eq('clinical_case_id', caseId).maybeSingle()
+      ]);
+
+      snapshotAtReturn = {
+        profile: profRes.data || null,
+        counselling: counsRes.data || null,
+        intervention: interRes.data || null,
+        dir: dirRes.data || null,
+        adr: adrRes.data || null,
+        returned_at: now
+      };
+    } catch (e) {
+      console.warn('Could not capture pre-return snapshot:', e);
+    }
+
     const updatePayload = {
       status: 'Returned',
       returned_at: now,
       returned_by_preceptor_id: preceptorId,
       overall_preceptor_comments: comments.trim(),
       returned_forms: returnedForms,
+      snapshot_at_return: snapshotAtReturn,
       case_locked: false,
       updated_at: now
     };
 
-    const { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
+    let { error: caseErr } = await supabase.from('clinical_cases').update(updatePayload).eq('id', caseId);
     if (caseErr) {
-      console.warn('Update error on clinical_cases return:', caseErr.message);
-      await supabase.from('clinical_cases').update({ status: 'Returned', returned_at: now, case_locked: false, updated_at: now }).eq('id', caseId);
+      console.warn('Update error on clinical_cases return (retrying without snapshot_at_return if column missing):', caseErr.message);
+      const fallbackPayload = { ...updatePayload };
+      delete fallbackPayload.snapshot_at_return;
+      await supabase.from('clinical_cases').update(fallbackPayload).eq('id', caseId);
     }
 
     // Map module key names

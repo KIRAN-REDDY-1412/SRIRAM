@@ -5,9 +5,21 @@ import { PatientProfilePDFPreviewModal } from './PatientProfilePDFPreviewModal';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { SearchableSelect } from '../common/SearchableSelect';
-import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clinicalMasterData';
+import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
 
-// Master Lab Category & Parameter Definition with Reference Ranges
+const ModifiedFieldBadge = ({ isModified, oldValue }) => {
+  if (!isModified) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-amber-500 text-slate-900 border border-amber-400 shadow-xs ml-2"
+      title={oldValue ? `Previous value before return: "${typeof oldValue === 'object' ? JSON.stringify(oldValue) : oldValue}"` : 'Modified by student after return'}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-ping" />
+      ⚡ MODIFIED BY STUDENT
+    </span>
+  );
+};
+
 const LAB_CATEGORY_MAP = {
   'Haematological Patterns': [
     { parameter_name: 'Hb %', reference_range: '11-16.5 %' },
@@ -102,7 +114,7 @@ const evaluateTestValueStatus = (valStr, refRangeStr) => {
   return 'none';
 };
 
-export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false, isReturned = false }) => {
+export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false, isReturned = false, snapshotAtReturn = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -194,6 +206,38 @@ export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOn
 
   const docError = getDocError();
   const dodError = getDodError();
+
+  const currentProfileObj = React.useMemo(() => ({
+    patient_name: patientName,
+    age, gender, ip_no: ipNo, height, weight, bmi, ward, department, doa, doc, dod, physician,
+    chief_complaints: chiefComplaints,
+    past_medical_history: pastMedicalHistory,
+    past_medication_history: pastMedicationHistory,
+    family_history: familyHistory,
+    smoker_pack_day: smokerPackDay, smoker_duration: smokerDuration,
+    alcoholic_amount_day: alcoholicAmountDay, alcoholic_duration: alcoholicDuration,
+    allergy_food: allergyFood, allergy_drugs: allergyDrugs, marital_status: maritalStatus,
+    cyanosis, icterus, pallor, cvs, gi, rs, cns, provisional_diagnosis: provisionalDiagnosis,
+    other_investigations: otherInvestigations,
+    final_diagnosis: finalDiagnosis,
+    discharge_summary: dischargeSummary,
+    vital_signs: vitalSigns,
+    lab_investigations: labInvestigations,
+    prescribed_drugs: prescribedDrugs
+  }), [
+    patientName, age, gender, ipNo, height, weight, bmi, ward, department, doa, doc, dod, physician,
+    chiefComplaints, pastMedicalHistory, pastMedicationHistory, familyHistory,
+    smokerPackDay, smokerDuration, alcoholicAmountDay, alcoholicDuration,
+    allergyFood, allergyDrugs, maritalStatus, cyanosis, icterus, pallor, cvs, gi, rs, cns,
+    provisionalDiagnosis, otherInvestigations, finalDiagnosis, dischargeSummary,
+    vitalSigns, labInvestigations, prescribedDrugs
+  ]);
+
+  const diffMap = React.useMemo(() => {
+    const snap = snapshotAtReturn || clinicalCase?.snapshot_at_return?.profile;
+    if (!snap) return {};
+    return computeModuleDiffs(currentProfileObj, snap, 'profile');
+  }, [currentProfileObj, snapshotAtReturn, clinicalCase?.snapshot_at_return?.profile]);
 
   // Load Existing Profile if available
   useEffect(() => {

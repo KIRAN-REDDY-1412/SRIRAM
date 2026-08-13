@@ -37,7 +37,8 @@ export const CollegeAdminLoginModal = ({ isOpen, onClose, initialCollege, onLogi
     setFieldErrors({});
 
     setLoggingIn(true);
-    const res = await loginCollegeAdmin(username.trim(), password.trim());
+    const targetCollegeId = initialCollege?.id || null;
+    const res = await loginCollegeAdmin(username.trim(), password.trim(), targetCollegeId);
     setLoggingIn(false);
 
     if (res.success && res.college) {

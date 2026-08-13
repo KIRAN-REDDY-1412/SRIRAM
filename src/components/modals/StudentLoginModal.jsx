@@ -36,7 +36,8 @@ export const StudentLoginModal = ({ isOpen, onClose, initialCollege, onLoginSucc
     setFieldErrors({});
 
     setLoggingIn(true);
-    const res = await authenticateStudentInSupabase(username.trim(), password.trim());
+    const targetCollegeId = initialCollege?.id || null;
+    const res = await authenticateStudentInSupabase(username.trim(), password.trim(), targetCollegeId);
     setLoggingIn(false);
 
     if (res.success && res.student) {

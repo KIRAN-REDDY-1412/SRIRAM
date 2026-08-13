@@ -67,7 +67,7 @@ export default function App() {
     }
   };
 
-  // Set custom RLS headers on supabase client based on logged-in user
+  // Set custom RLS headers on supabase client based on logged-in user & active college
   useEffect(() => {
     setSupabaseCustomHeader('x-student-id', loggedStudent?.id);
   }, [loggedStudent]);
@@ -77,14 +77,16 @@ export default function App() {
   }, [loggedPreceptor]);
 
   useEffect(() => {
-    setSupabaseCustomHeader('x-college-id', loggedCollegeAdmin?.id);
-  }, [loggedCollegeAdmin]);
+    const activeCollegeId = loggedStudent?.college_id || loggedPreceptor?.college_id || loggedCollegeAdmin?.id || activePortalCollege?.id;
+    setSupabaseCustomHeader('x-college-id', activeCollegeId);
+  }, [loggedStudent, loggedPreceptor, loggedCollegeAdmin, activePortalCollege]);
 
   // Helper to normalize college object fields (handling both snake_case from DB and camelCase from frontend)
   const normalizeCollege = (raw) => {
     if (!raw) return null;
     return {
       ...raw,
+      id: raw.id,
       name: raw.name || raw.college_name || 'Pharmacy College',
       code: raw.code || raw.college_code || 'CLG',
       description: raw.description || raw.college_description || '',
@@ -100,8 +102,12 @@ export default function App() {
     };
   };
 
-  // RESTORE ACTIVE SESSION ON BROWSER REFRESH (F5 / RELOAD)
+  // RESTORE ACTIVE SESSION ON BROWSER REFRESH (F5 / RELOAD) & DYNAMIC URL RESOLUTION
   useEffect(() => {
+    // 1. Check URL query parameters for dynamic college portal (e.g. ?college=AMRMCP or ?college_id=uuid)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetParam = urlParams.get('college') || urlParams.get('college_id') || urlParams.get('collegeCode');
+
     const session = getActiveSession();
     if (session) {
       if (session.viewMode === 'admin') {
@@ -113,19 +119,34 @@ export default function App() {
         }
       } else if (session.viewMode === 'college_admin' && (session.user || session.college)) {
         const collegeObj = normalizeCollege(session.college || session.user);
-        setLoggedCollegeAdmin(session.user || session.college);
-        setActivePortalCollege(collegeObj);
-        setViewMode('college_admin');
+        // College Isolation Verification
+        if (collegeObj && session.user && (session.user.id === collegeObj.id || session.user.college_id === collegeObj.id)) {
+          setLoggedCollegeAdmin(session.user || session.college);
+          setActivePortalCollege(collegeObj);
+          setViewMode('college_admin');
+        } else {
+          clearActiveSession();
+        }
       } else if (session.viewMode === 'preceptor_portal' && session.user) {
-        setLoggedPreceptor(session.user);
         const collegeObj = normalizeCollege(session.user.colleges || session.college);
-        if (collegeObj) setActivePortalCollege(collegeObj);
-        setViewMode('preceptor_portal');
+        // College Isolation Verification: preceptor.college_id must match session college
+        if (collegeObj && session.user.college_id === collegeObj.id) {
+          setLoggedPreceptor(session.user);
+          setActivePortalCollege(collegeObj);
+          setViewMode('preceptor_portal');
+        } else {
+          clearActiveSession();
+        }
       } else if (session.viewMode === 'student_portal' && session.user) {
-        setLoggedStudent(session.user);
         const collegeObj = normalizeCollege(session.user.colleges || session.college);
-        if (collegeObj) setActivePortalCollege(collegeObj);
-        setViewMode('student_portal');
+        // College Isolation Verification: student.college_id must match session college
+        if (collegeObj && session.user.college_id === collegeObj.id) {
+          setLoggedStudent(session.user);
+          setActivePortalCollege(collegeObj);
+          setViewMode('student_portal');
+        } else {
+          clearActiveSession();
+        }
       } else if (session.viewMode === 'college_portal' && session.college) {
         const collegeObj = normalizeCollege(session.college);
         setActivePortalCollege(collegeObj);

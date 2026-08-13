@@ -134,6 +134,7 @@ export const fetchCollegeByIdFromSupabase = async (collegeId) => {
 // ====================================================================
 
 export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
+  if (!collegeId) return { success: false, error: 'College ID required' };
   try {
     const { data, error } = await supabase
       .from('document_branding_settings')
@@ -142,7 +143,70 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
       .maybeSingle();
 
     if (error) return { success: false, error: error.message };
-    return { success: true, settings: data || null };
+
+    if (data) {
+      return { success: true, settings: data };
+    }
+
+    // Default Fallback: Fetch college details and return pre-populated default settings
+    const { data: college } = await supabase
+      .from('colleges')
+      .select('*')
+      .eq('id', collegeId)
+      .maybeSingle();
+
+    const collegeName = college?.college_name || 'Pharmacy College';
+    const defaultSettings = {
+      college_id: collegeId,
+      show_college_logo: true,
+      show_college_name: true,
+      show_autonomous: true,
+      show_hospital_logo: true,
+      show_hospital_name: true,
+      watermark_enabled: true,
+      watermark_text_line1: college?.college_code ? `${college.college_code} ERP` : 'PHARMDVERSE',
+      watermark_text_line2: collegeName,
+      watermark_opacity: 10,
+      watermark_position: 'Center',
+      footer_left_text: collegeName,
+      footer_center_text: 'Confidential Clinical Documentation',
+      show_page_number: true,
+      show_generated_datetime: true,
+      paper_size: 'A4',
+      orientation: 'Portrait',
+      margin_top: '15mm',
+      margin_bottom: '15mm',
+      margin_left: '15mm',
+      margin_right: '15mm',
+      font_family: 'Times New Roman',
+      title_font_size: '18px',
+      heading_font_size: '14px',
+      body_font_size: '12px',
+      primary_color: '#0f172a',
+      secondary_color: '#0284c7',
+      table_header_color: '#f1f5f9',
+      border_color: '#0f172a',
+      text_color: '#0f172a',
+      zebra_striping: false,
+      repeat_table_header: true,
+      repeat_header: true,
+      show_student_signature: true,
+      show_preceptor_signature: true,
+      ppt_theme: 'Clinical Emerald',
+      ppt_aspect_ratio: '16:9 (Widescreen)',
+      ppt_header_title: collegeName,
+      ppt_footer_text: `${collegeName} • Clinical Case Presentation`,
+      ppt_font_family: 'Times New Roman',
+      ppt_title_font_size: '22px',
+      ppt_subheading_font_size: '20px',
+      ppt_body_font_size: '18px',
+      ppt_show_logo: true,
+      ppt_show_autonomous: true,
+      ppt_show_student_preceptor: true,
+      document_templates: {}
+    };
+
+    return { success: true, settings: defaultSettings, isDefault: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -202,7 +266,8 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
       ppt_body_font_size: settingsPayload.ppt_body_font_size || settingsPayload.body_font_size || '18px',
       ppt_show_logo: settingsPayload.ppt_show_logo ?? settingsPayload.show_logo ?? true,
       ppt_show_autonomous: settingsPayload.ppt_show_autonomous ?? settingsPayload.show_autonomous ?? true,
-      ppt_show_student_preceptor: settingsPayload.ppt_show_student_preceptor ?? settingsPayload.show_student_preceptor ?? true
+      ppt_show_student_preceptor: settingsPayload.ppt_show_student_preceptor ?? settingsPayload.show_student_preceptor ?? true,
+      document_templates: settingsPayload.document_templates || {}
     };
 
     let activePayload = { ...payload };
@@ -245,6 +310,45 @@ export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, 
     return { success: true, settings: { ...payload, ...savedData } };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+};
+
+export const uploadBrandingAssetToSupabaseStorage = async (file, collegeId, assetType = 'branding') => {
+  if (!file) return { success: false, error: 'No file provided' };
+  if (!collegeId) return { success: false, error: 'College ID required' };
+
+  if (file.size > 1024 * 1024) {
+    return { success: false, error: 'File size exceeds 1 MB limit.' };
+  }
+
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${assetType}_${Date.now()}.${fileExt}`;
+    const filePath = `${collegeId}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('document-branding')
+      .upload(filePath, file, { upsert: true });
+
+    if (error) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve({ success: true, url: reader.result });
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('document-branding')
+      .getPublicUrl(filePath);
+
+    return { success: true, url: publicUrlData.publicUrl };
+  } catch (err) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve({ success: true, url: reader.result });
+      reader.readAsDataURL(file);
+    });
   }
 };
 
@@ -1070,7 +1174,7 @@ export const deleteClinicalCaseFromSupabase = async (caseRecordId) => {
 // PRECEPTOR PORTAL SERVICES
 // ====================================================================
 
-export const authenticatePreceptorInSupabase = async (username, password) => {
+export const authenticatePreceptorInSupabase = async (username, password, currentCollegeId = null) => {
   try {
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
@@ -1078,7 +1182,7 @@ export const authenticatePreceptorInSupabase = async (username, password) => {
     const { data: preceptor, error } = await supabase
       .from('preceptors')
       .select('*, colleges(*)')
-      .eq('username', username)
+      .or(`username.eq.${username},email.eq.${username}`)
       .maybeSingle();
 
     if (error || !preceptor) return { success: false, error: 'Invalid Username or Password' };
@@ -1087,6 +1191,11 @@ export const authenticatePreceptorInSupabase = async (username, password) => {
       // Increment failed login attempts
       await supabase.from('preceptors').update({ failed_login_attempts: (preceptor.failed_login_attempts || 0) + 1 }).eq('id', preceptor.id);
       return { success: false, error: 'Invalid Username or Password' };
+    }
+
+    // Dynamic Multi-College Login Isolation Check
+    if (currentCollegeId && preceptor.college_id !== currentCollegeId) {
+      return { success: false, error: 'These credentials are not valid for this college.' };
     }
 
     // Successful login - update last_login_at and reset failed attempts
@@ -1117,7 +1226,7 @@ export const fetchPreceptorAssignedStudentsFromSupabase = async (preceptorId) =>
 // STUDENT PORTAL SERVICES
 // ====================================================================
 
-export const authenticateStudentInSupabase = async (username, password) => {
+export const authenticateStudentInSupabase = async (username, password, currentCollegeId = null) => {
   try {
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
@@ -1125,7 +1234,7 @@ export const authenticateStudentInSupabase = async (username, password) => {
     const { data: student, error } = await supabase
       .from('students')
       .select('*, colleges(*)')
-      .eq('username', username)
+      .or(`username.eq.${username},roll_number.eq.${username},email.eq.${username}`)
       .maybeSingle();
 
     if (error || !student) return { success: false, error: 'Invalid Username or Password' };
@@ -1134,6 +1243,11 @@ export const authenticateStudentInSupabase = async (username, password) => {
       // Increment failed login attempts
       await supabase.from('students').update({ failed_login_attempts: (student.failed_login_attempts || 0) + 1 }).eq('id', student.id);
       return { success: false, error: 'Invalid Username or Password' };
+    }
+
+    // Dynamic Multi-College Login Isolation Check
+    if (currentCollegeId && student.college_id !== currentCollegeId) {
+      return { success: false, error: 'These credentials are not valid for this college.' };
     }
 
     // Successful login - update last_login_at and reset failed attempts
@@ -1588,15 +1702,41 @@ export const updateCollegeProfileAndSubscriptionInSupabase = async (collegeId, p
   }
 };
 
-export const authenticateCollegeAdminInSupabase = async (username, password) => {
+export const fetchCollegeByCodeOrIdFromSupabase = async (identifier) => {
+  if (!identifier) return { success: false, error: 'Identifier required' };
+  try {
+    const { data, error } = await supabase
+      .from('colleges')
+      .select('*')
+      .or(`id.eq.${identifier},college_code.ilike.${identifier},college_admin_username.ilike.${identifier}`)
+      .maybeSingle();
+
+    if (error || !data) return { success: false, error: 'College not found' };
+    return { success: true, college: data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const authenticateCollegeAdminInSupabase = async (username, password, currentCollegeId = null) => {
   try {
     const inputHash = await hashPassword(password);
     if (!inputHash) return { success: false, error: 'Invalid password format' };
 
-    const { data: college, error } = await supabase.from('colleges').select('*').eq('college_admin_username', username).maybeSingle();
+    const { data: college, error } = await supabase
+      .from('colleges')
+      .select('*')
+      .or(`college_admin_username.eq.${username},principal_email.eq.${username}`)
+      .maybeSingle();
+
     if (error || !college) return { success: false, error: 'Invalid User ID or Password' };
     if (!college.college_admin_password_hash) return { success: false, error: 'College Admin password has not been set by Super Admin.' };
     if (college.college_admin_password_hash !== inputHash) return { success: false, error: 'Invalid User ID or Password' };
+
+    // Dynamic Multi-College Login Isolation Check
+    if (currentCollegeId && college.id !== currentCollegeId) {
+      return { success: false, error: 'These credentials are not valid for this college.' };
+    }
 
     return { success: true, college };
   } catch (err) {

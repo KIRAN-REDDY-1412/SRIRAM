@@ -168,8 +168,8 @@ export const CollegeProvider = ({ children }) => {
   };
 
   // Authenticate College Admin
-  const loginCollegeAdmin = async (username, password) => {
-    return await authenticateCollegeAdminInSupabase(username, password);
+  const loginCollegeAdmin = async (username, password, targetCollegeId = null) => {
+    return await authenticateCollegeAdminInSupabase(username, password, targetCollegeId);
   };
 
   // Delete Single College -> Direct Supabase Deletion

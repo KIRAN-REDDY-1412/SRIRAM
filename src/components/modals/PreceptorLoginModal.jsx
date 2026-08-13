@@ -36,7 +36,8 @@ export const PreceptorLoginModal = ({ isOpen, onClose, initialCollege, onLoginSu
     setFieldErrors({});
 
     setLoggingIn(true);
-    const res = await authenticatePreceptorInSupabase(username.trim(), password.trim());
+    const targetCollegeId = initialCollege?.id || null;
+    const res = await authenticatePreceptorInSupabase(username.trim(), password.trim(), targetCollegeId);
     setLoggingIn(false);
 
     if (res.success && res.preceptor) {

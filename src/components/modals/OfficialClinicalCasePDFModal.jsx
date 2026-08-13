@@ -90,8 +90,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     if (!element) return;
 
     setDownloading(true);
+    let wrapper = null;
     try {
-      const pageElements = element.querySelectorAll('.pharmdverse-document-page');
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
       const pdf = new jsPDF({
         orientation: isLandscape ? 'landscape' : 'portrait',
@@ -102,66 +102,69 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
+
+      // Create an off-screen wrapper for capturing pure white A4 pages without web modal artifacts
+      wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.left = '-9999px';
+      wrapper.style.top = '-9999px';
+      wrapper.style.width = isLandscape ? '297mm' : '210mm';
+      wrapper.style.backgroundColor = '#ffffff';
+      wrapper.style.color = '#0f172a';
+      wrapper.style.zIndex = '-9999';
+      document.body.appendChild(wrapper);
+
+      // Clone target document into wrapper
+      const clone = element.cloneNode(true);
+      wrapper.appendChild(clone);
+
+      const pageElements = clone.querySelectorAll('.pharmdverse-document-page');
+      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [clone];
 
       let isFirstPdfPage = true;
 
       for (let i = 0; i < pagesToCapture.length; i++) {
         const targetEl = pagesToCapture[i];
 
-        try {
-          targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
-          await new Promise(r => setTimeout(r, 80));
-        } catch (sErr) {}
+        // Sanitize styles to enforce pristine white background and clear A4 margins
+        targetEl.style.width = isLandscape ? '297mm' : '210mm';
+        targetEl.style.minHeight = isLandscape ? '210mm' : '297mm';
+        targetEl.style.height = 'auto';
+        targetEl.style.backgroundColor = '#ffffff';
+        targetEl.style.color = '#0f172a';
+        targetEl.style.boxShadow = 'none';
+        targetEl.style.border = 'none';
+        targetEl.style.margin = '0 auto';
+        targetEl.style.transform = 'none';
+        targetEl.style.overflow = 'visible';
+
+        const innerScrolls = targetEl.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
+        innerScrolls.forEach(s => {
+          s.style.maxHeight = 'none';
+          s.style.overflow = 'visible';
+          s.style.height = 'auto';
+        });
+
+        const imgs = targetEl.querySelectorAll('img');
+        imgs.forEach(img => {
+          img.crossOrigin = 'anonymous';
+        });
 
         let pageCanvas;
         try {
           pageCanvas = await html2canvas(targetEl, {
-            scale: 1.8,
+            scale: 2,
             useCORS: true,
             allowTaint: false,
             logging: false,
             backgroundColor: '#ffffff',
             windowWidth: isLandscape ? 1123 : 850,
             scrollX: 0,
-            scrollY: 0,
-            onclone: (clonedDoc, clonedEl) => {
-              // Convert all images to crossOrigin anonymous or hide broken images
-              const imgs = clonedDoc.querySelectorAll('img');
-              imgs.forEach(img => {
-                img.crossOrigin = 'anonymous';
-              });
-
-              const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto');
-              allScrollables.forEach(s => {
-                s.style.maxHeight = 'none';
-                s.style.overflow = 'visible';
-                s.style.height = 'auto';
-              });
-
-              const container = clonedDoc.getElementById('official-clinical-case-pdf-container');
-              if (container) {
-                container.style.position = 'relative';
-                container.style.maxHeight = 'none';
-                container.style.overflow = 'visible';
-                container.style.height = 'auto';
-              }
-
-              if (clonedEl) {
-                clonedEl.style.width = isLandscape ? '297mm' : '210mm';
-                clonedEl.style.minHeight = isLandscape ? '210mm' : '297mm';
-                clonedEl.style.height = 'auto';
-                clonedEl.style.maxHeight = 'none';
-                clonedEl.style.overflow = 'visible';
-                clonedEl.style.margin = '0 auto';
-                clonedEl.style.boxShadow = 'none';
-                clonedEl.style.transform = 'none';
-              }
-            }
+            scrollY: 0
           });
         } catch (cErr) {
           pageCanvas = await html2canvas(targetEl, {
-            scale: 1.2,
+            scale: 1.5,
             useCORS: false,
             allowTaint: false,
             logging: false,
@@ -175,19 +178,15 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
         let imgData;
         try {
-          imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+          imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
         } catch (dataErr) {
-          // Fallback if canvas is tainted by CORS image
           const fallbackCanvas = document.createElement('canvas');
           fallbackCanvas.width = canvasWidth;
           fallbackCanvas.height = canvasHeight;
           const fCtx = fallbackCanvas.getContext('2d');
           fCtx.fillStyle = '#ffffff';
           fCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-          fCtx.font = '14px sans-serif';
-          fCtx.fillStyle = '#000000';
-          fCtx.fillText('Clinical Document Page Content', 20, 40);
-          imgData = fallbackCanvas.toDataURL('image/jpeg', 0.95);
+          imgData = fallbackCanvas.toDataURL('image/jpeg', 0.98);
         }
 
         if (pagePdfHeight <= pdfHeight + 2) {
@@ -214,7 +213,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
             let sliceImgData;
             try {
-              sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+              sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.98);
             } catch (e) {
               sliceImgData = imgData;
             }
@@ -226,7 +225,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         }
       }
 
-      // Stamp dynamic page numbers on all generated PDF pages
+      // Stamp dynamic total page numbers on footer
       const totalPdfPages = pdf.getNumberOfPages();
       if (branding?.show_page_number !== false) {
         for (let p = 1; p <= totalPdfPages; p++) {
@@ -237,12 +236,16 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         }
       }
 
+      // DIRECT FILE DOWNLOAD
       pdf.save(fileName);
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
-      // Fallback: trigger print dialog if direct pdf stream fails
-      window.print();
     } finally {
+      if (wrapper && wrapper.parentNode) {
+        try {
+          wrapper.parentNode.removeChild(wrapper);
+        } catch (cleanErr) {}
+      }
       setDownloading(false);
     }
   };

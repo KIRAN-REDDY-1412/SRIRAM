@@ -2149,7 +2149,7 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
           title: 'Clinical Case Resubmitted',
           message: `Student Name: ${studentName}\nRoll Number: ${studentRoll}\nCase ID: ${clinicalCase.case_id}\nResubmitted: ${nowStr}`,
           actionLabel: 'Review Case',
-          actionRoute: 'assigned-students'
+          actionRoute: 'case-review'
         });
       } else {
         await createWorkflowNotificationInSupabase({
@@ -2162,7 +2162,7 @@ export const submitCompleteClinicalCaseInSupabase = async (clinicalCase, caseMod
           title: 'New Clinical Case Submitted',
           message: `Student Name: ${studentName}\nRoll Number: ${studentRoll}\nCase ID: ${clinicalCase.case_id}\nHospital: ${clinicalCase.hospital_name || currentCase?.hospital_name}\nDepartment: ${clinicalCase.department || currentCase?.department}\nSubmitted: ${nowStr}`,
           actionLabel: 'Review Case',
-          actionRoute: 'assigned-students'
+          actionRoute: 'case-review'
         });
       }
     }

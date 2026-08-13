@@ -34,7 +34,12 @@ export const NotificationsView = ({ userId, userRole, onNavigate, onBack }) => {
 
     // Trigger navigation
     if (onNavigate) {
-      const targetRoute = notif.action_route || (userRole === 'Preceptor' ? 'case-review' : 'my-cases');
+      let targetRoute = notif.action_route;
+      if (userRole === 'Preceptor' || notif.action_label === 'Review Case' || notif.notification_type?.includes('Case')) {
+        targetRoute = 'case-review';
+      } else if (!targetRoute) {
+        targetRoute = 'my-cases';
+      }
       onNavigate(targetRoute, notif.clinical_case_id);
     }
   };

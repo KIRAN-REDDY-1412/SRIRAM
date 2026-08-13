@@ -272,8 +272,7 @@ export const PreceptorLayout = ({ preceptor, onLogout }) => {
               userId={preceptor.id}
               userRole="Preceptor"
               onNavigate={(route, caseId) => {
-                const targetTab = route === 'assigned-students' ? 'assigned-students' : 'case-review';
-                handleNavigate(targetTab, 'All', caseId);
+                handleNavigate('case-review', 'All', caseId);
               }}
               onBack={() => handleNavigate('dashboard')}
             />

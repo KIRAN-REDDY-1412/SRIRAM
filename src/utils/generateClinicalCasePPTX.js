@@ -75,8 +75,8 @@ export const generateClinicalCasePPTX = async ({
     fill: { color: 'F1F5F9' }, line: { color: '0F172A', width: 1.5 }
   });
 
-  const collegeLogo = college?.college_logo_url || college?.logo_url || (typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '');
-  const hospitalLogo = college?.hospital_logo_url || (typeof window !== 'undefined' ? `${window.location.origin}/hospital-logo.jpg` : '');
+  const collegeLogo = college?.college_logo_url || college?.logo_url || '';
+  const hospitalLogo = college?.hospital_logo_url || '';
 
   // Left Side: College Logo
   if (pptSettings?.show_logo !== false && collegeLogo) {

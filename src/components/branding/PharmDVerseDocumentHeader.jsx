@@ -57,8 +57,6 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-start shrink-0">
           {showCollegeLogo && collegeLogoUrl ? (
             <img src={collegeLogoUrl} alt={collegeName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
-          ) : showCollegeLogo ? (
-            <div className="w-12 h-12 sm:w-14 sm:h-14 border border-slate-900 font-sans text-[8px] sm:text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">COLLEGE LOGO</div>
           ) : null}
         </div>
 
@@ -87,8 +85,6 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-end shrink-0">
           {showHospitalLogo && hospitalLogoUrl ? (
             <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
-          ) : showCollegeLogo ? (
-            <div className="w-12 h-12 sm:w-14 sm:h-14 border border-slate-900 font-sans text-[8px] sm:text-[9px] flex items-center justify-center font-bold text-slate-700 bg-slate-50">HOSPITAL LOGO</div>
           ) : null}
         </div>
 

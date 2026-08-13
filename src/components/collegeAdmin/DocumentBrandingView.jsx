@@ -106,9 +106,7 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
               {/* College Logo (Left) */}
               {pptSettings?.show_logo !== false && (college?.college_logo_url || college?.logo_url) ? (
                 <img src={college.college_logo_url || college.logo_url} alt="College Logo" className="w-14 h-14 object-contain rounded" />
-              ) : (
-                <img src="/logo.png" alt="College Logo" className="w-14 h-14 object-contain rounded" />
-              )}
+              ) : null}
 
               {/* College & Hospital Name (Center) */}
               <div className="flex-1 text-center space-y-0.5">
@@ -120,10 +118,10 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
                 </p>
               </div>
 
-              {/* Hospital Logo (Right Side - Lalitha Group of Hospitals) */}
-              {pptSettings?.show_hospital_logo !== false && (
-                <img src={college?.hospital_logo_url || '/hospital-logo.jpg'} alt="Lalitha Hospital Logo" className="w-14 h-14 object-contain rounded" />
-              )}
+              {/* Hospital Logo (Right Side) */}
+              {pptSettings?.show_hospital_logo !== false && college?.hospital_logo_url ? (
+                <img src={college.hospital_logo_url} alt="Hospital Logo" className="w-14 h-14 object-contain rounded" />
+              ) : null}
             </div>
 
             {/* Case ID Banner */}

@@ -99,7 +99,25 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     if (!element) return;
 
     setDownloading(true);
+
+    // Temporarily sanitize live document <style> tags to prevent html2canvas oklch stylesheet parser crash
+    const styleElements = Array.from(document.querySelectorAll('style'));
+    const styleBackups = [];
+
+    const replaceOklch = (cssText) => {
+      if (!cssText || typeof cssText !== 'string') return cssText;
+      if (!/oklch|oklab|lab|lch|color\(/i.test(cssText)) return cssText;
+      return cssText.replace(/(oklch|oklab|lab|lch|color)\([^)]+\)/gi, () => 'rgb(15, 23, 42)');
+    };
+
     try {
+      styleElements.forEach(style => {
+        if (style.textContent && /oklch|oklab|lab|lch|color\(/i.test(style.textContent)) {
+          styleBackups.push({ element: style, text: style.textContent });
+          style.textContent = replaceOklch(style.textContent);
+        }
+      });
+
       const html2pdfFunc = typeof html2pdf === 'function' ? html2pdf : (html2pdf?.default || window?.html2pdf);
 
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
@@ -124,54 +142,20 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               s.style.height = 'auto';
             });
 
-            // Convert modern CSS oklch / oklab / lab / lch / color() strings to standard rgb/hex for html2canvas
-            try {
-              const canvas = clonedDoc.createElement('canvas');
-              const ctx = canvas.getContext('2d');
+            const clonedStyles = clonedDoc.querySelectorAll('style');
+            clonedStyles.forEach(s => {
+              if (s.textContent && /oklch|oklab|lab|lch|color\(/i.test(s.textContent)) {
+                s.textContent = replaceOklch(s.textContent);
+              }
+            });
 
-              const convertColorString = (str) => {
-                if (!str || typeof str !== 'string') return str;
-                if (!/oklch|oklab|lab|lch|color\(/i.test(str)) return str;
-
-                return str.replace(/(oklch|oklab|lab|lch|color)\([^)]+\)/gi, (match) => {
-                  try {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillStyle = match;
-                    const res = ctx.fillStyle;
-                    return (res && res !== '#ffffff' && res !== 'rgb(255, 255, 255)') ? res : 'rgb(15, 23, 42)';
-                  } catch (e) {
-                    return 'rgb(15, 23, 42)';
-                  }
-                });
-              };
-
-              // Sanitize style tags in cloned document
-              const styleTags = clonedDoc.querySelectorAll('style');
-              styleTags.forEach(style => {
-                if (style.textContent && /oklch|oklab|lab|lch|color\(/i.test(style.textContent)) {
-                  style.textContent = convertColorString(style.textContent);
-                }
-              });
-
-              // Sanitize inline styles & computed styles on all DOM elements
-              const allElements = clonedDoc.querySelectorAll('*');
-              allElements.forEach(el => {
-                const inlineStyle = el.getAttribute('style');
-                if (inlineStyle && /oklch|oklab|lab|lch|color\(/i.test(inlineStyle)) {
-                  el.setAttribute('style', convertColorString(inlineStyle));
-                }
-
-                const computed = window.getComputedStyle(el);
-                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor', 'fill', 'stroke'].forEach(prop => {
-                  const val = computed[prop];
-                  if (val && /oklch|oklab|lab|lch|color\(/i.test(val)) {
-                    el.style[prop] = convertColorString(val);
-                  }
-                });
-              });
-            } catch (e) {
-              console.warn('DOM color conversion note:', e);
-            }
+            const allElements = clonedDoc.querySelectorAll('*');
+            allElements.forEach(el => {
+              const inlineStyle = el.getAttribute('style');
+              if (inlineStyle && /oklch|oklab|lab|lch|color\(/i.test(inlineStyle)) {
+                el.setAttribute('style', replaceOklch(inlineStyle));
+              }
+            });
           }
         },
         jsPDF: {
@@ -188,6 +172,12 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       console.error('Failed to generate Official PDF:', err);
       alert('Could not download PDF. Error: ' + (err?.message || err));
     } finally {
+      // Restore live document stylesheets immediately
+      styleBackups.forEach(b => {
+        try {
+          b.element.textContent = b.text;
+        } catch (e) {}
+      });
       setDownloading(false);
     }
   };

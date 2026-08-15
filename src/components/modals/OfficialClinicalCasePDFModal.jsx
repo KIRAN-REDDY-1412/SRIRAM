@@ -123,6 +123,24 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               s.style.overflow = 'visible';
               s.style.height = 'auto';
             });
+
+            // Convert modern CSS oklch / oklab colors to standard rgb/hex for html2canvas
+            try {
+              const canvas = clonedDoc.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach(el => {
+                const computed = window.getComputedStyle(el);
+                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor'].forEach(prop => {
+                  const val = computed[prop];
+                  if (val && (val.includes('oklch') || val.includes('oklab'))) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = val;
+                    el.style[prop] = ctx.fillStyle;
+                  }
+                });
+              });
+            } catch (e) {}
           }
         },
         jsPDF: {

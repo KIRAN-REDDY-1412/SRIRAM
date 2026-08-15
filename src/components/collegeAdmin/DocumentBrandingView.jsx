@@ -46,22 +46,74 @@ const DEFAULT_SETTINGS = {
   show_preceptor_signature: true
 };
 
-const SampleTwoPageDocument = ({ college, settings }) => {
+const AdminFormatPDFPreview = ({ college, settings }) => {
   return (
-    <ClinicalCaseDocumentRenderer
-      caseData={SAMPLE_CLINICAL_CASE_DATA}
-      branding={settings}
+    <PharmDVerseBrandedDocumentContainer
       college={college}
-      student={SAMPLE_CLINICAL_CASE_DATA.student}
-      preceptor={SAMPLE_CLINICAL_CASE_DATA.preceptor}
-    />
+      branding={settings}
+      documentTitle="DOCUMENT BRANDING & FORMAT PREVIEW"
+      caseId="COLLEGE-PDF-FORMAT-PREVIEW"
+      student={{ full_name: '[ Student Name ]', roll_number: '[ Roll Number ]' }}
+      preceptor={{ full_name: '[ Faculty Preceptor Name ]', designation: '[ Faculty Designation ]' }}
+      preceptorName="[ Faculty Preceptor Name ]"
+      pageNumber="1 of 1"
+      showSignatures={true}
+      isLastPage={true}
+    >
+      <div className="space-y-6 text-xs">
+        {/* FORMAT PREVIEW PLACEHOLDER FRAME */}
+        <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center space-y-4 bg-slate-50/50">
+          <div className="inline-block px-3 py-1 rounded-full bg-slate-900 text-white font-mono text-[10px] uppercase font-bold tracking-widest">
+            College PDF Document Format Preview
+          </div>
+          
+          <h3 className="text-base font-black uppercase text-slate-800 tracking-tight">
+            [ CLINICAL DOCUMENTATION CONTENT AREA ]
+          </h3>
+
+          <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
+            This area will automatically populate with the complete approved clinical documentation from all 5 modules (Patient Profile, Counselling Record, Pharmacist Intervention, Drug Information Request & ADR Monitoring Log) when an actual clinical case is approved for this college.
+          </p>
+
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-5 gap-2 text-[10px] font-mono">
+            <div className="p-2.5 rounded bg-white border border-slate-200 shadow-2xs font-bold text-slate-700">
+              1. Patient Profile
+            </div>
+            <div className="p-2.5 rounded bg-white border border-slate-200 shadow-2xs font-bold text-slate-700">
+              2. Counselling
+            </div>
+            <div className="p-2.5 rounded bg-white border border-slate-200 shadow-2xs font-bold text-slate-700">
+              3. Intervention
+            </div>
+            <div className="p-2.5 rounded bg-white border border-slate-200 shadow-2xs font-bold text-slate-700">
+              4. Drug Info (DIR)
+            </div>
+            <div className="p-2.5 rounded bg-white border border-slate-200 shadow-2xs font-bold text-slate-700">
+              5. ADR Log
+            </div>
+          </div>
+        </div>
+
+        {/* VERIFICATION & APPROVAL BADGE PLACEHOLDER */}
+        <div className="border border-slate-300 p-3 rounded-xl bg-slate-900 text-white flex items-center justify-between text-xs">
+          <div>
+            <div className="text-[10px] font-mono uppercase text-emerald-400 font-bold">PharmDVerse Verification Registry</div>
+            <div className="font-bold text-xs">Case Status: APPROVED & LOCKED [TEMPLATE PREVIEW]</div>
+          </div>
+          <div className="text-right text-[10px] font-mono text-slate-300">
+            <div>Signed by: [Student Name]</div>
+            <div>Approved by: [Faculty Preceptor Name]</div>
+          </div>
+        </div>
+      </div>
+    </PharmDVerseBrandedDocumentContainer>
   );
 };
 
 const SamplePptSlidePreview = ({ college, pptSettings }) => {
   const [slideNum, setSlideNum] = useState(1);
-  const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const hospitalName = college?.hospital_name || 'Lalitha Superspecialities Hospital';
+  const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'COLLEGE NAME PLACEHOLDER';
+  const hospitalName = college?.hospital_name || 'HOSPITAL NAME PLACEHOLDER';
   const fontFamily = pptSettings?.font_family || 'Times New Roman';
   const titleSize = pptSettings?.ppt_title_font_size || '22px';
   const subHeadingSize = pptSettings?.ppt_subheading_font_size || '20px';
@@ -85,11 +137,11 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
           >
             ← Prev Slide
           </button>
-          <span className="font-mono text-amber-300 px-1 font-bold">Slide {slideNum} of 7</span>
+          <span className="font-mono text-amber-300 px-1 font-bold">Slide {slideNum} of 5</span>
           <button
             type="button"
-            onClick={() => setSlideNum(prev => Math.min(7, prev + 1))}
-            disabled={slideNum === 7}
+            onClick={() => setSlideNum(prev => Math.min(5, prev + 1))}
+            disabled={slideNum === 5}
             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-xs font-bold transition-colors"
           >
             Next Slide →
@@ -103,12 +155,10 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
           <div className="space-y-5">
             {/* Header Box with Dual Logos (College Left, Hospital Right) */}
             <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 flex items-center justify-between gap-4">
-              {/* College Logo (Left) */}
               {pptSettings?.show_logo !== false && (college?.college_logo_url || college?.logo_url) ? (
                 <img src={college.college_logo_url || college.logo_url} alt="College Logo" className="w-14 h-14 object-contain rounded" />
               ) : null}
 
-              {/* College & Hospital Name (Center) */}
               <div className="flex-1 text-center space-y-0.5">
                 <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
                   {collegeName}
@@ -118,7 +168,6 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
                 </p>
               </div>
 
-              {/* Hospital Logo (Right Side) */}
               {pptSettings?.show_hospital_logo !== false && college?.hospital_logo_url ? (
                 <img src={college.hospital_logo_url} alt="Hospital Logo" className="w-14 h-14 object-contain rounded" />
               ) : null}
@@ -126,261 +175,54 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
 
             {/* Case ID Banner */}
             <div className="p-2.5 bg-slate-900 text-white rounded-xl text-center font-mono font-bold" style={{ fontSize: bodySize }}>
-              CASE ID : AMRMCP-2026-Y22PHD0316-0002
+              CASE ID : [ CASE ID PLACEHOLDER ]
             </div>
 
             {/* Main Presentation Title */}
             <div className="text-center space-y-2 py-2">
               <h1 className="font-black text-emerald-700 uppercase tracking-tight" style={{ fontSize: `calc(${titleSize} + 4px)` }}>
-                CLINICAL CASE PRESENTATION
+                CLINICAL CASE PRESENTATION TITLE [PLACEHOLDER]
               </h1>
               <p className="font-bold text-slate-800" style={{ fontSize: subHeadingSize }}>
-                Final Diagnosis: IBD WITH TERMINAL ILETIS
+                Final Diagnosis: [ Final Diagnosis Placeholder ]
               </p>
             </div>
 
-            {/* Student & Preceptor Metadata - Split Left (Preceptor) / Right (Submitted By) */}
+            {/* Student Details (LEFT) & Faculty Preceptor Details (RIGHT SIDE) */}
             {pptSettings?.show_student_preceptor !== false && (
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 grid grid-cols-2 gap-4 text-xs" style={{ fontSize: bodySize }}>
-                {/* LEFT SIDE: PRECEPTOR */}
+                {/* LEFT SIDE: STUDENT DETAILS */}
                 <div className="text-left space-y-1 border-r border-slate-200 pr-3">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Evaluated & Approved By:</span>
-                  <strong className="text-emerald-700 font-extrabold text-sm block">Dr. A. Sharma, M.D.</strong>
-                  <span className="text-[11px] text-slate-600 block">Faculty Preceptor / Evaluator</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Submitted / Presented By:</span>
+                  <strong className="text-slate-900 font-extrabold text-sm block">Student Name: [Student Name]</strong>
+                  <span className="text-[11px] text-slate-600 block font-mono">Roll Number: [Roll Number]</span>
                 </div>
 
-                {/* RIGHT SIDE: SUBMITTED BY STUDENT */}
+                {/* RIGHT SIDE: FACULTY PRECEPTOR DETAILS */}
                 <div className="text-right space-y-1 pl-3">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Submitted / Presented By:</span>
-                  <strong className="text-slate-900 font-extrabold text-sm block">John Doe</strong>
-                  <span className="text-[11px] text-slate-600 block font-mono">Roll No: Y22PHD0316</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Evaluated & Approved By:</span>
+                  <strong className="text-emerald-700 font-extrabold text-sm block">Faculty Preceptor: [Faculty Preceptor Name]</strong>
+                  <span className="text-[11px] text-slate-600 block font-mono">Designation: [Faculty Designation]</span>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {slideNum === 2 && (
+        {slideNum > 1 && (
           <div className="space-y-4">
             <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>1. Patient Profile, Demographics & Social History</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
+              <span>Module Slide Format Preview {slideNum}</span>
+              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Template Format</span>
             </h2>
 
-            <table className="w-full text-left border-collapse border border-slate-300 rounded-xl overflow-hidden text-xs" style={{ fontSize: bodySize }}>
-              <tbody>
-                <tr className="border-b border-slate-300 bg-slate-100">
-                  <th className="p-2 font-bold border-r border-slate-300">Patient Initials & Reg No</th>
-                  <td className="p-2">BB (46 Yrs / Male / IP: 123456789)</td>
-                </tr>
-                <tr className="border-b border-slate-300">
-                  <th className="p-2 font-bold border-r border-slate-300">Department & Ward</th>
-                  <td className="p-2">Gastroenterology (Female Medical Ward)</td>
-                </tr>
-                <tr className="border-b border-slate-300 bg-slate-100">
-                  <th className="p-2 font-bold border-r border-slate-300">Chief Complaints</th>
-                  <td className="p-2">Abdominal pain during defication for 3 days</td>
-                </tr>
-                <tr className="border-b border-slate-300">
-                  <th className="p-2 font-bold border-r border-slate-300">Past History</th>
-                  <td className="p-2">Medical: Appendectomy P/S | Medication: Nil</td>
-                </tr>
-                <tr className="border-b border-slate-300 bg-slate-100">
-                  <th className="p-2 font-bold border-r border-slate-300">Family History</th>
-                  <td className="p-2">No history of hereditary systemic illness</td>
-                </tr>
-                <tr>
-                  <th className="p-2 font-bold border-r border-slate-300 text-sky-800">Social History</th>
-                  <td className="p-2 font-bold text-sky-700">Marital Status: Married | Non-smoker, Non-alcoholic, Mixed diet</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {slideNum === 3 && (
-          <div className="space-y-4">
-            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>2. Vital Signs Log & Clinical Examinations</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
-            </h2>
-
-            <div className="p-3 bg-slate-50 border border-slate-300 rounded-xl space-y-1 text-xs" style={{ fontSize: bodySize }}>
-              <div><strong>General Examination:</strong> Cyanosis: Absent | Icterus: Absent | Pallor: Absent</div>
-              <div><strong>Systemic Examination:</strong> CVS: S1S2+ | GI: Soft and Tenderness | RS: B/L AE+ | CNS: HMF+NEND+</div>
-            </div>
-
-            <table className="w-full text-left border-collapse border border-slate-300 rounded-xl overflow-hidden text-xs" style={{ fontSize: bodySize }}>
-              <thead className="bg-slate-100 font-bold">
-                <tr className="border-b border-slate-300">
-                  <th className="p-2 border-r border-slate-300">Date</th>
-                  <th className="p-2 border-r border-slate-300">Temp (°F)</th>
-                  <th className="p-2 border-r border-slate-300">BP (mmHg)</th>
-                  <th className="p-2 border-r border-slate-300">Pulse</th>
-                  <th className="p-2 border-r border-slate-300">Resp Rate</th>
-                  <th className="p-2">SpO2 (%)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-300">
-                  <td className="p-2 border-r border-slate-300">2025-10-08</td>
-                  <td className="p-2 border-r border-slate-300">98.3</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">120/70</td>
-                  <td className="p-2 border-r border-slate-300">67</td>
-                  <td className="p-2 border-r border-slate-300">18</td>
-                  <td className="p-2 font-bold">98%</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-slate-300">2025-11-08</td>
-                  <td className="p-2 border-r border-slate-300">98.6</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">130/70</td>
-                  <td className="p-2 border-r border-slate-300">70</td>
-                  <td className="p-2 border-r border-slate-300">19</td>
-                  <td className="p-2 font-bold">98%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {slideNum === 4 && (
-          <div className="space-y-4">
-            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>3. Laboratory & Diagnostic Investigations</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
-            </h2>
-
-            <table className="w-full text-left border-collapse border border-slate-300 rounded-xl overflow-hidden text-xs" style={{ fontSize: bodySize }}>
-              <thead className="bg-slate-100 font-bold">
-                <tr className="border-b border-slate-300">
-                  <th className="p-2 border-r border-slate-300">Category</th>
-                  <th className="p-2 border-r border-slate-300">Parameter</th>
-                  <th className="p-2 border-r border-slate-300">Observed Value</th>
-                  <th className="p-2">Reference Range</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-300">
-                  <td className="p-2 border-r border-slate-300">Haematological</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">Hb %</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">13.0 g/dL</td>
-                  <td className="p-2">11 - 16.5 %</td>
-                </tr>
-                <tr className="border-b border-slate-300">
-                  <td className="p-2 border-r border-slate-300">Haematological</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">WBC Count</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">11,200 /cu.mm</td>
-                  <td className="p-2">4000 - 11000</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-slate-300">Biochemistry</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">Blood Urea</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">24 mg/dL</td>
-                  <td className="p-2">15 - 45 mg/dL</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl space-y-1 text-xs text-sky-900" style={{ fontSize: bodySize }}>
-              <strong className="block font-bold text-sky-900">Other Diagnostic Investigations:</strong>
-              <div>HISTOPATHOLOGY REPORT: FOCAL CHOLESTEROLOSIS | US SCAN OF WHOLE ABDOMEN: RIGHT RENAL CORTICAL CYST.</div>
-            </div>
-          </div>
-        )}
-
-        {slideNum === 5 && (
-          <div className="space-y-4">
-            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>4. Final Diagnosis & Prescribed Medications</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
-            </h2>
-
-            <div className="p-3 bg-emerald-50 border-2 border-emerald-500 rounded-xl text-center">
-              <span className="text-xs uppercase font-bold text-emerald-800 tracking-wider block">Final Diagnosis</span>
-              <strong className="text-lg font-black text-emerald-700">IBD WITH TERMINAL ILETIS</strong>
-            </div>
-
-            <table className="w-full text-left border-collapse border border-slate-300 rounded-xl overflow-hidden text-xs" style={{ fontSize: bodySize }}>
-              <thead className="bg-slate-100 font-bold">
-                <tr className="border-b border-slate-300">
-                  <th className="p-2 border-r border-slate-300">S.No</th>
-                  <th className="p-2 border-r border-slate-300">Brand & Generic Name</th>
-                  <th className="p-2 border-r border-slate-300">Dose & Route</th>
-                  <th className="p-2">Frequency</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-300">
-                  <td className="p-2 border-r border-slate-300 text-center">1</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">Inj. Ceftriaxone 1g</td>
-                  <td className="p-2 border-r border-slate-300">1g (IV)</td>
-                  <td className="p-2 font-bold">BD</td>
-                </tr>
-                <tr className="border-b border-slate-300">
-                  <td className="p-2 border-r border-slate-300 text-center">2</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">Tab. Pantoprazole 40mg</td>
-                  <td className="p-2 border-r border-slate-300">40mg (Oral)</td>
-                  <td className="p-2 font-bold">OD (Before Food)</td>
-                </tr>
-                <tr>
-                  <td className="p-2 border-r border-slate-300 text-center">3</td>
-                  <td className="p-2 border-r border-slate-300 font-bold">Tab. Mesalamine 1.2g</td>
-                  <td className="p-2 border-r border-slate-300">1.2g (Oral)</td>
-                  <td className="p-2 font-bold">TID</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {slideNum === 6 && (
-          <div className="space-y-4">
-            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>5. Patient Counselling & Pharmacist Interventions</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ fontSize: bodySize }}>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 space-y-2">
-                <h3 className="font-bold text-amber-800 uppercase text-xs tracking-wider border-b pb-1 border-slate-200">Patient Counselling Record</h3>
-                <div>Counselling Provided To: <strong>Patient</strong></div>
-                <div>Mode & Time: <strong>Oral & Leaflet (15 min)</strong></div>
-                <div>Key Focus: <strong>Antibiotic compliance, glucose monitoring & hydration.</strong></div>
+            <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center space-y-3 bg-slate-50">
+              <div className="text-xs font-mono font-bold uppercase text-slate-500">
+                [ Module Content Layout Frame ]
               </div>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-300 space-y-2">
-                <h3 className="font-bold text-indigo-800 uppercase text-xs tracking-wider border-b pb-1 border-slate-200">Pharmacist Intervention</h3>
-                <div>Problem Identified: <strong>Verified non-cross-reactivity with Ceftriaxone.</strong></div>
-                <div>Recommendation: <strong>Spaced oral antidiabetic vs IV infusion.</strong></div>
-                <div>Status: <strong className="text-emerald-700 font-bold">Accepted by Physician</strong></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {slideNum === 7 && (
-          <div className="space-y-4">
-            <h2 className="font-extrabold text-slate-900 border-b pb-2 border-slate-300 flex items-center justify-between" style={{ fontSize: titleSize }}>
-              <span>6. ADR Log, Discharge Summary & Preceptor Approval</span>
-              <span className="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300 font-bold">🟢 Approved</span>
-            </h2>
-
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1 text-xs text-amber-900" style={{ fontSize: bodySize }}>
-              <strong className="block font-bold text-amber-900">ADR Log & Causality:</strong>
-              <div>Reaction: Suspected ADR (Drug: Metformin) | Naranjo Causality: Probable | Outcome: Recovered</div>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-300 rounded-xl space-y-1 text-xs" style={{ fontSize: bodySize }}>
-              <strong className="block font-bold text-slate-900">Discharge Summary:</strong>
-              <div>A 54Y female patient was admitted with chief complaints of abdominal pain and vomiting. All investigations done. Patient treated with antibiotics, antiemetics, and discharged with supportive care.</div>
-            </div>
-
-            <div className="p-3 bg-emerald-50 border-2 border-emerald-600 rounded-xl flex items-center justify-between text-xs">
-              <div>
-                <span className="block font-bold text-emerald-900 uppercase">Faculty Preceptor Verification</span>
-                <strong className="text-slate-900 font-extrabold">Dr. A. Sharma, M.D.</strong>
-              </div>
-              <span className="px-3 py-1 bg-emerald-600 text-white font-bold rounded-lg text-xs">STATUS: APPROVED</span>
+              <p className="text-xs text-slate-600 max-w-md mx-auto">
+                Actual student data for this module will render inside this styled layout container during case presentation export.
+              </p>
             </div>
           </div>
         )}
@@ -1301,7 +1143,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
           maxWidth={settings.orientation === 'Landscape' ? 'max-w-6xl' : 'max-w-4xl'}
         >
           <div className="p-4 bg-slate-100 dark:bg-slate-950 max-h-[82vh] overflow-y-auto">
-            <SampleTwoPageDocument college={college} settings={settings} />
+            <AdminFormatPDFPreview college={college} settings={settings} />
           </div>
         </ModalWrapper>
       )}

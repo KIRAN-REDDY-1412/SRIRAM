@@ -1376,6 +1376,22 @@ export const fetchPreceptorsFromSupabase = async (collegeId) => {
   }
 };
 
+export const fetchPreceptorByIdFromSupabase = async (preceptorId) => {
+  if (!preceptorId) return { success: false, error: 'Preceptor ID required' };
+  try {
+    const { data, error } = await supabase
+      .from('preceptors')
+      .select('*')
+      .eq('id', preceptorId)
+      .maybeSingle();
+
+    if (error || !data) return { success: false, error: error?.message || 'Preceptor not found' };
+    return { success: true, preceptor: data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
 export const insertPreceptorToSupabase = async (collegeId, preceptorData) => {
   try {
     const passwordHash = await hashPassword(preceptorData.password);

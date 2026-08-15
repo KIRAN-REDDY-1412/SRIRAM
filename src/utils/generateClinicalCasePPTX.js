@@ -142,21 +142,21 @@ export const generateClinicalCasePPTX = async ({
       fill: { color: darkBgColor }, line: { color: 'CBD5E1', width: 1 }
     });
 
-    // LEFT COLUMN: Evaluated & Approved By (Preceptor)
+    // LEFT COLUMN: Submitted / Presented By (Student)
     slide1.addText([
-      { text: 'Evaluated & Approved By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
-      { text: `${preceptorName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: emeraldColor } },
-      { text: 'Faculty Preceptor / Evaluator', options: { fontSize: bodyFontSize - 2, color: '475569' } }
+      { text: 'Submitted / Presented By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
+      { text: `${studentName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: primaryColor } },
+      { text: `Roll No: ${rollNumber}`, options: { fontSize: bodyFontSize - 2, color: '475569' } }
     ], {
       x: startX + 0.3, y: 2.75, w: 4.0, h: 1.4,
       fontFace, align: 'left'
     });
 
-    // RIGHT COLUMN: Submitted / Presented By (Student)
+    // RIGHT COLUMN: Evaluated & Approved By (Faculty Preceptor on RIGHT SIDE)
     slide1.addText([
-      { text: 'Submitted / Presented By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
-      { text: `${studentName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: primaryColor } },
-      { text: `Roll No: ${rollNumber}`, options: { fontSize: bodyFontSize - 2, color: '475569' } }
+      { text: 'Evaluated & Approved By:\n', options: { bold: true, fontSize: bodyFontSize - 2, color: '64748B' } },
+      { text: `${preceptorName}\n`, options: { bold: true, fontSize: bodyFontSize + 1, color: emeraldColor } },
+      { text: preceptor?.designation || 'Faculty Preceptor / Evaluator', options: { fontSize: bodyFontSize - 2, color: '475569' } }
     ], {
       x: startX + 4.7, y: 2.75, w: 4.0, h: 1.4,
       fontFace, align: 'right'

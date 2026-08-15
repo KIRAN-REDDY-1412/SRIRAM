@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Presentation } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
+import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase, fetchPreceptorByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 import { ClinicalCaseDocumentRenderer } from '../branding/ClinicalCaseDocumentRenderer';
@@ -36,9 +36,11 @@ const convertUrlToBase64 = (url) => {
 export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, student, preceptor, college }) => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [exportingPPT, setExportingPPT] = useState(false);
   const [caseModulesData, setCaseModulesData] = useState({});
   const [branding, setBranding] = useState(null);
   const [collegeData, setCollegeData] = useState(college);
+  const [assignedPreceptorObj, setAssignedPreceptorObj] = useState(preceptor);
 
   const caseId = clinicalCase?.case_id || 'AMRMCP-2026-000001';
   const fileName = `${caseId}_Approved.pdf`;
@@ -51,10 +53,13 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       if (!clinicalCase?.id) return;
       setLoading(true);
       const collegeId = clinicalCase?.college_id || student?.college_id || college?.id;
-      const [res, brandRes, collegeRes] = await Promise.all([
+      const targetPreceptorId = clinicalCase?.preceptor_id || clinicalCase?.assigned_preceptor_id || clinicalCase?.approved_by_preceptor_id || preceptor?.id;
+
+      const [res, brandRes, collegeRes, preceptorRes] = await Promise.all([
         fetchCaseModuleStatusesFromSupabase(clinicalCase.id),
         collegeId ? fetchDocumentBrandingSettingsFromSupabase(collegeId) : Promise.resolve({ success: false }),
-        collegeId ? fetchCollegeByIdFromSupabase(collegeId) : Promise.resolve({ success: false })
+        collegeId ? fetchCollegeByIdFromSupabase(collegeId) : Promise.resolve({ success: false }),
+        targetPreceptorId ? fetchPreceptorByIdFromSupabase(targetPreceptorId) : Promise.resolve({ success: false })
       ]);
 
       if (res.success) {
@@ -62,6 +67,11 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       }
       if (brandRes.success && brandRes.settings) {
         setBranding(brandRes.settings);
+      }
+      if (preceptorRes.success && preceptorRes.preceptor) {
+        setAssignedPreceptorObj(preceptorRes.preceptor);
+      } else if (preceptor) {
+        setAssignedPreceptorObj(preceptor);
       }
 
       const targetCollege = (collegeRes.success && collegeRes.college) ? collegeRes.college : college;
@@ -240,7 +250,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     }
   };
 
-  const [exportingPPT, setExportingPPT] = useState(false);
   const handleDownloadPPT = async () => {
     setExportingPPT(true);
     try {
@@ -389,14 +398,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               caseData={{
                 clinicalCase,
                 student,
-                preceptor,
+                preceptor: assignedPreceptorObj || preceptor,
                 college: finalCollegeObj,
                 caseModulesData
               }}
               branding={branding}
               college={finalCollegeObj}
               student={student}
-              preceptor={preceptor}
+              preceptor={assignedPreceptorObj || preceptor}
             />
           )}
         </div>

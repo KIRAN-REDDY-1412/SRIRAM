@@ -50,7 +50,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     const loadModules = async () => {
       if (!clinicalCase?.id) return;
       setLoading(true);
-      const collegeId = college?.id || student?.college_id || clinicalCase?.college_id;
+      const collegeId = clinicalCase?.college_id || student?.college_id || college?.id;
       const [res, brandRes, collegeRes] = await Promise.all([
         fetchCaseModuleStatusesFromSupabase(clinicalCase.id),
         collegeId ? fetchDocumentBrandingSettingsFromSupabase(collegeId) : Promise.resolve({ success: false }),
@@ -90,7 +90,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     if (!element) return;
 
     setDownloading(true);
-    let wrapper = null;
     try {
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
       const pdf = new jsPDF({
@@ -103,52 +102,19 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // Create an off-screen wrapper for capturing pure white A4 pages without web modal artifacts
-      wrapper = document.createElement('div');
-      wrapper.style.position = 'fixed';
-      wrapper.style.left = '-9999px';
-      wrapper.style.top = '-9999px';
-      wrapper.style.width = isLandscape ? '297mm' : '210mm';
-      wrapper.style.backgroundColor = '#ffffff';
-      wrapper.style.color = '#0f172a';
-      wrapper.style.zIndex = '-9999';
-      document.body.appendChild(wrapper);
-
-      // Clone target document into wrapper
-      const clone = element.cloneNode(true);
-      wrapper.appendChild(clone);
-
-      const pageElements = clone.querySelectorAll('.pharmdverse-document-page');
-      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [clone];
+      const pageElements = element.querySelectorAll('.pharmdverse-document-page');
+      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
 
       let isFirstPdfPage = true;
 
       for (let i = 0; i < pagesToCapture.length; i++) {
         const targetEl = pagesToCapture[i];
 
-        // Sanitize styles to enforce pristine white background and clear A4 margins
-        targetEl.style.width = isLandscape ? '297mm' : '210mm';
-        targetEl.style.minHeight = isLandscape ? '210mm' : '297mm';
-        targetEl.style.height = 'auto';
-        targetEl.style.backgroundColor = '#ffffff';
-        targetEl.style.color = '#0f172a';
-        targetEl.style.boxShadow = 'none';
-        targetEl.style.border = 'none';
-        targetEl.style.margin = '0 auto';
-        targetEl.style.transform = 'none';
-        targetEl.style.overflow = 'visible';
-
-        const innerScrolls = targetEl.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
-        innerScrolls.forEach(s => {
-          s.style.maxHeight = 'none';
-          s.style.overflow = 'visible';
-          s.style.height = 'auto';
-        });
-
-        const imgs = targetEl.querySelectorAll('img');
-        imgs.forEach(img => {
-          img.crossOrigin = 'anonymous';
-        });
+        // Ensure page is in viewport for smooth canvas context
+        try {
+          targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
+          await new Promise(r => setTimeout(r, 60));
+        } catch (sErr) {}
 
         let pageCanvas;
         try {
@@ -160,7 +126,36 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
             backgroundColor: '#ffffff',
             windowWidth: isLandscape ? 1123 : 850,
             scrollX: 0,
-            scrollY: 0
+            scrollY: 0,
+            onclone: (clonedDoc, clonedPage) => {
+              // Ensure images are crossOrigin anonymous
+              const imgs = clonedDoc.querySelectorAll('img');
+              imgs.forEach(img => {
+                img.crossOrigin = 'anonymous';
+              });
+
+              // Expand all scrollable containers
+              const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
+              allScrollables.forEach(s => {
+                s.style.maxHeight = 'none';
+                s.style.overflow = 'visible';
+                s.style.height = 'auto';
+              });
+
+              // Apply pristine white A4 styles to the cloned page
+              if (clonedPage) {
+                clonedPage.style.width = isLandscape ? '297mm' : '210mm';
+                clonedPage.style.minHeight = isLandscape ? '210mm' : '297mm';
+                clonedPage.style.height = 'auto';
+                clonedPage.style.backgroundColor = '#ffffff';
+                clonedPage.style.color = '#0f172a';
+                clonedPage.style.boxShadow = 'none';
+                clonedPage.style.border = 'none';
+                clonedPage.style.margin = '0 auto';
+                clonedPage.style.transform = 'none';
+                clonedPage.style.overflow = 'visible';
+              }
+            }
           });
         } catch (cErr) {
           pageCanvas = await html2canvas(targetEl, {
@@ -241,11 +236,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
     } finally {
-      if (wrapper && wrapper.parentNode) {
-        try {
-          wrapper.parentNode.removeChild(wrapper);
-        } catch (cleanErr) {}
-      }
       setDownloading(false);
     }
   };

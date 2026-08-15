@@ -55,6 +55,9 @@ export const generateOfficialClinicalCasePDF = async ({
 
   const finalDiagnosis = clinicalCase?.final_diagnosis || clinicalCase?.diagnosis || profile.final_diagnosis || profile.provisional_diagnosis || 'Clinical Case Presentation';
 
+  const collegeLogo = college?.college_logo_url || college?.logo_url;
+  const hospitalLogo = college?.hospital_logo_url;
+
   // Helper for drawing repeating page header
   const drawPageHeader = () => {
     // Header Outer Box
@@ -62,15 +65,31 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setLineWidth(0.4);
     doc.rect(marginX, 12, contentWidth, 22);
 
+    // College Logo (Left)
+    if (collegeLogo && typeof collegeLogo === 'string' && collegeLogo.startsWith('data:image')) {
+      try {
+        const fmt = collegeLogo.includes('image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(collegeLogo, fmt, marginX + 2, 13.5, 17, 17);
+      } catch (e) {}
+    }
+
+    // Hospital Logo (Right)
+    if (hospitalLogo && typeof hospitalLogo === 'string' && hospitalLogo.startsWith('data:image')) {
+      try {
+        const fmt = hospitalLogo.includes('image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(hospitalLogo, fmt, pageWidth - marginX - 19, 13.5, 17, 17);
+      } catch (e) {}
+    }
+
     // College Name
     doc.setFont('times', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
     doc.text(collegeName.toUpperCase(), pageWidth / 2, 19, { align: 'center' });
 
     // Subtitle (Autonomous & Hospital)
     doc.setFont('times', 'italic');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
     doc.text(`(Autonomous) • ${hospitalName}`, pageWidth / 2, 24, { align: 'center' });
 
@@ -78,20 +97,20 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setFillColor(15, 23, 42);
     doc.rect(marginX, 28, contentWidth, 5, 'F');
     doc.setFont('courier', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(255, 255, 255);
     doc.text(`CASE ID : ${caseId}   •   OFFICIAL APPROVED CLINICAL CASE RECORD`, pageWidth / 2, 31.5, { align: 'center' });
   };
 
-  // Helper for drawing watermark
+  // Helper for drawing soft watermark
   const drawWatermark = () => {
     doc.setFont('times', 'bold');
-    doc.setFontSize(26);
-    doc.setTextColor(226, 232, 240); // slate-200
+    doc.setFontSize(16);
+    doc.setTextColor(241, 245, 249); // slate-100 (soft light gray)
     doc.text(collegeName.toUpperCase(), pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
   };
 
-  // Helper for drawing page footer
+  // Helper for drawing page footer (3 distinct non-overlapping columns)
   const drawPageFooter = (pageNum, totalPages) => {
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(0.2);
@@ -100,9 +119,9 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setFont('times', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text(`${collegeName} • Official Approved Clinical Document`, marginX, pageHeight - 7);
-    doc.text(currentDateStr, pageWidth / 2, pageHeight - 7, { align: 'center' });
-    doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 7, { align: 'right' });
+    doc.text('PharmDVerse • Official Approved Record', marginX, pageHeight - 6);
+    doc.text(currentDateStr, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
   };
 
   // --- PAGE 1: DEMOGRAPHICS & CLINICAL HISTORY ---
@@ -113,7 +132,7 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // Module Title
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(2, 132, 199); // secondary cyan
   doc.text('1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY', marginX, y);
   y += 4;
@@ -151,35 +170,35 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // History Sections
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
   doc.text('Chief Complaints & Presenting History:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(profile.chief_complaints || 'Patient presented with chief complaints as documented in medical records.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  y += 12;
+  y += 10;
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.text('Past Medical & Medication History:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(profile.past_medical_history || profile.past_history || 'No significant past medical history reported.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  y += 12;
+  y += 10;
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.text('General & Systemic Examinations:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   const genExam = profile.general_examination || 'General Exam: Conscious, coherent, no acute distress.';
   const sysExam = profile.systemic_examination || 'CVS: S1S2 heard | RS: NVBS | GI: Soft | CNS: Intact.';
   doc.text(`${genExam}\n${sysExam}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  y += 16;
+  y += 14;
 
   // Vitals Signs Table
   doc.setFont('times', 'bold');
@@ -221,7 +240,7 @@ export const generateOfficialClinicalCasePDF = async ({
   y = 38;
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
   doc.text('2. LABORATORY & DIAGNOSTIC INVESTIGATIONS', marginX, y);
   y += 6;
@@ -269,7 +288,7 @@ export const generateOfficialClinicalCasePDF = async ({
 
   y += 6;
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
   doc.text('3. FINAL DIAGNOSIS & PRESCRIBED MEDICATIONS', marginX, y);
   y += 6;
@@ -321,19 +340,19 @@ export const generateOfficialClinicalCasePDF = async ({
   y = 38;
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
   doc.text('4. PATIENT COUNSELLING & PHARMACIST INTERVENTIONS', marginX, y);
   y += 6;
 
   // Counselling Box
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
   doc.text('Patient Counselling Summary:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(`Counselled: ${counselling.counselling_provided_to || 'Patient'} | Mode: ${counselling.counselling_mode || 'Oral'} | Time: ${counselling.time_taken || '15 min'}`, marginX + 3, y);
   y += 5;
   doc.text(`Key Focus: ${counselling.counselling_points || counselling.disease_counselled || 'Medication adherence, lifestyle modifications, and dietary precautions.'}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
@@ -342,11 +361,11 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // Pharmacist Intervention Box
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.text('Pharmacist Intervention Summary:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(`Problem Identified: ${intervention.prescription_problems || intervention.description_of_problem || 'Therapeutic optimization and dosage spacing.'}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
   y += 5;
   doc.text(`Recommendation: ${intervention.recommendations || intervention.action_taken || 'Discussed with attending physician for optimal therapy.'}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
@@ -360,19 +379,19 @@ export const generateOfficialClinicalCasePDF = async ({
   y = 38;
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
   doc.text('5. ADR LOG, DISCHARGE SUMMARY & VERIFICATION', marginX, y);
   y += 6;
 
   // ADR Log
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
   doc.text('Adverse Drug Reaction (ADR) Log:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(`Suspected Drug: ${adr.suspected_drug || 'None Reported'} | Reaction: ${adr.reaction_description || adr.reaction || 'Nil'}`, marginX + 3, y);
   y += 5;
   doc.text(`Causality Assessment: ${adr.naranjo_causality || adr.causality || 'Unlikely'} | Outcome: ${adr.outcome || 'Resolved'}`, marginX + 3, y);
@@ -381,15 +400,15 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // Discharge Summary
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.text('Discharge Summary & Advice:', marginX, y);
   y += 4;
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.text(profile.discharge_summary || 'Patient managed symptomatically and discharged in stable condition with advice to follow up as prescribed.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  // DUAL VERIFICATION SIGNATURE SECTION (AT BOTTOM OF PAGE 5)
-  const sigY = pageHeight - 45;
+  // DUAL VERIFICATION SIGNATURE SECTION (AT BOTTOM OF FINAL PAGE)
+  const sigY = pageHeight - 42;
 
   doc.setDrawColor(15, 23, 42);
   doc.setLineWidth(0.4);
@@ -399,37 +418,37 @@ export const generateOfficialClinicalCasePDF = async ({
   const sigRightX = pageWidth - marginX - 55;
 
   // Student Signature Box (Left)
-  doc.line(sigLeftX, sigY + 12, sigLeftX + 45, sigY + 12);
+  doc.line(sigLeftX, sigY + 10, sigLeftX + 45, sigY + 10);
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('Student Signature', sigLeftX + 22.5, sigY + 16, { align: 'center' });
+  doc.text('Student Signature', sigLeftX + 22.5, sigY + 14, { align: 'center' });
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(2, 132, 199);
-  doc.text(`${studentName} (${studentRoll})`, sigLeftX + 22.5, sigY + 21, { align: 'center' });
-  doc.setFontSize(8);
+  doc.text(`${studentName} (${studentRoll})`, sigLeftX + 22.5, sigY + 19, { align: 'center' });
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 25, { align: 'center' });
+  doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 23, { align: 'center' });
 
   // Faculty Preceptor Signature Box (Right Side)
-  doc.line(sigRightX, sigY + 12, sigRightX + 45, sigY + 12);
+  doc.line(sigRightX, sigY + 10, sigRightX + 45, sigY + 10);
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 16, { align: 'center' });
+  doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 14, { align: 'center' });
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(2, 132, 199);
-  doc.text(preceptorName, sigRightX + 22.5, sigY + 21, { align: 'center' });
-  doc.setFontSize(8);
+  doc.text(preceptorName, sigRightX + 22.5, sigY + 19, { align: 'center' });
+  doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text(preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 29, { align: 'center' });
-  doc.setFontSize(8);
+  doc.text(preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 26, { align: 'center' });
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 33, { align: 'center' });
+  doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 30, { align: 'center' });
 
-  // Stamp total pages on footers across all 5 pages
+  // Stamp total pages on footers across all pages
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);

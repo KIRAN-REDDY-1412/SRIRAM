@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Presentation } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import html2pdf from 'html2pdf.js';
 import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase, fetchPreceptorByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
@@ -102,147 +101,50 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     setDownloading(true);
     try {
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
-      const pdf = new jsPDF({
-        orientation: isLandscape ? 'landscape' : 'portrait',
-        unit: 'mm',
-        format: branding?.paper_size?.toLowerCase() === 'letter' ? 'letter' : 'a4',
-        compress: true
-      });
+      const isLetter = branding?.paper_size?.toLowerCase() === 'letter';
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const opt = {
+        margin: [0, 0, 0, 0],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: isLandscape ? 1123 : 794,
+          onclone: (clonedDoc) => {
+            const scrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
+            scrollables.forEach(s => {
+              s.style.maxHeight = 'none';
+              s.style.overflow = 'visible';
+              s.style.height = 'auto';
+            });
+          }
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: isLetter ? 'letter' : 'a4',
+          orientation: isLandscape ? 'landscape' : 'portrait',
+          compress: true
+        },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr', '.branded-header', '.branded-body'] }
+      };
 
-      const pageElements = element.querySelectorAll('.pharmdverse-document-page');
-      const pagesToCapture = pageElements.length > 0 ? Array.from(pageElements) : [element];
-
-      let isFirstPdfPage = true;
-
-      for (let i = 0; i < pagesToCapture.length; i++) {
-        const targetEl = pagesToCapture[i];
-
-        // Ensure page is in viewport for smooth canvas context
-        try {
-          targetEl.scrollIntoView({ block: 'start', inline: 'nearest' });
-          await new Promise(r => setTimeout(r, 60));
-        } catch (sErr) {}
-
-        let pageCanvas;
-        try {
-          pageCanvas = await html2canvas(targetEl, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: false,
-            logging: false,
-            backgroundColor: '#ffffff',
-            windowWidth: isLandscape ? 1123 : 850,
-            scrollX: 0,
-            scrollY: 0,
-            onclone: (clonedDoc, clonedPage) => {
-              // Ensure images are crossOrigin anonymous
-              const imgs = clonedDoc.querySelectorAll('img');
-              imgs.forEach(img => {
-                img.crossOrigin = 'anonymous';
-              });
-
-              // Expand all scrollable containers
-              const allScrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
-              allScrollables.forEach(s => {
-                s.style.maxHeight = 'none';
-                s.style.overflow = 'visible';
-                s.style.height = 'auto';
-              });
-
-              // Apply pristine white A4 styles to the cloned page
-              if (clonedPage) {
-                clonedPage.style.width = isLandscape ? '297mm' : '210mm';
-                clonedPage.style.minHeight = isLandscape ? '210mm' : '297mm';
-                clonedPage.style.height = 'auto';
-                clonedPage.style.backgroundColor = '#ffffff';
-                clonedPage.style.color = '#0f172a';
-                clonedPage.style.boxShadow = 'none';
-                clonedPage.style.border = 'none';
-                clonedPage.style.margin = '0 auto';
-                clonedPage.style.transform = 'none';
-                clonedPage.style.overflow = 'visible';
-              }
-            }
-          });
-        } catch (cErr) {
-          pageCanvas = await html2canvas(targetEl, {
-            scale: 1.5,
-            useCORS: false,
-            allowTaint: false,
-            logging: false,
-            backgroundColor: '#ffffff'
-          });
-        }
-
-        const canvasWidth = pageCanvas.width;
-        const canvasHeight = pageCanvas.height;
-        const pagePdfHeight = (canvasHeight * pdfWidth) / canvasWidth;
-
-        let imgData;
-        try {
-          imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
-        } catch (dataErr) {
-          const fallbackCanvas = document.createElement('canvas');
-          fallbackCanvas.width = canvasWidth;
-          fallbackCanvas.height = canvasHeight;
-          const fCtx = fallbackCanvas.getContext('2d');
-          fCtx.fillStyle = '#ffffff';
-          fCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-          imgData = fallbackCanvas.toDataURL('image/jpeg', 0.98);
-        }
-
-        if (pagePdfHeight <= pdfHeight + 2) {
-          if (!isFirstPdfPage) pdf.addPage();
-          isFirstPdfPage = false;
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pagePdfHeight, undefined, 'FAST');
-        } else {
-          // Multi-page slicing if content height exceeds 1 A4 page
-          const sliceHeightPx = Math.floor((canvasWidth * pdfHeight) / pdfWidth);
-          let currentY = 0;
-
-          while (currentY < canvasHeight) {
-            if (!isFirstPdfPage) pdf.addPage();
-            isFirstPdfPage = false;
-
-            const sliceH = Math.min(sliceHeightPx, canvasHeight - currentY);
-            const sliceCanvas = document.createElement('canvas');
-            sliceCanvas.width = canvasWidth;
-            sliceCanvas.height = sliceH;
-            const ctx = sliceCanvas.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvasWidth, sliceH);
-            ctx.drawImage(pageCanvas, 0, currentY, canvasWidth, sliceH, 0, 0, canvasWidth, sliceH);
-
-            let sliceImgData;
-            try {
-              sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.98);
-            } catch (e) {
-              sliceImgData = imgData;
-            }
-            const slicePdfH = (sliceH * pdfWidth) / canvasWidth;
-            pdf.addImage(sliceImgData, 'JPEG', 0, 0, pdfWidth, slicePdfH, undefined, 'FAST');
-
-            currentY += sliceHeightPx;
+      await html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
+        const totalPages = pdf.internal.getNumberOfPages();
+        if (branding?.show_page_number !== false) {
+          const pWidth = pdf.internal.pageSize.getWidth();
+          const pHeight = pdf.internal.pageSize.getHeight();
+          for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(`Page ${i} of ${totalPages}`, pWidth - 25, pHeight - 6);
           }
         }
-      }
-
-      // Stamp dynamic total page numbers on footer
-      const totalPdfPages = pdf.getNumberOfPages();
-      if (branding?.show_page_number !== false) {
-        for (let p = 1; p <= totalPdfPages; p++) {
-          pdf.setPage(p);
-          pdf.setFontSize(8);
-          pdf.setTextColor(100, 116, 139);
-          pdf.text(`Page ${p} of ${totalPdfPages}`, pdfWidth - 25, pdfHeight - 6);
-        }
-      }
-
-      // DIRECT FILE DOWNLOAD
-      pdf.save(fileName);
+      }).save();
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
     } finally {

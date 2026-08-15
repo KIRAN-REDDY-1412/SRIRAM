@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Eye, Loader2, CheckCircle2, ShieldCheck, FileCheck2, Presentation } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
 import { fetchCaseModuleStatusesFromSupabase, fetchDocumentBrandingSettingsFromSupabase, fetchCollegeByIdFromSupabase, fetchPreceptorByIdFromSupabase } from '../../services/supabaseService';
 import { ModalWrapper } from './ModalWrapper';
 import { PharmDVerseBrandedDocumentContainer } from '../branding/PharmDVerseBrandedDocumentContainer';
 import { ClinicalCaseDocumentRenderer } from '../branding/ClinicalCaseDocumentRenderer';
 import { generateClinicalCasePPTX } from '../../utils/generateClinicalCasePPTX';
+import { generateOfficialClinicalCasePDF } from '../../utils/generateOfficialClinicalCasePDF';
 
 const convertUrlToBase64 = (url) => {
   return new Promise((resolve) => {
@@ -95,89 +95,22 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   }, [isOpen, clinicalCase?.id, college?.id, student?.college_id, clinicalCase?.college_id]);
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('official-clinical-case-pdf-container');
-    if (!element) return;
-
     setDownloading(true);
-
-    // Temporarily sanitize live document <style> tags to prevent html2canvas oklch stylesheet parser crash
-    const styleElements = Array.from(document.querySelectorAll('style'));
-    const styleBackups = [];
-
-    const replaceOklch = (cssText) => {
-      if (!cssText || typeof cssText !== 'string') return cssText;
-      if (!/oklch|oklab|lab|lch|color\(/i.test(cssText)) return cssText;
-      return cssText.replace(/(oklch|oklab|lab|lch|color)\([^)]+\)/gi, () => 'rgb(15, 23, 42)');
-    };
-
     try {
-      styleElements.forEach(style => {
-        if (style.textContent && /oklch|oklab|lab|lch|color\(/i.test(style.textContent)) {
-          styleBackups.push({ element: style, text: style.textContent });
-          style.textContent = replaceOklch(style.textContent);
-        }
+      const finalCollegeObj = collegeData || college;
+      const finalPreceptorObj = assignedPreceptorObj || preceptor;
+      await generateOfficialClinicalCasePDF({
+        clinicalCase,
+        student,
+        preceptor: finalPreceptorObj,
+        college: finalCollegeObj,
+        caseModulesData,
+        branding
       });
-
-      const html2pdfFunc = typeof html2pdf === 'function' ? html2pdf : (html2pdf?.default || window?.html2pdf);
-
-      const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
-      const isLetter = branding?.paper_size?.toLowerCase() === 'letter';
-
-      const opt = {
-        margin: [0, 0, 0, 0],
-        filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          windowWidth: isLandscape ? 1123 : 794,
-          onclone: (clonedDoc) => {
-            const scrollables = clonedDoc.querySelectorAll('.overflow-y-auto, .overflow-auto, [class*="max-h-"]');
-            scrollables.forEach(s => {
-              s.style.maxHeight = 'none';
-              s.style.overflow = 'visible';
-              s.style.height = 'auto';
-            });
-
-            const clonedStyles = clonedDoc.querySelectorAll('style');
-            clonedStyles.forEach(s => {
-              if (s.textContent && /oklch|oklab|lab|lch|color\(/i.test(s.textContent)) {
-                s.textContent = replaceOklch(s.textContent);
-              }
-            });
-
-            const allElements = clonedDoc.querySelectorAll('*');
-            allElements.forEach(el => {
-              const inlineStyle = el.getAttribute('style');
-              if (inlineStyle && /oklch|oklab|lab|lch|color\(/i.test(inlineStyle)) {
-                el.setAttribute('style', replaceOklch(inlineStyle));
-              }
-            });
-          }
-        },
-        jsPDF: {
-          unit: 'mm',
-          format: isLetter ? 'letter' : 'a4',
-          orientation: isLandscape ? 'landscape' : 'portrait',
-          compress: true
-        },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr'] }
-      };
-
-      await html2pdfFunc().set(opt).from(element).save();
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
       alert('Could not download PDF. Error: ' + (err?.message || err));
     } finally {
-      // Restore live document stylesheets immediately
-      styleBackups.forEach(b => {
-        try {
-          b.element.textContent = b.text;
-        } catch (e) {}
-      });
       setDownloading(false);
     }
   };

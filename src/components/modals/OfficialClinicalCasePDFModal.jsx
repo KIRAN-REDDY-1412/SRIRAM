@@ -124,23 +124,54 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               s.style.height = 'auto';
             });
 
-            // Convert modern CSS oklch / oklab colors to standard rgb/hex for html2canvas
+            // Convert modern CSS oklch / oklab / lab / lch / color() strings to standard rgb/hex for html2canvas
             try {
               const canvas = clonedDoc.createElement('canvas');
               const ctx = canvas.getContext('2d');
+
+              const convertColorString = (str) => {
+                if (!str || typeof str !== 'string') return str;
+                if (!/oklch|oklab|lab|lch|color\(/i.test(str)) return str;
+
+                return str.replace(/(oklch|oklab|lab|lch|color)\([^)]+\)/gi, (match) => {
+                  try {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = match;
+                    const res = ctx.fillStyle;
+                    return (res && res !== '#ffffff' && res !== 'rgb(255, 255, 255)') ? res : 'rgb(15, 23, 42)';
+                  } catch (e) {
+                    return 'rgb(15, 23, 42)';
+                  }
+                });
+              };
+
+              // Sanitize style tags in cloned document
+              const styleTags = clonedDoc.querySelectorAll('style');
+              styleTags.forEach(style => {
+                if (style.textContent && /oklch|oklab|lab|lch|color\(/i.test(style.textContent)) {
+                  style.textContent = convertColorString(style.textContent);
+                }
+              });
+
+              // Sanitize inline styles & computed styles on all DOM elements
               const allElements = clonedDoc.querySelectorAll('*');
               allElements.forEach(el => {
+                const inlineStyle = el.getAttribute('style');
+                if (inlineStyle && /oklch|oklab|lab|lch|color\(/i.test(inlineStyle)) {
+                  el.setAttribute('style', convertColorString(inlineStyle));
+                }
+
                 const computed = window.getComputedStyle(el);
-                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor'].forEach(prop => {
+                ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'outlineColor', 'fill', 'stroke'].forEach(prop => {
                   const val = computed[prop];
-                  if (val && (val.includes('oklch') || val.includes('oklab'))) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillStyle = val;
-                    el.style[prop] = ctx.fillStyle;
+                  if (val && /oklch|oklab|lab|lch|color\(/i.test(val)) {
+                    el.style[prop] = convertColorString(val);
                   }
                 });
               });
-            } catch (e) {}
+            } catch (e) {
+              console.warn('DOM color conversion note:', e);
+            }
           }
         },
         jsPDF: {

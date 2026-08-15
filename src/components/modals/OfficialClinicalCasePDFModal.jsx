@@ -100,6 +100,8 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
     setDownloading(true);
     try {
+      const html2pdfFunc = typeof html2pdf === 'function' ? html2pdf : (html2pdf?.default || window?.html2pdf);
+
       const isLandscape = branding?.orientation?.toLowerCase() === 'landscape';
       const isLetter = branding?.paper_size?.toLowerCase() === 'letter';
 
@@ -110,7 +112,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
         html2canvas: {
           scale: 2,
           useCORS: true,
-          allowTaint: false,
+          allowTaint: true,
           logging: false,
           backgroundColor: '#ffffff',
           windowWidth: isLandscape ? 1123 : 794,
@@ -129,24 +131,13 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
           orientation: isLandscape ? 'landscape' : 'portrait',
           compress: true
         },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr', '.branded-header', '.branded-body'] }
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr'] }
       };
 
-      await html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
-        const totalPages = pdf.internal.getNumberOfPages();
-        if (branding?.show_page_number !== false) {
-          const pWidth = pdf.internal.pageSize.getWidth();
-          const pHeight = pdf.internal.pageSize.getHeight();
-          for (let i = 1; i <= totalPages; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(8);
-            pdf.setTextColor(100, 116, 139);
-            pdf.text(`Page ${i} of ${totalPages}`, pWidth - 25, pHeight - 6);
-          }
-        }
-      }).save();
+      await html2pdfFunc().set(opt).from(element).save();
     } catch (err) {
       console.error('Failed to generate Official PDF:', err);
+      alert('Could not download PDF. Error: ' + (err?.message || err));
     } finally {
       setDownloading(false);
     }

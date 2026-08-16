@@ -112,6 +112,12 @@ const AdminFormatPDFPreview = ({ college, settings }) => {
 
 const SamplePptSlidePreview = ({ college, pptSettings }) => {
   const [slideNum, setSlideNum] = useState(1);
+  const showCollegeName = pptSettings?.show_college_name !== false;
+  const showAutonomous = pptSettings?.show_autonomous !== false;
+  const showHospitalName = pptSettings?.show_hospital_name !== false;
+  const showCollegeLogo = (pptSettings?.show_logo !== false && pptSettings?.show_college_logo !== false);
+  const showHospitalLogo = pptSettings?.show_hospital_logo !== false;
+
   const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'College Name';
   const hospitalName = college?.hospital_name || college?.hospitalName || college?.primary_hospital_name || 'Primary Hospital Name';
   const fontFamily = pptSettings?.font_family || 'Times New Roman';
@@ -155,22 +161,28 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
           <div className="space-y-5">
             {/* Header Box with Dual Logos (College Left, Hospital Right) */}
             <div className="p-4 bg-slate-100 rounded-2xl border-2 border-slate-900 flex items-center justify-between gap-4">
-              {pptSettings?.show_logo !== false && (college?.college_logo_url || college?.logo_url) ? (
+              {showCollegeLogo && (college?.college_logo_url || college?.logo_url) ? (
                 <img src={college.college_logo_url || college.logo_url} alt="College Logo" className="w-14 h-14 object-contain rounded" />
-              ) : null}
+              ) : <div className="w-14 h-14" />}
 
               <div className="flex-1 text-center space-y-0.5">
-                <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
-                  {collegeName}
-                </h2>
-                <p className="text-slate-600 italic font-semibold" style={{ fontSize: subHeadingSize }}>
-                  (Autonomous) • {hospitalName}
-                </p>
+                {showCollegeName && (
+                  <h2 className="font-extrabold uppercase text-slate-900" style={{ fontSize: titleSize }}>
+                    {collegeName}
+                  </h2>
+                )}
+                {(showAutonomous || showHospitalName) && (
+                  <p className="text-slate-600 italic font-semibold" style={{ fontSize: subHeadingSize }}>
+                    {showAutonomous ? '(Autonomous)' : ''}
+                    {showAutonomous && showHospitalName ? ' • ' : ''}
+                    {showHospitalName ? hospitalName : ''}
+                  </p>
+                )}
               </div>
 
-              {pptSettings?.show_hospital_logo !== false && college?.hospital_logo_url ? (
-                <img src={college.hospital_logo_url} alt="Hospital Logo" className="w-14 h-14 object-contain rounded" />
-              ) : null}
+              {showHospitalLogo && (college?.hospital_logo_url || college?.hospitalLogoUrl) ? (
+                <img src={college.hospital_logo_url || college.hospitalLogoUrl} alt="Hospital Logo" className="w-14 h-14 object-contain rounded" />
+              ) : <div className="w-14 h-14" />}
             </div>
 
             {/* Case ID Banner */}
@@ -857,6 +869,20 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
       {/* PPT FORMAT CONFIGURATION PANELS */}
       <div className="space-y-6 max-w-5xl mx-auto pt-6 border-t border-slate-200 dark:border-slate-800">
         
+        {/* INLINE PPT SLIDE LIVE PREVIEW */}
+        <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+              <MonitorPlay className="w-4 h-4 text-amber-400" />
+              Live PPT Slide Format Preview
+            </h3>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-800">
+              Live Real-Time Updates
+            </span>
+          </div>
+          <SamplePptSlidePreview college={college} pptSettings={pptSettings} />
+        </div>
+
         {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY) */}
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">

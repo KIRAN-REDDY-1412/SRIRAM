@@ -53,18 +53,18 @@ export const CollegeProvider = ({ children }) => {
           initials: (c.college_name || c.name) ? (c.college_name || c.name).split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
           studentsCount: sub ? sub.maximum_students : 600,
           portalUrl: `https://${(c.college_code || c.code || 'clg').toLowerCase()}.pharmdverse.com`,
-          status: c.status || 'Active',
+          status: c.status || (sub ? sub.status : 'Active'),
           subscriptionPlan: sub ? sub.plan_name : 'Professional',
           subscriptionStartDate: sub ? sub.subscription_start_date : new Date().toISOString().split('T')[0],
           subscriptionExpiryDate: sub ? sub.subscription_expiry_date : '2027-08-04',
           maxStudentsAllowed: sub ? sub.maximum_students : 600,
-          subscriptionStatus: sub ? sub.status : 'Active'
+          subscriptionStatus: sub ? sub.status : (c.status || 'Active')
         };
       });
 
-      const activeList = mappedColleges.filter(c => c.status === 'Active');
-      const inactiveList = mappedColleges.filter(c => c.status === 'Inactive');
-      const expiredList = mappedColleges.filter(c => c.status === 'Expired');
+      const activeList = mappedColleges.filter(c => String(c.status).toLowerCase() === 'active');
+      const expiredList = mappedColleges.filter(c => String(c.status).toLowerCase() === 'expired');
+      const inactiveList = mappedColleges.filter(c => String(c.status).toLowerCase() !== 'active' && String(c.status).toLowerCase() !== 'expired');
 
       setActiveColleges(activeList);
       setInactiveColleges(inactiveList);

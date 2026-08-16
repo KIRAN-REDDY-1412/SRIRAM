@@ -78,11 +78,14 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   );
 
   const filteredInactive = inactiveColleges.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.name || c.collegeName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.city || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.state || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredExpired = expiredSubscriptions.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.name || c.collegeName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.city || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Helper for current tab items

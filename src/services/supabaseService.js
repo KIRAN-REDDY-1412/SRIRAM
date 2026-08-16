@@ -1793,6 +1793,9 @@ export const updateCollegeStatusInSupabase = async (collegeId, status) => {
       .eq('id', collegeId)
       .select();
 
+    // Also update subscriptions table status so subscription record matches college status
+    await supabase.from('subscriptions').update({ status, updated_at: new Date().toISOString() }).eq('college_id', collegeId);
+
     if (error) return { success: false, error: error.message };
     return { success: true, college: data ? data[0] : null };
   } catch (err) {

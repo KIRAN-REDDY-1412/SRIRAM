@@ -33,9 +33,9 @@ export const PharmacistInterventionPDFPreviewModal = ({ isOpen, onClose, clinica
   };
 
   const rxDetails = interventionData?.prescription_details || [];
-  const rxProblems = interventionData?.prescription_problems || [];
-  const actionsTaken = interventionData?.action_taken || [];
-  const recommendations = interventionData?.recommendations || [];
+  const rxProblems = Array.isArray(interventionData?.prescription_problems) ? interventionData.prescription_problems : (interventionData?.prescription_problems ? [interventionData.prescription_problems] : []);
+  const actionsTaken = Array.isArray(interventionData?.action_taken) ? interventionData.action_taken : (interventionData?.action_taken ? [interventionData.action_taken] : []);
+  const recommendations = Array.isArray(interventionData?.recommendations) ? interventionData.recommendations : (interventionData?.recommendations ? [interventionData.recommendations] : []);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-6 animate-fadeIn">

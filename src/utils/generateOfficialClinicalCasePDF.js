@@ -75,27 +75,27 @@ export const generateOfficialClinicalCasePDF = async ({
   const drawPageHeader = () => {
     doc.setDrawColor(15, 23, 42); // slate-900
     doc.setLineWidth(0.4);
-    doc.rect(marginX, 12, contentWidth, 22);
+    doc.rect(marginX, 10, contentWidth, 18);
 
     if (showCollegeLogo && collegeLogo && typeof collegeLogo === 'string' && collegeLogo.startsWith('data:image')) {
       try {
         const fmt = collegeLogo.includes('image/png') ? 'PNG' : 'JPEG';
-        doc.addImage(collegeLogo, fmt, marginX + 2, 13.5, 17, 17);
+        doc.addImage(collegeLogo, fmt, marginX + 2, 11.5, 15, 15);
       } catch (e) {}
     }
 
     if (showHospitalLogo && hospitalLogo && typeof hospitalLogo === 'string' && hospitalLogo.startsWith('data:image')) {
       try {
         const fmt = hospitalLogo.includes('image/png') ? 'PNG' : 'JPEG';
-        doc.addImage(hospitalLogo, fmt, pageWidth - marginX - 19, 13.5, 17, 17);
+        doc.addImage(hospitalLogo, fmt, pageWidth - marginX - 17, 11.5, 15, 15);
       } catch (e) {}
     }
 
     if (showCollegeName) {
       doc.setFont(fontFamily, 'bold');
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
-      doc.text(collegeName.toUpperCase(), pageWidth / 2, 19, { align: 'center' });
+      doc.text(collegeName.toUpperCase(), pageWidth / 2, 17, { align: 'center' });
     }
 
     const subTextParts = [];
@@ -104,17 +104,17 @@ export const generateOfficialClinicalCasePDF = async ({
 
     if (subTextParts.length > 0) {
       doc.setFont(fontFamily, 'italic');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
-      doc.text(subTextParts.join(' • '), pageWidth / 2, 24, { align: 'center' });
+      doc.text(subTextParts.join(' • '), pageWidth / 2, 23, { align: 'center' });
     }
 
     doc.setFillColor(15, 23, 42);
-    doc.rect(marginX, 28, contentWidth, 5, 'F');
+    doc.rect(marginX, 28, contentWidth, 5.5, 'F');
     doc.setFont('courier', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(`CASE ID : ${norm.caseId}   •   OFFICIAL APPROVED CLINICAL CASE RECORD`, pageWidth / 2, 31.5, { align: 'center' });
+    doc.text(`CASE ID : ${norm.caseId}   •   OFFICIAL APPROVED CLINICAL CASE RECORD`, pageWidth / 2, 31.8, { align: 'center' });
   };
 
   const drawWatermark = () => {

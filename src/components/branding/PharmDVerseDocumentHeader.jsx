@@ -51,12 +51,12 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
     <div className="space-y-2 mb-6 text-slate-900 font-serif">
       
       {/* HEADER ROW 1 */}
-      <div className="border-2 border-slate-900 p-3 sm:p-4 text-center flex items-center justify-between min-h-[90px] relative gap-2">
+      <div className="border-2 border-slate-900 p-2.5 sm:p-3 text-center flex items-center justify-between min-h-[80px] relative gap-2">
         
         {/* LEFT: COLLEGE LOGO */}
-        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-start shrink-0">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0">
           {showCollegeLogo && collegeLogoUrl ? (
-            <img src={collegeLogoUrl} alt={collegeName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
+            <img src={collegeLogoUrl} alt={collegeName} className="max-w-12 max-h-12 sm:max-w-14 sm:max-h-14 object-contain" />
           ) : null}
         </div>
 
@@ -82,9 +82,9 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
         </div>
 
         {/* RIGHT: HOSPITAL LOGO */}
-        <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-end shrink-0">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0">
           {showHospitalLogo && hospitalLogoUrl ? (
-            <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-14 max-h-14 sm:max-w-16 sm:max-h-16 object-contain border border-slate-300 rounded-sm" />
+            <img src={hospitalLogoUrl} alt={hospitalName} className="max-w-12 max-h-12 sm:max-w-14 sm:max-h-14 object-contain" />
           ) : null}
         </div>
 

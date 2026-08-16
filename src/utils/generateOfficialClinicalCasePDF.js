@@ -270,15 +270,17 @@ export const generateOfficialClinicalCasePDF = async ({
   }
 
   // VITAL SIGNS MONITORING LOG TABLE
-  if (norm.vitals.length > 0) {
+  const vitalsList = norm.vitals.length > 0 ? norm.vitals : (profile.vital_signs || profile.vitals ? [{ date: norm.dates.doa, bp: profile.bp || '120/80', temperature: profile.temperature || profile.temp || '98.6', pulse: profile.pulse || profile.pr || '72', respiratory_rate: profile.respiratory_rate || profile.rr || '18', spo2: profile.spo2 || '98' }] : []);
+
+  if (vitalsList.length > 0) {
     ensureSpace(20);
-    doc.setFont('times', 'bold'); doc.setFontSize(10); doc.setTextColor(2, 132, 199);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(2, 132, 199);
     doc.text('VITAL SIGNS MONITORING LOG', marginX, y);
     y += 4;
 
     doc.setFillColor(241, 245, 249);
     doc.rect(marginX, y, contentWidth, 6, 'F');
-    doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text('Date', marginX + 4, y + 4);
     doc.text('Temp (°F)', marginX + 30, y + 4);
     doc.text('BP (mmHg)', marginX + 60, y + 4);
@@ -287,12 +289,12 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text('SpO2 (%)', marginX + 160, y + 4);
     y += 6;
 
-    doc.setFont('times', 'normal');
-    norm.vitals.forEach((v) => {
+    doc.setFont(fontFamily, 'normal');
+    vitalsList.forEach((v) => {
       if (ensureSpace(6)) {
         doc.setFillColor(241, 245, 249);
         doc.rect(marginX, y, contentWidth, 6, 'F');
-        doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
         doc.text('Date', marginX + 4, y + 4);
         doc.text('Temp (°F)', marginX + 30, y + 4);
         doc.text('BP (mmHg)', marginX + 60, y + 4);
@@ -300,14 +302,14 @@ export const generateOfficialClinicalCasePDF = async ({
         doc.text('Resp Rate', marginX + 130, y + 4);
         doc.text('SpO2 (%)', marginX + 160, y + 4);
         y += 6;
-        doc.setFont('times', 'normal');
+        doc.setFont(fontFamily, 'normal');
       }
-      doc.text(v.date || '—', marginX + 4, y + 4);
-      doc.text(v.temperature || v.temp ? `${v.temperature || v.temp}°F` : '—', marginX + 30, y + 4);
-      doc.text(v.bp || '—', marginX + 60, y + 4);
-      doc.text(v.pulse || v.pr ? `${v.pulse || v.pr}` : '—', marginX + 95, y + 4);
-      doc.text(v.respiratory_rate || v.rr ? `${v.respiratory_rate || v.rr}` : '—', marginX + 130, y + 4);
-      doc.text(v.spo2 ? `${v.spo2}%` : '—', marginX + 160, y + 4);
+      doc.text(String(v.date || '—'), marginX + 4, y + 4);
+      doc.text(String(v.temperature || v.temp ? `${v.temperature || v.temp}°F` : '—'), marginX + 30, y + 4);
+      doc.text(String(v.bp || '—'), marginX + 60, y + 4);
+      doc.text(String(v.pulse || v.pr ? `${v.pulse || v.pr}` : '—'), marginX + 95, y + 4);
+      doc.text(String(v.respiratory_rate || v.rr ? `${v.respiratory_rate || v.rr}` : '—'), marginX + 130, y + 4);
+      doc.text(String(v.spo2 ? `${v.spo2}%` : '—'), marginX + 160, y + 4);
       y += 5;
     });
     y += 6;
@@ -316,36 +318,36 @@ export const generateOfficialClinicalCasePDF = async ({
   // LABORATORY & DIAGNOSTIC INVESTIGATIONS TABLE
   if (norm.labs.length > 0) {
     ensureSpace(20);
-    doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
     doc.text(`${sectionCounter++}. LABORATORY & DIAGNOSTIC INVESTIGATIONS`, marginX, y);
     y += 6;
 
     doc.setFillColor(241, 245, 249);
     doc.rect(marginX, y, contentWidth, 6, 'F');
-    doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text('Category', marginX + 4, y + 4);
     doc.text('Parameter Name', marginX + 45, y + 4);
     doc.text('Observed Value', marginX + 105, y + 4);
     doc.text('Reference Range', marginX + 145, y + 4);
     y += 6;
 
-    doc.setFont('times', 'normal');
+    doc.setFont(fontFamily, 'normal');
     norm.labs.forEach((lab) => {
       if (ensureSpace(6)) {
         doc.setFillColor(241, 245, 249);
         doc.rect(marginX, y, contentWidth, 6, 'F');
-        doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
         doc.text('Category', marginX + 4, y + 4);
         doc.text('Parameter Name', marginX + 45, y + 4);
         doc.text('Observed Value', marginX + 105, y + 4);
         doc.text('Reference Range', marginX + 145, y + 4);
         y += 6;
-        doc.setFont('times', 'normal');
+        doc.setFont(fontFamily, 'normal');
       }
-      doc.text(lab.category || lab.lab_category || 'General', marginX + 4, y + 4);
-      doc.text(lab.parameter_name || lab.test_name || '—', marginX + 45, y + 4);
-      doc.text(lab.observed_value || lab.test_value || lab.value || '—', marginX + 105, y + 4);
-      doc.text(lab.reference_range || lab.normal_range || '—', marginX + 145, y + 4);
+      doc.text(String(lab.category || lab.lab_category || 'General'), marginX + 4, y + 4);
+      doc.text(String(lab.parameter_name || lab.test_name || '—'), marginX + 45, y + 4);
+      doc.text(String(lab.observed_value || lab.test_value || lab.value || '—'), marginX + 105, y + 4);
+      doc.text(String(lab.reference_range || lab.normal_range || '—'), marginX + 145, y + 4);
       y += 5;
     });
     y += 6;
@@ -353,46 +355,49 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // FINAL DIAGNOSIS & PRESCRIBED MEDICATIONS TABLE
   ensureSpace(25);
-  doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
+  doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
   doc.text(`${sectionCounter++}. FINAL DIAGNOSIS & PRESCRIBED MEDICATIONS`, marginX, y);
   y += 6;
 
   doc.setDrawColor(5, 150, 105);
   doc.setFillColor(236, 253, 245);
   doc.rect(marginX, y, contentWidth, 12, 'FD');
-  doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(5, 150, 105);
+  doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(5, 150, 105);
   doc.text(`FINAL DIAGNOSIS: ${norm.diagnosis.final.toUpperCase()}`, pageWidth / 2, y + 8, { align: 'center' });
 
   y += 18;
 
-  if (norm.drugs.length > 0) {
+  const drugsList = norm.drugs.length > 0 ? norm.drugs : (profile.medications || profile.drugs || profile.prescribed_medications ? [{ drug_name: profile.medications || profile.drugs || profile.prescribed_medications, dose: 'As prescribed', route: 'Oral', frequency: 'OD' }] : []);
+
+  if (drugsList.length > 0) {
     ensureSpace(12);
     doc.setFillColor(241, 245, 249);
     doc.rect(marginX, y, contentWidth, 6, 'F');
-    doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
     doc.text('S.No', marginX + 3, y + 4);
     doc.text('Brand & Generic Medication Name', marginX + 18, y + 4);
     doc.text('Dose & Route', marginX + 100, y + 4);
     doc.text('Frequency', marginX + 145, y + 4);
     y += 6;
 
-    doc.setFont('times', 'normal');
-    norm.drugs.forEach((d, idx) => {
+    doc.setFont(fontFamily, 'normal');
+    drugsList.forEach((d, idx) => {
       if (ensureSpace(6)) {
         doc.setFillColor(241, 245, 249);
         doc.rect(marginX, y, contentWidth, 6, 'F');
-        doc.setFont('times', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
         doc.text('S.No', marginX + 3, y + 4);
         doc.text('Brand & Generic Medication Name', marginX + 18, y + 4);
         doc.text('Dose & Route', marginX + 100, y + 4);
         doc.text('Frequency', marginX + 145, y + 4);
         y += 6;
-        doc.setFont('times', 'normal');
+        doc.setFont(fontFamily, 'normal');
       }
       doc.text(`${d.s_no || idx + 1}`, marginX + 3, y + 4);
-      doc.text(`${d.trade_name || d.brand_name || ''} (${d.generic_name || d.drug_name || '—'})`, marginX + 18, y + 4, { maxWidth: 78 });
+      const nameStr = d.trade_name || d.brand_name ? `${d.trade_name || d.brand_name} (${d.generic_name || d.drug_name || '—'})` : String(d.generic_name || d.drug_name || '—');
+      doc.text(nameStr, marginX + 18, y + 4, { maxWidth: 78 });
       doc.text(`${d.dose || '—'} (${d.route_of_admin || d.route || 'Oral'})`, marginX + 100, y + 4);
-      doc.text(d.frequency || 'OD', marginX + 145, y + 4);
+      doc.text(String(d.frequency || 'OD'), marginX + 145, y + 4);
       y += 6;
     });
     y += 6;

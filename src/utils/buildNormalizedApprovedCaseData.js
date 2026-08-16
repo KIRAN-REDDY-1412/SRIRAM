@@ -95,10 +95,36 @@ export const buildNormalizedApprovedCaseData = ({
     systemicExam: profile.systemic_examination || ''
   };
 
-  // Tables
-  const vitals = caseModulesData?.vitals || profile.vital_signs || profile.vitals || [];
-  const labs = caseModulesData?.labs || [];
-  const drugs = caseModulesData?.drugs || [];
+  const safeArray = (val) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+    return [];
+  };
+
+  const rawVitals = safeArray(caseModulesData?.vitals)
+    .concat(safeArray(profile.vital_signs))
+    .concat(safeArray(profile.vitals))
+    .concat(safeArray(profile.vital_signs_log));
+  const vitals = rawVitals.length > 0 ? rawVitals : [];
+
+  const rawLabs = safeArray(caseModulesData?.labs)
+    .concat(safeArray(profile.labs))
+    .concat(safeArray(profile.laboratory_tests))
+    .concat(safeArray(profile.lab_investigations));
+  const labs = rawLabs.length > 0 ? rawLabs : [];
+
+  const rawDrugs = safeArray(caseModulesData?.drugs)
+    .concat(safeArray(profile.drugs))
+    .concat(safeArray(profile.medications))
+    .concat(safeArray(profile.prescribed_medications))
+    .concat(safeArray(profile.drug_treatment_chart));
+  const drugs = rawDrugs.length > 0 ? rawDrugs : [];
 
   // Diagnoses & Notes
   const diagnosis = {

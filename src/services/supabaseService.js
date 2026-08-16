@@ -148,10 +148,9 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
       const pptSettings = data.document_templates?.ppt_settings || {};
       return {
         success: true,
-        settings: {
-          ...data,
-          ...pptSettings
-        }
+        settings: data,
+        pdfSettings: data,
+        pptSettings: pptSettings
       };
     }
 
@@ -163,7 +162,7 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
       .maybeSingle();
 
     const collegeName = college?.college_name || 'Pharmacy College';
-    const defaultSettings = {
+    const defaultPdfSettings = {
       college_id: collegeId,
       show_college_logo: true,
       show_college_name: true,
@@ -198,134 +197,157 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
       repeat_table_header: true,
       repeat_header: true,
       show_student_signature: true,
-      show_preceptor_signature: true,
-      ppt_theme: 'Clinical Emerald',
-      ppt_aspect_ratio: '16:9 (Widescreen)',
-      ppt_header_title: collegeName,
-      ppt_footer_text: `${collegeName} • Clinical Case Presentation`,
-      ppt_font_family: 'Times New Roman',
+      show_preceptor_signature: true
+    };
+
+    const defaultPptSettings = {
+      theme: 'Clinical Emerald',
+      aspect_ratio: '16:9 (Widescreen)',
+      header_title: collegeName,
+      footer_text: `${collegeName} • Clinical Case Presentation`,
+      font_family: 'Times New Roman',
       ppt_title_font_size: '22px',
       ppt_subheading_font_size: '20px',
       ppt_body_font_size: '18px',
-      ppt_show_logo: true,
-      ppt_show_autonomous: true,
-      ppt_show_student_preceptor: true,
-      document_templates: {}
+      show_college_logo: true,
+      show_hospital_logo: true,
+      show_college_name: true,
+      show_hospital_name: true,
+      show_autonomous: true,
+      show_student_preceptor: true,
+      show_watermark: true
     };
 
-    return { success: true, settings: defaultSettings, isDefault: true };
+    return {
+      success: true,
+      settings: defaultPdfSettings,
+      pdfSettings: defaultPdfSettings,
+      pptSettings: defaultPptSettings,
+      isDefault: true
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const savePdfBrandingSettingsInSupabase = async (collegeId, pdfPayload) => {
+  try {
+    const { data: existing } = await supabase
+      .from('document_branding_settings')
+      .select('id, document_templates')
+      .eq('college_id', collegeId)
+      .maybeSingle();
+
+    const payload = {
+      college_id: collegeId,
+      show_college_logo: pdfPayload.show_college_logo ?? true,
+      show_college_name: pdfPayload.show_college_name ?? true,
+      show_autonomous: pdfPayload.show_autonomous ?? true,
+      show_hospital_logo: pdfPayload.show_hospital_logo ?? true,
+      show_hospital_name: pdfPayload.show_hospital_name ?? true,
+      watermark_enabled: pdfPayload.watermark_enabled ?? true,
+      watermark_text_line1: pdfPayload.watermark_text_line1 || 'PHARMDVERSE',
+      watermark_text_line2: pdfPayload.watermark_text_line2 || 'Clinical Documentation System',
+      watermark_opacity: parseInt(pdfPayload.watermark_opacity, 10) || 10,
+      watermark_position: pdfPayload.watermark_position || 'Center',
+      footer_left_text: pdfPayload.footer_left_text || 'PharmDVerse',
+      footer_center_text: pdfPayload.footer_center_text || 'Confidential Clinical Documentation',
+      show_page_number: pdfPayload.show_page_number ?? true,
+      show_generated_datetime: pdfPayload.show_generated_datetime ?? true,
+      paper_size: pdfPayload.paper_size || 'A4',
+      orientation: pdfPayload.orientation || 'Portrait',
+      margin_top: pdfPayload.margin_top || '15mm',
+      margin_bottom: pdfPayload.margin_bottom || '15mm',
+      margin_left: pdfPayload.margin_left || '15mm',
+      margin_right: pdfPayload.margin_right || '15mm',
+      font_family: pdfPayload.font_family || 'Times New Roman',
+      title_font_size: pdfPayload.title_font_size || '16pt',
+      heading_font_size: pdfPayload.heading_font_size || '14pt',
+      body_font_size: pdfPayload.body_font_size || '12pt',
+      primary_color: pdfPayload.primary_color || '#0f172a',
+      secondary_color: pdfPayload.secondary_color || '#0284c7',
+      table_header_color: pdfPayload.table_header_color || '#f1f5f9',
+      border_color: pdfPayload.border_color || '#0f172a',
+      text_color: pdfPayload.text_color || '#0f172a',
+      zebra_striping: pdfPayload.zebra_striping ?? false,
+      repeat_table_header: pdfPayload.repeat_table_header ?? true,
+      repeat_header: pdfPayload.repeat_header ?? true,
+      show_student_signature: pdfPayload.show_student_signature ?? true,
+      show_preceptor_signature: pdfPayload.show_preceptor_signature ?? true,
+      document_templates: existing?.document_templates || {}
+    };
+
+    if (existing) {
+      const { data, error } = await supabase.from('document_branding_settings').update(payload).eq('id', existing.id).select();
+      if (error) return { success: false, error: error.message };
+      return { success: true, settings: data[0] };
+    } else {
+      const { data, error } = await supabase.from('document_branding_settings').insert([payload]).select();
+      if (error) return { success: false, error: error.message };
+      return { success: true, settings: data[0] };
+    }
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const savePptBrandingSettingsInSupabase = async (collegeId, pptPayload) => {
+  try {
+    const { data: existing } = await supabase
+      .from('document_branding_settings')
+      .select('*')
+      .eq('college_id', collegeId)
+      .maybeSingle();
+
+    const existingTemplates = existing?.document_templates || {};
+    const updatedPptSettings = {
+      theme: pptPayload.theme || 'Clinical Emerald',
+      aspect_ratio: pptPayload.aspect_ratio || '16:9 (Widescreen)',
+      font_family: pptPayload.font_family || 'Times New Roman',
+      ppt_title_font_size: pptPayload.ppt_title_font_size || '22px',
+      ppt_subheading_font_size: pptPayload.ppt_subheading_font_size || '20px',
+      ppt_body_font_size: pptPayload.ppt_body_font_size || '18px',
+      header_title: pptPayload.header_title || '',
+      footer_text: pptPayload.footer_text || 'Pharm.D Clinical Case Presentation • Confidential',
+      show_college_logo: pptPayload.show_college_logo ?? pptPayload.show_logo ?? true,
+      show_hospital_logo: pptPayload.show_hospital_logo ?? true,
+      show_college_name: pptPayload.show_college_name ?? true,
+      show_hospital_name: pptPayload.show_hospital_name ?? true,
+      show_autonomous: pptPayload.show_autonomous ?? true,
+      show_student_preceptor: pptPayload.show_student_preceptor ?? true,
+      show_watermark: pptPayload.show_watermark ?? true
+    };
+
+    const docTemplates = {
+      ...existingTemplates,
+      ppt_settings: updatedPptSettings
+    };
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('document_branding_settings')
+        .update({ document_templates: docTemplates })
+        .eq('id', existing.id)
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, pptSettings: updatedPptSettings };
+    } else {
+      const { data, error } = await supabase
+        .from('document_branding_settings')
+        .insert([{ college_id: collegeId, document_templates: docTemplates }])
+        .select();
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, pptSettings: updatedPptSettings };
+    }
   } catch (err) {
     return { success: false, error: err.message };
   }
 };
 
 export const saveOrUpdateDocumentBrandingSettingsInSupabase = async (collegeId, settingsPayload) => {
-  try {
-    const { data: existing } = await supabase
-      .from('document_branding_settings')
-      .select('id')
-      .eq('college_id', collegeId)
-      .maybeSingle();
-
-    const pptSettings = {
-      ppt_theme: settingsPayload.ppt_theme || settingsPayload.theme || 'Clinical Emerald',
-      ppt_aspect_ratio: settingsPayload.ppt_aspect_ratio || settingsPayload.aspect_ratio || '16:9 (Widescreen)',
-      ppt_header_title: settingsPayload.ppt_header_title || settingsPayload.header_title || '',
-      ppt_footer_text: settingsPayload.ppt_footer_text || settingsPayload.footer_text || 'Pharm.D Clinical Case Presentation • Confidential',
-      ppt_font_family: settingsPayload.ppt_font_family || settingsPayload.font_family || 'Times New Roman',
-      ppt_title_font_size: settingsPayload.ppt_title_font_size || settingsPayload.title_font_size || '22px',
-      ppt_subheading_font_size: settingsPayload.ppt_subheading_font_size || settingsPayload.subheading_font_size || '20px',
-      ppt_body_font_size: settingsPayload.ppt_body_font_size || settingsPayload.body_font_size || '18px',
-      ppt_show_logo: settingsPayload.ppt_show_logo ?? settingsPayload.show_logo ?? true,
-      ppt_show_autonomous: settingsPayload.ppt_show_autonomous ?? settingsPayload.show_autonomous ?? true,
-      ppt_show_student_preceptor: settingsPayload.ppt_show_student_preceptor ?? settingsPayload.show_student_preceptor ?? true
-    };
-
-    const docTemplates = {
-      ...(settingsPayload.document_templates || {}),
-      ppt_settings: pptSettings
-    };
-
-    const payload = {
-      college_id: collegeId,
-      show_college_logo: settingsPayload.show_college_logo ?? true,
-      show_college_name: settingsPayload.show_college_name ?? true,
-      show_autonomous: settingsPayload.show_autonomous ?? true,
-      show_hospital_logo: settingsPayload.show_hospital_logo ?? true,
-      show_hospital_name: settingsPayload.show_hospital_name ?? true,
-      watermark_enabled: settingsPayload.watermark_enabled ?? true,
-      watermark_text_line1: settingsPayload.watermark_text_line1 || 'PHARMDVERSE',
-      watermark_text_line2: settingsPayload.watermark_text_line2 || 'Clinical Documentation System',
-      watermark_opacity: parseInt(settingsPayload.watermark_opacity, 10) || 10,
-      watermark_position: settingsPayload.watermark_position || 'Center',
-      footer_left_text: settingsPayload.footer_left_text || 'PharmDVerse',
-      footer_center_text: settingsPayload.footer_center_text || 'Confidential Clinical Documentation',
-      show_page_number: settingsPayload.show_page_number ?? true,
-      show_generated_datetime: settingsPayload.show_generated_datetime ?? true,
-      paper_size: settingsPayload.paper_size || 'A4',
-      orientation: settingsPayload.orientation || 'Portrait',
-      margin_top: settingsPayload.margin_top || '15mm',
-      margin_bottom: settingsPayload.margin_bottom || '15mm',
-      margin_left: settingsPayload.margin_left || '15mm',
-      margin_right: settingsPayload.margin_right || '15mm',
-      font_family: settingsPayload.font_family || 'Times New Roman',
-      title_font_size: settingsPayload.title_font_size || '16pt',
-      heading_font_size: settingsPayload.heading_font_size || '14pt',
-      body_font_size: settingsPayload.body_font_size || '12pt',
-      primary_color: settingsPayload.primary_color || '#0f172a',
-      secondary_color: settingsPayload.secondary_color || '#0284c7',
-      table_header_color: settingsPayload.table_header_color || '#f1f5f9',
-      border_color: settingsPayload.border_color || '#0f172a',
-      text_color: settingsPayload.text_color || '#0f172a',
-      zebra_striping: settingsPayload.zebra_striping ?? false,
-      repeat_table_header: settingsPayload.repeat_table_header ?? true,
-      repeat_header: settingsPayload.repeat_header ?? true,
-      show_student_signature: settingsPayload.show_student_signature ?? true,
-      show_preceptor_signature: settingsPayload.show_preceptor_signature ?? true,
-      document_templates: docTemplates
-    };
-
-    let activePayload = { ...payload };
-    let savedData = null;
-
-    const performSave = async (currentPayload) => {
-      if (existing && existing.id) {
-        return await supabase
-          .from('document_branding_settings')
-          .update(currentPayload)
-          .eq('id', existing.id)
-          .select();
-      } else {
-        return await supabase
-          .from('document_branding_settings')
-          .insert([currentPayload])
-          .select();
-      }
-    };
-
-    let result = await performSave(activePayload);
-
-    // Dynamic Schema Fallback: Iteratively strip any columns missing in Supabase schema cache and retry until save succeeds
-    let attempts = 0;
-    while (result.error && result.error.message && result.error.message.includes('Could not find the') && attempts < 10) {
-      attempts++;
-      const match = result.error.message.match(/Could not find the '([^']+)' column/);
-      if (match && match[1]) {
-        const missingCol = match[1];
-        delete activePayload[missingCol];
-        result = await performSave(activePayload);
-      } else {
-        break;
-      }
-    }
-
-    if (result.error) return { success: false, error: result.error.message };
-
-    savedData = result.data?.[0] || activePayload;
-    return { success: true, settings: { ...payload, ...savedData } };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  return await savePdfBrandingSettingsInSupabase(collegeId, settingsPayload);
 };
 
 export const uploadBrandingAssetToSupabaseStorage = async (file, collegeId, assetType = 'branding') => {

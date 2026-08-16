@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Save, RefreshCw, Eye, CheckCircle2, AlertTriangle, Loader2, Sparkles, Sliders, Type, Layout, ShieldCheck, Printer, Building, MonitorPlay, Info, Presentation } from 'lucide-react';
-import { fetchDocumentBrandingSettingsFromSupabase, saveOrUpdateDocumentBrandingSettingsInSupabase, fetchCollegeByIdFromSupabase } from '../../services/supabaseService';
+import { 
+  fetchDocumentBrandingSettingsFromSupabase, 
+  savePdfBrandingSettingsInSupabase, 
+  savePptBrandingSettingsInSupabase, 
+  fetchCollegeByIdFromSupabase 
+} from '../../services/supabaseService';
 import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { ModalWrapper } from '../modals/ModalWrapper';
@@ -143,11 +148,11 @@ const SamplePptSlidePreview = ({ college, pptSettings }) => {
           >
             ← Prev Slide
           </button>
-          <span className="font-mono text-amber-300 px-1 font-bold">Slide {slideNum} of 5</span>
+          <span className="font-mono text-amber-300 px-1 font-bold">Slide {slideNum} of 2 ({slideNum === 1 ? 'Title Slide' : 'Content Slide'})</span>
           <button
             type="button"
-            onClick={() => setSlideNum(prev => Math.min(5, prev + 1))}
-            disabled={slideNum === 5}
+            onClick={() => setSlideNum(prev => Math.min(2, prev + 1))}
+            disabled={slideNum === 2}
             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-xs font-bold transition-colors"
           >
             Next Slide →
@@ -316,32 +321,18 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
       setCollege(colRes.college);
     }
 
-    if (res.success && res.settings) {
+    if (res.success) {
+      const pdf = res.pdfSettings || res.settings || {};
+      const ppt = res.pptSettings || {};
+
       setSettings({
         ...DEFAULT_SETTINGS,
-        ...res.settings,
-        show_college_logo: res.settings.show_college_logo ?? true,
-        show_college_name: res.settings.show_college_name ?? true,
-        show_autonomous: res.settings.show_autonomous ?? true,
-        show_hospital_logo: res.settings.show_hospital_logo ?? true,
-        show_hospital_name: res.settings.show_hospital_name ?? true,
-        watermark_enabled: res.settings.watermark_enabled ?? true
+        ...pdf
       });
 
       setPptSettings(prev => ({
         ...prev,
-        theme: res.settings.ppt_theme || res.settings.theme || prev.theme,
-        aspect_ratio: res.settings.ppt_aspect_ratio || res.settings.aspect_ratio || prev.aspect_ratio,
-        font_family: res.settings.ppt_font_family || res.settings.font_family || prev.font_family,
-        ppt_title_font_size: res.settings.ppt_title_font_size || prev.ppt_title_font_size,
-        ppt_subheading_font_size: res.settings.ppt_subheading_font_size || prev.ppt_subheading_font_size,
-        ppt_body_font_size: res.settings.ppt_body_font_size || prev.ppt_body_font_size,
-        header_title: res.settings.ppt_header_title || res.settings.header_title || prev.header_title,
-        footer_text: res.settings.ppt_footer_text || res.settings.footer_text || prev.footer_text,
-        show_logo: res.settings.show_logo ?? res.settings.ppt_show_college_logo ?? prev.show_logo ?? true,
-        show_hospital_logo: res.settings.show_hospital_logo ?? res.settings.ppt_show_hospital_logo ?? prev.show_hospital_logo ?? true,
-        show_watermark: res.settings.show_watermark ?? res.settings.ppt_show_watermark ?? prev.show_watermark ?? true,
-        show_student_preceptor: res.settings.show_student_preceptor ?? res.settings.ppt_show_student_preceptor ?? prev.show_student_preceptor ?? true
+        ...ppt
       }));
     } else {
       setSettings(DEFAULT_SETTINGS);
@@ -377,10 +368,8 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
   const handleSave = async () => {
     if (!college?.id) return;
     setSaving(true);
-    setErrorMsg('');
-    setSuccessMsg('');
 
-    const res = await saveOrUpdateDocumentBrandingSettingsInSupabase(college.id, settings);
+    const res = await savePdfBrandingSettingsInSupabase(college.id, settings);
     setSaving(false);
 
     if (res.success) {
@@ -401,9 +390,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
     if (!college?.id) return;
     setPptSaving(true);
     
-    // Save to Supabase (and local storage backup)
-    const combinedPayload = { ...settings, ...pptSettings };
-    const res = await saveOrUpdateDocumentBrandingSettingsInSupabase(college.id, combinedPayload);
+    const res = await savePptBrandingSettingsInSupabase(college.id, pptSettings);
     try {
       localStorage.setItem(`pharmdverse_ppt_settings_${college.id}`, JSON.stringify(pptSettings));
     } catch (e) {}

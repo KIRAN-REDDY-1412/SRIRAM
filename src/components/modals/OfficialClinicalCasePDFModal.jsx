@@ -38,6 +38,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const [exportingPPT, setExportingPPT] = useState(false);
   const [caseModulesData, setCaseModulesData] = useState({});
   const [branding, setBranding] = useState(null);
+  const [pptSettingsState, setPptSettingsState] = useState(null);
   const [collegeData, setCollegeData] = useState(college);
   const [assignedPreceptorObj, setAssignedPreceptorObj] = useState(preceptor);
 
@@ -64,8 +65,9 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
       if (res.success) {
         setCaseModulesData(res.records || {});
       }
-      if (brandRes.success && brandRes.settings) {
-        setBranding(brandRes.settings);
+      if (brandRes.success) {
+        setBranding(brandRes.pdfSettings || brandRes.settings);
+        setPptSettingsState(brandRes.pptSettings || {});
       }
       if (preceptorRes.success && preceptorRes.preceptor) {
         setAssignedPreceptorObj(preceptorRes.preceptor);
@@ -118,13 +120,14 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const handleDownloadPPT = async () => {
     setExportingPPT(true);
     try {
+      const finalCollegeObj = collegeData || college;
       await generateClinicalCasePPTX({
         clinicalCase,
         student,
         preceptor,
         college: finalCollegeObj,
         caseModulesData,
-        pptSettings: branding
+        pptSettings: pptSettingsState || branding
       });
     } catch (err) {
       console.error('Failed to generate PPT presentation:', err);

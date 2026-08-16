@@ -2506,11 +2506,11 @@ export const fetchAllCollegeClinicalCasesFromSupabase = async (collegeId) => {
 
     // Fetch cases and college students in parallel to guarantee student full_name & roll_number
     const [casesRes, studentsRes] = await Promise.all([
-      supabase.from('clinical_cases').select('*').eq('college_id', collegeId).order('created_at', { ascending: false }),
+      supabase.from('clinical_cases').select('*').eq('college_id', collegeId).neq('status', 'Draft').order('created_at', { ascending: false }),
       supabase.from('students').select('*').eq('college_id', collegeId)
     ]);
 
-    const rawCases = casesRes.data || [];
+    const rawCases = (casesRes.data || []).filter(c => c.status !== 'Draft' && c.overall_case_status !== 'Draft');
     const studentList = studentsRes.data || [];
     const studentMap = new Map(studentList.map(s => [s.id, s]));
 

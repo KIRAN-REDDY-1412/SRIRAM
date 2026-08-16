@@ -115,7 +115,8 @@ const evaluateTestValueStatus = (valStr, refRangeStr) => {
   return 'none';
 };
 
-export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly = false, isReturned = false, snapshotAtReturn = null }) => {
+export const PatientProfileFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false, isReturned = false, snapshotAtReturn = null }) => {
+  const isReadOnly = propReadOnly || clinicalCase?.status === 'Approved' || clinicalCase?.overall_case_status === 'Approved';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');

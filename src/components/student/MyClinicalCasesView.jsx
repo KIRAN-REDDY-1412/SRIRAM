@@ -247,20 +247,16 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
     );
   };
 
-  const renderModuleDot = (statusStr) => {
-    // Grey dot: no record or not started
+  const renderModuleDot = (statusStr, isApprovedCase = false) => {
+    if (isApprovedCase || statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved' || statusStr === 'Reviewed') {
+      return <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Submitted / Approved" />;
+    }
     if (!statusStr || statusStr === 'Not Started' || statusStr === 'Not Added') {
       return <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 shrink-0" title="Not Started" />;
     }
-    // Green dot: completed / submitted / approved / reviewed
-    if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved' || statusStr === 'Reviewed') {
-      return <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" title="Completed" />;
-    }
-    // Rose dot: returned
     if (statusStr === 'Returned') {
       return <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" title="Returned" />;
     }
-    // Amber dot: Draft or any in-progress status
     return <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" title={statusStr || 'Draft'} />;
   };
 
@@ -511,7 +507,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
                                 }`}
                                 title={`Profile – ${moduleStatuses[c.id]?.profileStatus || 'Not Started'}`}
                               >
-                                {renderModuleDot(moduleStatuses[c.id]?.profileStatus)}
+                                {renderModuleDot(moduleStatuses[c.id]?.profileStatus, c.status === 'Approved' || c.overall_case_status === 'Approved')}
                                 <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 <span>Profile</span>
                                 {isFormReturned(c, 'patient_profile', 'Patient Profile') && (
@@ -529,7 +525,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
                                 }`}
                                 title={`Counselling – ${moduleStatuses[c.id]?.counsellingStatus || 'Not Started'}`}
                               >
-                                {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus)}
+                                {renderModuleDot(moduleStatuses[c.id]?.counsellingStatus, c.status === 'Approved' || c.overall_case_status === 'Approved')}
                                 <HeartHandshake className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                                 <span>Counselling</span>
                                 {isFormReturned(c, 'patient_counselling', 'Patient Counselling') && (
@@ -547,7 +543,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
                                 }`}
                                 title={`Intervention – ${moduleStatuses[c.id]?.interventionStatus || 'Not Added'}`}
                               >
-                                {renderModuleDot(moduleStatuses[c.id]?.interventionStatus)}
+                                {renderModuleDot(moduleStatuses[c.id]?.interventionStatus, c.status === 'Approved' || c.overall_case_status === 'Approved')}
                                 <ShieldAlert className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                                 <span>Intervention</span>
                                 {isFormReturned(c, 'pharmacist_intervention', 'Pharmacist Intervention') && (
@@ -565,7 +561,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
                                 }`}
                                 title={`Drug Information Request – ${moduleStatuses[c.id]?.dirStatus || 'Not Started'}`}
                               >
-                                {renderModuleDot(moduleStatuses[c.id]?.dirStatus)}
+                                {renderModuleDot(moduleStatuses[c.id]?.dirStatus, c.status === 'Approved' || c.overall_case_status === 'Approved')}
                                 <FileSearch className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                                 <span>Drug Info</span>
                                 {isFormReturned(c, 'drug_information_request', 'Drug Information Request') && (
@@ -583,7 +579,7 @@ export const MyClinicalCasesView = ({ student, initialFilter = 'All', targetCase
                                 }`}
                                 title={`ADR Documentation – ${moduleStatuses[c.id]?.adrStatus || 'Not Started'}`}
                               >
-                                {renderModuleDot(moduleStatuses[c.id]?.adrStatus)}
+                                {renderModuleDot(moduleStatuses[c.id]?.adrStatus, c.status === 'Approved' || c.overall_case_status === 'Approved')}
                                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                 <span>ADR Log</span>
                                 {isFormReturned(c, 'adr_documentation', 'ADR Documentation') && (

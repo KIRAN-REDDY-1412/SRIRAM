@@ -39,7 +39,8 @@ const ModifiedFieldBadge = ({ isModified, oldValue }) => {
   );
 };
 
-export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, isReadOnly = false, snapshotAtReturn = null }) => {
+export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, isReadOnly: propReadOnly = false, snapshotAtReturn = null }) => {
+  const isReadOnly = propReadOnly || clinicalCase?.status === 'Approved' || clinicalCase?.overall_case_status === 'Approved';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);

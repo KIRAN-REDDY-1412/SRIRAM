@@ -151,11 +151,11 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
         </span>
       );
     }
-    if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved') {
+    if (statusStr === 'Completed' || statusStr === 'Submitted' || statusStr === 'Approved' || clinicalCase?.status === 'Approved' || clinicalCase?.overall_case_status === 'Approved') {
       return (
         <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500 text-white flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-          Completed
+          <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          Submitted / Approved
         </span>
       );
     }

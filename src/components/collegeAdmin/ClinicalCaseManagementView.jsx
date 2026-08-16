@@ -82,6 +82,7 @@ export const ClinicalCaseManagementView = ({ college, initialFilter = 'All' }) =
       c.department?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const caseSt = getEffSt(c);
+    if (caseSt === 'Draft') return false;
     const matchesStatus = statusFilter === 'All' || caseSt === statusFilter;
     const matchesDept = departmentFilter === 'All' || c.department === departmentFilter;
     const matchesHosp = hospitalFilter === 'All' || c.hospital_name === hospitalFilter;

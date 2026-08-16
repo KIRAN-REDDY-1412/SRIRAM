@@ -15,7 +15,7 @@ class PanelErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4 text-center text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-xl">
+        <div className="p-3 text-center text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-xl">
           Workflow Diagram Reference
         </div>
       );
@@ -26,7 +26,7 @@ class PanelErrorBoundary extends Component {
 
 /**
  * Role-Based Workflow Reference Panel & Modal Component.
- * Displays top-right workflow guidance for Student, Preceptor, and College Admin roles.
+ * Displays top-right workflow guidance using standalone clean role images.
  */
 export const WorkflowReferencePanel = ({ role = 'student' }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -42,8 +42,7 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
           themeBg: 'bg-emerald-50/80 dark:bg-emerald-950/40',
           badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700',
           btnBg: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-          cropPosition: '0% 48.5%',
-          containerHeight: 'h-24 sm:h-28'
+          imageSrc: '/workflows/preceptor_workflow.png'
         };
       case 'college_admin':
         return {
@@ -53,8 +52,7 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
           themeBg: 'bg-purple-50/80 dark:bg-purple-950/40',
           badgeBg: 'bg-purple-100 text-purple-800 dark:bg-purple-900/80 dark:text-purple-300 border-purple-300 dark:border-purple-700',
           btnBg: 'bg-purple-600 hover:bg-purple-700 text-white',
-          cropPosition: '0% 98.5%',
-          containerHeight: 'h-24 sm:h-28'
+          imageSrc: '/workflows/college_admin_workflow.png'
         };
       case 'student':
       default:
@@ -65,14 +63,12 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
           themeBg: 'bg-blue-50/80 dark:bg-blue-950/40',
           badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/80 dark:text-blue-300 border-blue-300 dark:border-blue-700',
           btnBg: 'bg-blue-600 hover:bg-blue-700 text-white',
-          cropPosition: '0% 0%',
-          containerHeight: 'h-24 sm:h-28'
+          imageSrc: '/workflows/student_workflow.png'
         };
     }
   };
 
   const config = getRoleConfig();
-  const imageSrc = '/workflows/workflow_full.png';
 
   return (
     <PanelErrorBoundary>
@@ -98,23 +94,20 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
           </button>
         </div>
 
-        {/* CROPPED REFERENCE IMAGE CONTAINER */}
+        {/* CLEAN PREVIEW IMAGE CONTAINER */}
         <div
           onClick={() => setIsExpanded(true)}
-          className={`w-full ${config.containerHeight} rounded-xl overflow-hidden border border-slate-300/70 dark:border-slate-700 relative bg-white dark:bg-slate-900 cursor-pointer group shadow-inner`}
+          className="w-full h-24 sm:h-28 rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700/80 relative bg-white dark:bg-slate-900 cursor-pointer group shadow-inner flex items-center justify-center p-1"
         >
           <img
-            src={imageSrc}
+            src={config.imageSrc}
             alt={config.title}
             onError={() => setImgError(true)}
-            className="w-full h-[320%] max-w-none object-cover transition-transform duration-300 group-hover:scale-102"
-            style={{
-              objectPosition: config.cropPosition
-            }}
+            className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-102"
           />
           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors flex items-center justify-center">
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
-              <Eye className="w-3 h-3" /> Click to View Full Workflow
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/85 text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md backdrop-blur-xs">
+              <Eye className="w-3 h-3" /> Click to View Full Diagram
             </span>
           </div>
         </div>
@@ -123,7 +116,7 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
       {/* FULLSCREEN LIGHTBOX MODAL FOR CLEAR READING */}
       {isExpanded && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
             
             {/* MODAL HEADER */}
             <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
@@ -145,12 +138,12 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
             </div>
 
             {/* MODAL IMAGE VIEWPORT */}
-            <div className="p-4 sm:p-6 overflow-auto flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-950/80 min-h-[300px]">
+            <div className="p-4 sm:p-6 overflow-auto flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-950/80 min-h-[350px]">
               <img
-                src={imageSrc}
-                alt="Full Clinical Workflow System Guide"
+                src={config.imageSrc}
+                alt={config.title}
                 onError={() => setImgError(true)}
-                className="max-w-full h-auto rounded-xl border border-slate-300 dark:border-slate-800 shadow-lg object-contain"
+                className="max-w-full max-h-[75vh] w-auto h-auto rounded-2xl border border-slate-300/80 dark:border-slate-800 shadow-xl object-contain bg-white"
               />
             </div>
 
@@ -163,7 +156,7 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
 
               <button
                 onClick={() => setIsExpanded(false)}
-                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer"
+                className="px-5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
               >
                 Close
               </button>

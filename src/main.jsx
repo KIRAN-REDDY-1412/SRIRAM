@@ -55,8 +55,11 @@ class ErrorBoundary extends Component {
               </p>
             )}
             <button
-              onClick={() => { localStorage.clear(); window.location.reload(); }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-lg transition-all"
+              onClick={() => { 
+                sessionStorage.clear(); 
+                window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now(); 
+              }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-lg transition-all cursor-pointer"
             >
               Reset Session & Reload
             </button>

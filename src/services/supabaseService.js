@@ -145,12 +145,40 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
     if (error) return { success: false, error: error.message };
 
     if (data) {
-      const pptSettings = data.document_templates?.ppt_settings || {};
+      let pptSettings = {};
+      try {
+        if (data.footer_text && data.footer_text.startsWith('{')) {
+          pptSettings = JSON.parse(data.footer_text);
+        }
+      } catch (e) {}
+
+      const formattedSettings = {
+        ...data,
+        repeat_header: data.header_enabled ?? data.repeat_header ?? true,
+        repeat_footer: data.footer_enabled ?? data.repeat_footer ?? true
+      };
+
       return {
         success: true,
-        settings: data,
-        pdfSettings: data,
-        pptSettings: pptSettings
+        settings: formattedSettings,
+        pdfSettings: formattedSettings,
+        pptSettings: Object.keys(pptSettings).length > 0 ? pptSettings : {
+          theme: 'Clinical Emerald',
+          aspect_ratio: '16:9 (Widescreen)',
+          font_family: data.font_family || 'Times New Roman',
+          ppt_title_font_size: '22px',
+          ppt_subheading_font_size: '20px',
+          ppt_body_font_size: '18px',
+          header_title: data.college_name || '',
+          footer_text: 'Pharm.D Clinical Case Presentation • Confidential',
+          show_college_logo: data.show_college_logo ?? true,
+          show_hospital_logo: data.show_hospital_logo ?? true,
+          show_college_name: data.show_college_name ?? true,
+          show_hospital_name: data.show_hospital_name ?? true,
+          show_autonomous: data.show_autonomous ?? true,
+          show_student_preceptor: true,
+          show_watermark: data.watermark_enabled ?? true
+        }
       };
     }
 
@@ -196,6 +224,7 @@ export const fetchDocumentBrandingSettingsFromSupabase = async (collegeId) => {
       zebra_striping: false,
       repeat_table_header: true,
       repeat_header: true,
+      repeat_footer: true,
       show_student_signature: true,
       show_preceptor_signature: true
     };
@@ -271,7 +300,8 @@ export const savePdfBrandingSettingsInSupabase = async (collegeId, pdfPayload) =
       text_color: pdfPayload.text_color || '#0f172a',
       zebra_striping: pdfPayload.zebra_striping ?? false,
       repeat_table_header: pdfPayload.repeat_table_header ?? true,
-      repeat_header: pdfPayload.repeat_header ?? true,
+      header_enabled: pdfPayload.repeat_header ?? pdfPayload.header_enabled ?? true,
+      footer_enabled: pdfPayload.repeat_footer ?? pdfPayload.footer_enabled ?? true,
       show_student_signature: pdfPayload.show_student_signature ?? true,
       show_preceptor_signature: pdfPayload.show_preceptor_signature ?? true
     };
@@ -279,11 +309,11 @@ export const savePdfBrandingSettingsInSupabase = async (collegeId, pdfPayload) =
     if (existing) {
       const { data, error } = await supabase.from('document_branding_settings').update(payload).eq('id', existing.id).select();
       if (error) return { success: false, error: error.message };
-      return { success: true, settings: data[0] };
+      return { success: true, settings: { ...data[0], repeat_header: data[0].header_enabled, repeat_footer: data[0].footer_enabled } };
     } else {
       const { data, error } = await supabase.from('document_branding_settings').insert([payload]).select();
       if (error) return { success: false, error: error.message };
-      return { success: true, settings: data[0] };
+      return { success: true, settings: { ...data[0], repeat_header: data[0].header_enabled, repeat_footer: data[0].footer_enabled } };
     }
   } catch (err) {
     return { success: false, error: err.message };

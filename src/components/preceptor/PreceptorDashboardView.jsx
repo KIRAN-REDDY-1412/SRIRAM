@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Stethoscope, GraduationCap, Building2, ShieldCheck, ArrowRight, FolderKanban, Send, FileSearch, RotateCcw, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 import { fetchPreceptorAssignedStudentsFromSupabase, fetchAllPreceptorCasesFromSupabase } from '../../services/supabaseService';
+import { WorkflowReferencePanel } from '../common/WorkflowReferencePanel';
 
 export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
   const [assignedCount, setAssignedCount] = useState(0);
@@ -126,53 +127,53 @@ export const PreceptorDashboardView = ({ preceptor, onNavigate }) => {
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
-      {/* WELCOME CARD */}
+      {/* WELCOME CARD WITH TOP-RIGHT WORKFLOW PANEL */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-purple-50/70 dark:from-[#0f172a] dark:via-slate-900 dark:to-purple-950/40 text-slate-900 dark:text-white relative overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
-          {preceptor?.profile_photo_url ? (
-            <img
-              src={preceptor.profile_photo_url}
-              alt={preceptor.full_name}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-purple-400/60 shadow-md p-0.5 bg-white dark:bg-slate-800 shrink-0"
-            />
-          ) : (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-purple-400/60 shrink-0">
-              {preceptor?.full_name ? preceptor.full_name.substring(0, 2).toUpperCase() : 'PR'}
-            </div>
-          )}
-
-          <div className="space-y-2 flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                <Stethoscope className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Preceptor Portal
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{preceptor?.colleges?.college_name || 'Pharmacy College'}</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              Welcome, {preceptor?.full_name}
-            </h1>
-
-            <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Department: </span>
-                <strong className="text-slate-900 dark:text-slate-100 font-bold">{preceptor?.department}</strong>
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-6 relative z-10">
+          <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 min-w-0">
+            {preceptor?.profile_photo_url ? (
+              <img
+                src={preceptor.profile_photo_url}
+                alt={preceptor.full_name}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-purple-400/60 shadow-md p-0.5 bg-white dark:bg-slate-800 shrink-0"
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-purple-400/60 shrink-0">
+                {preceptor?.full_name ? preceptor.full_name.substring(0, 2).toUpperCase() : 'PR'}
               </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Qualification: </span>
-                <strong className="text-slate-900 dark:text-slate-100 font-bold">{preceptor?.qualification}</strong>
+            )}
+
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  <Stethoscope className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  Preceptor Portal
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{preceptor?.colleges?.college_name || 'Pharmacy College'}</span>
               </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Designation: </span>
-                <strong className="text-slate-900 dark:text-slate-100">{preceptor?.designation}</strong>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                Welcome, {preceptor?.full_name}
+              </h1>
+
+              <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Designation: </span>
+                  <strong className="text-slate-900 dark:text-slate-100 font-bold">{preceptor?.designation || 'Faculty Preceptor'}</strong>
+                </div>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Department: </span>
+                  <strong className="text-purple-700 dark:text-purple-400 font-bold">{preceptor?.department || 'Pharmacy Practice'}</strong>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* TOP RIGHT WORKFLOW PANEL */}
+          <WorkflowReferencePanel role="preceptor" />
         </div>
       </div>
 

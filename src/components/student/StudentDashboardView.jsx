@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Stethoscope, ArrowRight, ShieldCheck, FolderKanban, FileEdit, Send, FileSearch, RotateCcw, CheckCircle2, Loader2 } from 'lucide-react';
 import { fetchStudentAssignedPreceptorFromSupabase, fetchStudentCasesFromSupabase } from '../../services/supabaseService';
+import { WorkflowReferencePanel } from '../common/WorkflowReferencePanel';
 
 export const StudentDashboardView = ({ student, onNavigate }) => {
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
@@ -58,43 +59,32 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
       count: draftCount,
       filter: 'Draft',
       icon: FileEdit,
-      iconColor: 'text-slate-600 dark:text-slate-400',
-      badgeBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-      borderLeft: 'border-l-slate-400',
-      description: 'Work-in-progress cases saved for completion'
+      iconColor: 'text-amber-600 dark:text-amber-400',
+      badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      borderLeft: 'border-l-amber-500',
+      description: 'Saved drafts — not yet submitted to preceptor'
     },
     {
       id: 'submitted',
-      title: 'Submitted Cases',
-      count: submittedCount,
+      title: 'Submitted / Under Review',
+      count: submittedCount + underReviewCount,
       filter: 'Submitted',
       icon: Send,
       iconColor: 'text-blue-600 dark:text-blue-400',
       badgeBg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800',
       borderLeft: 'border-l-blue-500',
-      description: 'Submitted to preceptor for evaluation'
-    },
-    {
-      id: 'under_review',
-      title: 'Under Review Cases',
-      count: underReviewCount,
-      filter: 'Under Review',
-      icon: FileSearch,
-      iconColor: 'text-amber-600 dark:text-amber-400',
-      badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-      borderLeft: 'border-l-amber-500',
-      description: 'Currently under active preceptor review'
+      description: 'Awaiting preceptor evaluation and approval'
     },
     {
       id: 'returned',
-      title: 'Returned Cases',
+      title: 'Returned for Changes',
       count: returnedCount,
       filter: 'Returned',
       icon: RotateCcw,
       iconColor: 'text-rose-600 dark:text-rose-400',
       badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800',
       borderLeft: 'border-l-rose-500',
-      description: 'Returned with comments requiring revisions'
+      description: 'Requires student modifications & resubmission'
     },
     {
       id: 'approved',
@@ -111,53 +101,58 @@ export const StudentDashboardView = ({ student, onNavigate }) => {
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
-      {/* WELCOME CARD */}
+      {/* WELCOME CARD WITH TOP-RIGHT WORKFLOW PANEL */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-emerald-50/70 dark:from-[#0f172a] dark:via-slate-900 dark:to-emerald-950/40 text-slate-900 dark:text-white relative overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row items-start gap-6 relative z-10">
-          {student?.profile_photo_url ? (
-            <img
-              src={student.profile_photo_url}
-              alt={student.full_name}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-emerald-400/60 shadow-md p-0.5 bg-white dark:bg-slate-800 shrink-0"
-            />
-          ) : (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-emerald-400/60 shrink-0">
-              {student?.full_name ? student.full_name.substring(0, 2).toUpperCase() : 'ST'}
-            </div>
-          )}
-
-          <div className="space-y-2 flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                Student Logbook Portal
-              </span>
-              <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">Roll: {student?.roll_number}</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              Welcome, {student?.full_name}
-            </h1>
-
-            <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Course: </span>
-                <strong className="text-slate-900 dark:text-slate-100 font-bold">{student?.course} ({student?.year})</strong>
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-6 relative z-10">
+          <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 min-w-0">
+            {student?.profile_photo_url ? (
+              <img
+                src={student.profile_photo_url}
+                alt={student.full_name}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-emerald-400/60 shadow-md p-0.5 bg-white dark:bg-slate-800 shrink-0"
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-extrabold text-2xl shadow-md border-2 border-emerald-400/60 shrink-0">
+                {student?.full_name ? student.full_name.substring(0, 2).toUpperCase() : 'ST'}
               </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">Batch: </span>
-                <strong className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{student?.batch}</strong>
+            )}
+
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Student Logbook Portal
+                </span>
+                <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400">Roll: {student?.roll_number}</span>
               </div>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">College: </span>
-                <strong className="text-slate-900 dark:text-slate-100">{student?.colleges?.college_name || 'Pharmacy College'}</strong>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                Welcome, {student?.full_name}
+              </h1>
+
+              <div className="pt-1 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Course: </span>
+                  <strong className="text-slate-900 dark:text-slate-100 font-bold">{student?.course} ({student?.year})</strong>
+                </div>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">Batch: </span>
+                  <strong className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{student?.batch}</strong>
+                </div>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400">College: </span>
+                  <strong className="text-slate-900 dark:text-slate-100">{student?.colleges?.college_name || 'Pharmacy College'}</strong>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* TOP RIGHT WORKFLOW PANEL */}
+          <WorkflowReferencePanel role="student" />
         </div>
       </div>
 

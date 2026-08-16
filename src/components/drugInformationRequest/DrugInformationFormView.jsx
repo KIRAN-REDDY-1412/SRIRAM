@@ -162,12 +162,9 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
     enquirer_name_other: enquirerNameOther,
     designation, phone_no: phoneNo, unit_ward: unitWard, professional_status: professionalStatus,
     details_of_enquiry: detailsOfEnquiry,
-    question_category: questionCategory,
-    category_other: categoryOther,
-    purpose_of_enquiry: purposeOfEnquiry,
-    purpose_other: purposeOther,
+    question_category: questionCategorySelect === 'Other' ? questionCategoryOther : questionCategorySelect,
+    category_other: questionCategoryOther,
     timeframe_needed: timeframeNeeded,
-    patient_specific: patientSpecific,
     response_date: responseDate,
     response_time: responseTime,
     information_provided: informationProvided,
@@ -175,9 +172,8 @@ export const DrugInformationFormView = ({ clinicalCase, student, onBack, isReadO
     references
   }), [
     requestDate, requestTime, enquirerSelect, enquirerNameOther, designation, phoneNo, unitWard,
-    professionalStatus, detailsOfEnquiry, questionCategory, categoryOther, purposeOfEnquiry,
-    purposeOther, timeframeNeeded, patientSpecific, responseDate, responseTime, informationProvided,
-    replyMode, references
+    professionalStatus, detailsOfEnquiry, questionCategorySelect, questionCategoryOther,
+    timeframeNeeded, responseDate, responseTime, informationProvided, replyMode, references
   ]);
 
   const diffMap = React.useMemo(() => {

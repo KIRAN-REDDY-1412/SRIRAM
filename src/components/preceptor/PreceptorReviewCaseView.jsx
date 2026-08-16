@@ -36,15 +36,19 @@ export const PreceptorReviewCaseView = ({ clinicalCase, student, preceptor, onBa
     loadModuleStatuses();
   }, [clinicalCase?.id]);
 
-  const checkFilled = (status) => status && status !== 'Not Started' && status !== 'Not Added' && status !== 'Draft';
+  const checkFilled = (status, hasRecord) => {
+    if (status === 'Completed' || status === 'Submitted' || status === 'Approved' || status === 'Reviewed') return true;
+    if (clinicalCase?.status === 'Approved' && hasRecord && status !== 'Draft' && status !== 'Not Started') return true;
+    return false;
+  };
   const hasLoadedStatuses = Object.keys(modStatus).length > 0;
   
-  // If statuses loaded, only show filled tabs. If loading, show profile/counselling fallback.
-  const isProfileFilled = hasLoadedStatuses ? checkFilled(modStatus.profileStatus) : true;
-  const isCounsellingFilled = hasLoadedStatuses ? checkFilled(modStatus.counsellingStatus) : true;
-  const isInterventionFilled = hasLoadedStatuses ? checkFilled(modStatus.interventionStatus) : false;
-  const isDirFilled = hasLoadedStatuses ? checkFilled(modStatus.dirStatus) : false;
-  const isAdrFilled = hasLoadedStatuses ? checkFilled(modStatus.adrStatus) : false;
+  // Only show tabs for modules that were actually filled/completed/submitted by the student!
+  const isProfileFilled = hasLoadedStatuses ? checkFilled(modStatus.profileStatus, modStatus.hasProfile) : true;
+  const isCounsellingFilled = hasLoadedStatuses ? checkFilled(modStatus.counsellingStatus, modStatus.hasCounselling) : true;
+  const isInterventionFilled = hasLoadedStatuses ? checkFilled(modStatus.interventionStatus, modStatus.hasIntervention) : false;
+  const isDirFilled = hasLoadedStatuses ? checkFilled(modStatus.dirStatus, modStatus.hasDir) : false;
+  const isAdrFilled = hasLoadedStatuses ? checkFilled(modStatus.adrStatus, modStatus.hasAdr) : false;
 
   // Return checkboxes selection
   const [returnedForms, setReturnedForms] = useState({

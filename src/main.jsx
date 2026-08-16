@@ -54,15 +54,29 @@ class ErrorBoundary extends Component {
                 {this.state.error.message}
               </p>
             )}
-            <button
-              onClick={() => { 
-                sessionStorage.clear(); 
-                window.location.href = window.location.origin + window.location.pathname + '?reload=' + Date.now(); 
-              }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-lg transition-all cursor-pointer"
-            >
-              Reset Session & Reload
-            </button>
+            <div className="flex items-center gap-3 w-full pt-2">
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="flex-1 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                Dismiss & Retry
+              </button>
+              <button
+                onClick={() => { 
+                  localStorage.clear();
+                  sessionStorage.clear(); 
+                  if ('caches' in window) {
+                    caches.keys().then(names => {
+                      names.forEach(name => caches.delete(name));
+                    });
+                  }
+                  window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now(); 
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+              >
+                Clear Cache & Reload
+              </button>
+            </div>
           </div>
         </div>
       );

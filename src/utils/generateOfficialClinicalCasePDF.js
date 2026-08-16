@@ -440,10 +440,10 @@ export const generateOfficialClinicalCasePDF = async ({
     }
     y += 4;
 
-    // FINAL DIAGNOSIS & PRESCRIBED PHARMACOTHERAPY LOG TABLE
+    // PRESCRIBED MEDICATION PROFILE
     ensureSpace(25);
     doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. MEDICATION PROFILE / DISCHARGE SUMMARY`, marginX, y);
+    doc.text(`PRESCRIBED MEDICATION PROFILE`, marginX, y);
     y += 5;
 
     doc.setDrawColor(5, 150, 105);
@@ -502,6 +502,16 @@ export const generateOfficialClinicalCasePDF = async ({
       y += 6;
     }
     y += 4;
+
+    if (profile.discharge_summary) {
+      ensureSpace(18);
+      doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
+      doc.text('Discharge Summary & Instructions:', marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal'); doc.setFontSize(8.5);
+      doc.text(profile.discharge_summary, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 8;
+    }
 
     // Draw Dual Signatures at the end of Form 1
     drawDualSignatures(y);
@@ -627,7 +637,7 @@ export const generateOfficialClinicalCasePDF = async ({
   }
 
   // --- FORM 5: ADR DOCUMENTATION LOG (STARTS ON FRESH PAGE) ---
-  if (norm.isAdrCompleted || norm.diagnosis.dischargeSummary) {
+  if (norm.isAdrCompleted) {
     doc.addPage();
     drawWatermark();
     y = 38;
@@ -636,40 +646,28 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`${sectionCounter++}. ADR DOCUMENTATION LOG`, marginX, y);
     y += 5;
 
-    if (norm.isAdrCompleted) {
-      doc.setDrawColor(252, 211, 77);
-      doc.setFillColor(254, 252, 232);
-      doc.rect(marginX, y, contentWidth, 24, 'FD');
+    doc.setDrawColor(252, 211, 77);
+    doc.setFillColor(254, 252, 232);
+    doc.rect(marginX, y, contentWidth, 24, 'FD');
 
-      doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
+    doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
-      doc.setFont('times', 'bold'); doc.text('ADR Onset Date:', col1X, y + 6);
-      doc.setFont('times', 'normal'); doc.text(`${norm.dates.adrOnsetDate}`, col1X + 26, y + 6);
+    doc.setFont('times', 'bold'); doc.text('ADR Onset Date:', col1X, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.dates.adrOnsetDate}`, col1X + 26, y + 6);
 
-      doc.setFont('times', 'bold'); doc.text('Suspected Drug:', col2X, y + 6);
-      doc.setFont('times', 'normal'); doc.text(`${norm.adr.suspected_drug || 'N/A'}`, col2X + 26, y + 6);
+    doc.setFont('times', 'bold'); doc.text('Suspected Drug:', col2X, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.suspected_drug || 'N/A'}`, col2X + 26, y + 6);
 
-      doc.setFont('times', 'bold'); doc.text('Reaction Title:', col1X, y + 12);
-      doc.setFont('times', 'normal'); doc.text(`${norm.adr.reaction_title || norm.adr.reaction_description || 'Nil'}`, col1X + 24, y + 12, { maxWidth: contentWidth - 28 });
+    doc.setFont('times', 'bold'); doc.text('Reaction Title:', col1X, y + 12);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reaction_title || norm.adr.reaction_description || 'Nil'}`, col1X + 24, y + 12, { maxWidth: contentWidth - 28 });
 
-      doc.setFont('times', 'bold'); doc.text('Causality (Naranjo):', col1X, y + 18);
-      doc.setFont('times', 'normal'); doc.text(`${norm.adr.naranjo_causality || norm.adr.initial_causality_opinion || 'Possible'}`, col1X + 32, y + 18);
+    doc.setFont('times', 'bold'); doc.text('Causality (Naranjo):', col1X, y + 18);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.naranjo_causality || norm.adr.initial_causality_opinion || 'Possible'}`, col1X + 32, y + 18);
 
-      doc.setFont('times', 'bold'); doc.text('Reaction Severity:', col2X, y + 18);
-      doc.setFont('times', 'normal'); doc.text(`${norm.adr.reaction_severity || 'Moderate'}`, col2X + 28, y + 18);
+    doc.setFont('times', 'bold'); doc.text('Reaction Severity:', col2X, y + 18);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reaction_severity || 'Moderate'}`, col2X + 28, y + 18);
 
-      y += 28;
-    }
-
-    if (norm.diagnosis.dischargeSummary) {
-      ensureSpace(18);
-      doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
-      doc.text('Discharge Summary & Advice:', marginX, y);
-      y += 4;
-      doc.setFont('times', 'normal'); doc.setFontSize(8.5);
-      doc.text(norm.diagnosis.dischargeSummary, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 8;
-    }
+    y += 28;
 
     // Draw Dual Signatures at the end of Form 5
     drawDualSignatures(y);

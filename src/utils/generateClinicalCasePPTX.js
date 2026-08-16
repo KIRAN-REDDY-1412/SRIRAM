@@ -343,16 +343,15 @@ export const generateClinicalCasePPTX = async ({
     x: startX + 0.1, y: 0.9, w: contentW - 0.2, h: 0.9,
     fontFace, fontSize: titleFontSize, bold: true, color: emeraldColor, align: 'center'
   });
-
   slide8.addText(`Diagnostic Reasoning & Summary:\nConfirmed via colonoscopic biopsy histopathology and inflammatory marker elevations (CRP 28.5 mg/L).`, {
     x: startX, y: 2.1, w: contentW, h: 2.2,
     fontFace, fontSize: 11, color: '1E293B', fill: { color: 'F8FAFC' }, line: { color: 'CBD5E1', width: 1 }
   });
   slide8.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
 
-  // SLIDE 9: TREATMENT / MEDICATION
+  // SLIDE 9: TREATMENT / MEDICATION PROFILE
   const slide9 = pptx.addSlide();
-  slide9.addText('10. MEDICATION PROFILE / DISCHARGE SUMMARY', {
+  slide9.addText('PRESCRIBED MEDICATION PROFILE', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
@@ -383,49 +382,81 @@ export const generateClinicalCasePPTX = async ({
   });
   slide9.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
 
-  // SLIDE 10: CLINICAL ASSESSMENT / PHARMACIST INTERVENTION & COUNSELLING
-  const slide10 = pptx.addSlide();
-  slide10.addText('9. Counselling & Pharmacist Interventions', {
-    x: startX, y: 0.3, w: contentW, h: 0.4,
-    fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
-  });
+  // SLIDE 10: PATIENT COUNSELLING DOCUMENTATION (ONLY IF COMPLETED)
+  if (norm.isCounsellingCompleted) {
+    const slide10 = pptx.addSlide();
+    addWatermark(slide10);
+    slide10.addText('2. PATIENT COUNSELLING DOCUMENTATION', {
+      x: startX, y: 0.3, w: contentW, h: 0.4,
+      fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
+    });
 
-  const counsellingRows = [
-    [{ text: 'Clinical Aspect', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Details & Action Taken', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
-    [{ text: 'Counselled Provided To', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.counselling_provided_to || counselling.patient_type || 'Patient', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Counselling Mode & Time', options: { fontFace, fontSize: 9, bold: true } }, { text: `${counselling.counselling_mode || 'Oral'} (${counselling.time_taken || '15 min'})`, options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Intervention Problem Identified', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.prescription_problems || intervention.description_of_problem || intervention.problem_identified || 'Not Applicable / None Submitted', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Pharmacist Recommendation', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.recommendations || intervention.action_taken || intervention.intervention_provided || 'Not Applicable / None Submitted', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Physician Acceptance Status', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.physician_acceptance || intervention.outcome || intervention.status || 'Not Applicable', options: { fontFace, fontSize: 9, color: emeraldColor, bold: true } }]
-  ];
+    const counsellingRows = [
+      [{ text: 'Clinical Aspect', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Details & Action Taken', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
+      [{ text: 'Counselled Provided To', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.counselling_provided_to || counselling.patient_type || 'Patient', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Counselling Mode & Time', options: { fontFace, fontSize: 9, bold: true } }, { text: `${counselling.counselling_mode || 'Oral'} (${counselling.time_taken || '15 min'})`, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Disease Counselled', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.disease_counselled || finalDiagnosis, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Key Focus Points', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.counselling_points || counselling.points_covered || 'Medication compliance and lifestyle modifications.', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Student Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Digitally Signed by ${studentName} (${rollNumber})`, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Preceptor Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Verified & Approved by ${preceptorName}`, options: { fontFace, fontSize: 9, bold: true, color: primaryColor } }]
+    ];
 
-  slide10.addTable(counsellingRows, {
-    x: startX, y: 0.8, w: contentW, colW: [2.8, 6.2],
-    border: { pt: 1, color: 'CBD5E1' }
-  });
-  slide10.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
+    slide10.addTable(counsellingRows, {
+      x: startX, y: 0.8, w: contentW, colW: [2.8, 6.2],
+      border: { pt: 1, color: 'CBD5E1' }
+    });
+    slide10.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
+  }
 
-  // SLIDE 11: DISCHARGE SUMMARY & PRECEPTOR APPROVAL
-  const slide11 = pptx.addSlide();
-  slide11.addText('10. Discharge Summary & Preceptor Verification', {
-    x: startX, y: 0.3, w: contentW, h: 0.4,
-    fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
-  });
+  // SLIDE 11: PHARMACIST INTERVENTION DOCUMENTATION (ONLY IF COMPLETED)
+  if (norm.isInterventionCompleted) {
+    const slide11 = pptx.addSlide();
+    addWatermark(slide11);
+    slide11.addText('3. PHARMACIST INTERVENTION DOCUMENTATION', {
+      x: startX, y: 0.3, w: contentW, h: 0.4,
+      fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
+    });
 
-  const adrRows = [
-    [{ text: 'Record Section', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Summary Information & Verification Status', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
-    [{ text: 'ADR Suspected Drug & Reaction', options: { fontFace, fontSize: 9, bold: true } }, { text: adr.suspected_drug ? `${adr.suspected_drug} — ${adr.reaction_description || adr.reaction_title || adr.reaction}` : 'No ADR Reported', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Discharge Summary Notes', options: { fontFace, fontSize: 9, bold: true } }, { text: profile.discharge_summary || 'Discharged in stable condition as per physician advice.', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Institutional Case Status', options: { fontFace, fontSize: 9, bold: true } }, { text: 'OFFICIALLY APPROVED & VERIFIED', options: { fontFace, fontSize: 9, bold: true, color: emeraldColor } }],
-    [{ text: 'Candidate Student Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Digitally Signed by ${studentName} (${rollNumber})`, options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Faculty Preceptor Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Verified & Approved by ${preceptorName}`, options: { fontFace, fontSize: 9, bold: true, color: primaryColor } }]
-  ];
+    const interventionRows = [
+      [{ text: 'Intervention Aspect', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Details & Recommendations', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
+      [{ text: 'Problem Identified', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.prescription_problems || intervention.description_of_problem || intervention.problem_identified || 'None', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Action & Recommendation', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.recommendations || intervention.action_taken || intervention.intervention_provided || 'None', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Physician Acceptance', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.physician_acceptance || intervention.status || 'Accepted', options: { fontFace, fontSize: 9, color: emeraldColor, bold: true } }],
+      [{ text: 'Student Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Digitally Signed by ${studentName} (${rollNumber})`, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Preceptor Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Verified & Approved by ${preceptorName}`, options: { fontFace, fontSize: 9, bold: true, color: primaryColor } }]
+    ];
 
-  slide11.addTable(adrRows, {
-    x: startX, y: 0.8, w: contentW, colW: [2.8, 6.2],
-    border: { pt: 1, color: 'CBD5E1' }
-  });
-  slide11.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
+    slide11.addTable(interventionRows, {
+      x: startX, y: 0.8, w: contentW, colW: [2.8, 6.2],
+      border: { pt: 1, color: 'CBD5E1' }
+    });
+    slide11.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
+  }
+
+  // SLIDE 12: ADR DOCUMENTATION LOG (ONLY IF COMPLETED)
+  if (norm.isAdrCompleted) {
+    const slide12 = pptx.addSlide();
+    addWatermark(slide12);
+    slide12.addText('5. ADR DOCUMENTATION LOG', {
+      x: startX, y: 0.3, w: contentW, h: 0.4,
+      fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
+    });
+
+    const adrRows = [
+      [{ text: 'Record Section', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Summary Information & Verification Status', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
+      [{ text: 'ADR Onset Date', options: { fontFace, fontSize: 9, bold: true } }, { text: norm.dates.adrOnsetDate || 'N/A', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Suspected Drug & Reaction', options: { fontFace, fontSize: 9, bold: true } }, { text: adr.suspected_drug ? `${adr.suspected_drug} — ${adr.reaction_description || adr.reaction_title || 'Reaction Reported'}` : 'No ADR Reported', options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Causality & Severity', options: { fontFace, fontSize: 9, bold: true } }, { text: `Causality: ${adr.naranjo_causality || 'Possible'} | Severity: ${adr.reaction_severity || 'Moderate'}`, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Student Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Digitally Signed by ${studentName} (${rollNumber})`, options: { fontFace, fontSize: 9 } }],
+      [{ text: 'Preceptor Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Verified & Approved by ${preceptorName}`, options: { fontFace, fontSize: 9, bold: true, color: primaryColor } }]
+    ];
+
+    slide12.addTable(adrRows, {
+      x: startX, y: 0.8, w: contentW, colW: [2.8, 6.2],
+      border: { pt: 1, color: 'CBD5E1' }
+    });
+    slide12.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
+  }
 
   // Save presentation file directly
   const fileName = `${caseId}_Presentation.pptx`;

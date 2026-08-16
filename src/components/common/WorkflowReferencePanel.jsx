@@ -136,34 +136,34 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
         {/* NATIVE VECTOR STEP PIPELINE PREVIEW */}
         <div
           onClick={() => setIsExpanded(true)}
-          className="w-full p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 cursor-pointer group shadow-inner transition-all hover:border-emerald-400 dark:hover:border-emerald-700"
+          className="w-full p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 cursor-pointer group shadow-inner transition-all hover:border-emerald-400 dark:hover:border-emerald-700"
         >
-          <div className="flex items-center justify-between gap-1 overflow-hidden">
+          <div className="grid grid-cols-5 gap-2 items-center">
             {config.steps.slice(0, 5).map((st, idx) => {
               const IconComp = st.icon;
               return (
-                <React.Fragment key={idx}>
-                  <div className="flex flex-col items-center text-center gap-1 shrink-0">
-                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${st.bg} flex items-center justify-center transition-transform group-hover:scale-105`}>
-                      <IconComp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <div key={idx} className="flex flex-col items-center text-center gap-1 min-w-0">
+                  <div className="relative">
+                    <div className={`w-8 h-8 rounded-xl ${st.bg} flex items-center justify-center transition-transform group-hover:scale-105 shadow-2xs`}>
+                      <IconComp className="w-4 h-4" />
                     </div>
-                    <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300 max-w-[50px] truncate leading-tight">
-                      {st.title}
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-[8px] font-black flex items-center justify-center shadow-xs">
+                      {idx + 1}
                     </span>
                   </div>
-                  {idx < 4 && (
-                    <ArrowRight className="w-3 h-3 text-slate-300 dark:text-slate-600 shrink-0 mb-3" />
-                  )}
-                </React.Fragment>
+                  <span className="text-[9.5px] font-extrabold text-slate-700 dark:text-slate-300 leading-tight w-full truncate text-center">
+                    {st.title}
+                  </span>
+                </div>
               );
             })}
           </div>
 
-          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <Sparkles className="w-3 h-3" /> Interactive System Diagram
+          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+              <Sparkles className="w-3 h-3" /> Step-by-Step Workflow
             </span>
-            <span className="underline group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+            <span className="font-extrabold text-emerald-700 dark:text-emerald-400 group-hover:underline flex items-center gap-0.5">
               View All {config.steps.length} Steps →
             </span>
           </div>
@@ -172,11 +172,11 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
 
       {/* FULL-FEATURED VECTOR INTERACTIVE WORKFLOW MODAL */}
       {isExpanded && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 lg:p-10 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[82vh] flex flex-col shadow-2xl overflow-hidden my-auto">
             
             {/* MODAL HEADER */}
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/90 shrink-0">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/90 shrink-0">
               <div className="flex flex-wrap items-center gap-3">
                 <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${config.badgeBg} shadow-2xs`}>
                   {config.badge}

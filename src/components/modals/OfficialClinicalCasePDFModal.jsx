@@ -41,7 +41,7 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const [collegeData, setCollegeData] = useState(college);
   const [assignedPreceptorObj, setAssignedPreceptorObj] = useState(preceptor);
 
-  const caseId = clinicalCase?.case_id || 'AMRMCP-2026-000001';
+  const caseId = clinicalCase?.case_id || 'CLG-2026-000001';
   const fileName = `${caseId}_Approved.pdf`;
   const approvedDateStr = clinicalCase?.reviewed_at || clinicalCase?.approved_at
     ? new Date(clinicalCase.reviewed_at || clinicalCase.approved_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })

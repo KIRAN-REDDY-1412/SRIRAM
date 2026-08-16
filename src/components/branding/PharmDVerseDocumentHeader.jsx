@@ -98,7 +98,7 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
           </span>
         )}
         <span className="text-slate-900 text-xs sm:text-sm font-mono font-black whitespace-nowrap shrink-0">
-          Case ID : {caseId || 'AMRMCP-2026-000001'}
+          Case ID : {caseId || 'CLG-2026-000001'}
         </span>
       </div>
 

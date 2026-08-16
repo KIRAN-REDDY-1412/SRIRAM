@@ -5,7 +5,7 @@
 export const SAMPLE_CLINICAL_CASE_DATA = {
   clinicalCase: {
     id: 'sample-case-uuid-0001',
-    case_id: 'AMRMCP-2026-000001',
+    case_id: 'CLG-2026-000001',
     department: 'Gastroenterology & General Medicine',
     status: 'Approved',
     overall_case_status: 'Approved',

@@ -98,7 +98,7 @@ export const generateClinicalCasePPTX = async ({
     }
   }
 
-  // Right Side: Hospital Logo (Lalitha Group of Hospitals)
+  // Right Side: Hospital Logo
   if (pptSettings?.show_hospital_logo !== false && hospitalLogo) {
     try {
       slide1.addImage({

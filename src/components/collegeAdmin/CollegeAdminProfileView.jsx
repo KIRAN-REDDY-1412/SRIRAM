@@ -323,7 +323,7 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
                 required
                 value={formData.hospitalName}
                 onChange={handleChange}
-                placeholder="e.g. Lalitha Superspecialities Hospital"
+                placeholder="e.g. Primary Teaching Hospital"
                 className="w-full h-[46px] px-3.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500/50 focus:outline-none"
               />
             </div>

@@ -371,7 +371,7 @@ export const uploadBrandingAssetToSupabaseStorage = async (file, collegeId, asse
 // ADR DOCUMENTATION SERVICES (SINGLE CONSOLIDATED TABLE)
 // ====================================================================
 
-export const generateUniqueAdrNumberInSupabase = async (collegeCode = 'AMRMCP') => {
+export const generateUniqueAdrNumberInSupabase = async (collegeCode = 'CLG') => {
   try {
     const currentYear = new Date().getFullYear();
     const prefix = `ADR-${currentYear}-`;
@@ -830,7 +830,7 @@ export const savePrescribedDrugsInSupabase = async (patientProfileId, drugRecord
 // CLINICAL CASES SERVICES
 // ====================================================================
 
-export const generateUniqueCaseIdInSupabase = async (collegeCode = 'AMRMCP') => {
+export const generateUniqueCaseIdInSupabase = async (collegeCode = 'CLG') => {
   try {
     const currentYear = new Date().getFullYear();
     const prefix = `${collegeCode.toUpperCase()}-${currentYear}-`;
@@ -940,7 +940,7 @@ export const insertClinicalCaseToSupabase = async (casePayload) => {
     ]);
 
     const rollNumber = studentRes.data?.roll_number || 'UNKNOWN';
-    const collegeCode = collegeRes.data?.college_code || 'AMRMCP';
+    const collegeCode = collegeRes.data?.college_code || 'CLG';
     const currentYear = new Date().getFullYear();
 
     let insertedRecord = null;

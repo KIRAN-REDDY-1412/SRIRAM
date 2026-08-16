@@ -104,7 +104,7 @@ export default function App() {
 
   // RESTORE ACTIVE SESSION ON BROWSER REFRESH (F5 / RELOAD) & DYNAMIC URL RESOLUTION
   useEffect(() => {
-    // 1. Check URL query parameters for dynamic college portal (e.g. ?college=AMRMCP or ?college_id=uuid)
+    // 1. Check URL query parameters for dynamic college portal (e.g. ?college=CLG or ?college_id=uuid)
     const urlParams = new URLSearchParams(window.location.search);
     const targetParam = urlParams.get('college') || urlParams.get('college_id') || urlParams.get('collegeCode');
 

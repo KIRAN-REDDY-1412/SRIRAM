@@ -1029,7 +1029,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                   type="text"
                   value={pptSettings.header_title}
                   onChange={(e) => setPptSettings(prev => ({ ...prev, header_title: e.target.value }))}
-                  placeholder="e.g. Lalitha College of Pharmacy"
+                  placeholder="e.g. Pharmacy College"
                   className="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white"
                 />
               </div>

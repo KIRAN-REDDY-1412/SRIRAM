@@ -146,7 +146,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
             <div>
               <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Auto-Generated Case Identifier</span>
               <h3 className="text-xl font-black font-mono tracking-tight text-white">
-                {caseId || `${student?.colleges?.college_code || 'AMRMCP'}-${new Date().getFullYear()}-XXXX (Generated after saving)`}
+                {caseId || `${student?.colleges?.college_code || 'CLG'}-${new Date().getFullYear()}-XXXX (Generated after saving)`}
               </h3>
             </div>
 

@@ -3,6 +3,26 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
+// Global diagnostic error listeners to prevent silent blank screens
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    console.error('[Global Error Caught]:', event.error || event.message);
+    const root = document.getElementById('root');
+    if (root && (!root.children || root.children.length === 0)) {
+      root.innerHTML = `<div style="padding:30px;background:#0f172a;color:#f87171;font-family:monospace;min-height:100vh;">
+        <h2 style="color:#ef4444;margin-top:0;">⚠️ Runtime Render Exception:</h2>
+        <p style="color:#fca5a5;">${event.message}</p>
+        <pre style="background:#1e293b;padding:15px;border-radius:8px;overflow:auto;color:#cbd5e1;">${event.error?.stack || event.filename + ':' + event.lineno}</pre>
+        <button onclick="localStorage.clear();sessionStorage.clear();window.location.reload();" style="background:#10b981;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:15px;">Clear Cache & Reload App</button>
+      </div>`;
+    }
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[Global Unhandled Rejection Caught]:', event.reason);
+  });
+}
+
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);

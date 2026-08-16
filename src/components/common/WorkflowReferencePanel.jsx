@@ -176,12 +176,12 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
             
             {/* MODAL HEADER */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
-              <div className="flex items-center gap-2">
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${config.badgeBg}`}>
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/90 shrink-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${config.badgeBg} shadow-2xs`}>
                   {config.badge}
                 </span>
-                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight">
                   {config.title} (System Reference)
                 </h3>
               </div>
@@ -198,28 +198,34 @@ export const WorkflowReferencePanel = ({ role = 'student' }) => {
             <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-slate-50/60 dark:bg-slate-950/80">
               
               {/* STEP PIPELINE BANNER */}
-              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Operational Step-by-Step Flow
-                </h4>
+              <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-500" /> Operational Step-by-Step Flow
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">
+                    {config.steps.length} Sequential Steps
+                  </span>
+                </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className={`grid grid-cols-3 sm:grid-cols-5 ${config.steps.length === 9 ? 'lg:grid-cols-9' : 'lg:grid-cols-7'} gap-3 pt-1 items-start`}>
                   {config.steps.map((st, idx) => {
                     const IconComp = st.icon;
                     return (
-                      <React.Fragment key={idx}>
-                        <div className="flex flex-col items-center text-center gap-1.5 flex-1 min-w-[80px]">
-                          <div className={`w-10 h-10 rounded-2xl ${st.bg} flex items-center justify-center shadow-sm`}>
-                            <IconComp className="w-5 h-5" />
+                      <div key={idx} className="flex flex-col items-center text-center gap-2 relative group">
+                        <div className="relative flex items-center justify-center">
+                          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl ${st.bg} flex items-center justify-center shadow-xs transition-transform group-hover:scale-105`}>
+                            <IconComp className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                           </div>
-                          <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">
-                            {st.title}
+                          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-[10px] font-black flex items-center justify-center shadow-xs border-2 border-white dark:border-slate-900">
+                            {idx + 1}
                           </span>
                         </div>
-                        {idx < config.steps.length - 1 && (
-                          <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-700 shrink-0 hidden sm:block" />
-                        )}
-                      </React.Fragment>
+
+                        <span className="text-[11px] font-extrabold text-slate-800 dark:text-slate-200 leading-tight text-center w-full">
+                          {st.title}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>

@@ -20,14 +20,15 @@ export const buildNormalizedApprovedCaseData = ({
 
   // Form completion checker
   const isFormCompleted = (formObj) => {
-    if (!formObj || typeof formObj !== 'object') return false;
-    const status = (formObj.status || formObj.form_status || '').toLowerCase();
-    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted') return false;
-    if (status === 'completed' || status === 'submitted' || status === 'approved' || formObj.is_completed === true) return true;
-    return Object.entries(formObj).some(([k, v]) => {
-      if (['status', 'form_status', 'id', 'clinical_case_id', 'created_at', 'updated_at'].includes(k)) return false;
-      return v !== null && v !== undefined && v !== '';
-    }) && status !== 'draft';
+    if (!formObj || typeof formObj !== 'object' || Object.keys(formObj).length === 0) return false;
+    const status = (formObj.status || formObj.form_status || formObj.approval_status || '').toLowerCase();
+    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted' || status === 'not started' || status === 'not added' || status === '') {
+      return false;
+    }
+    if (status === 'completed' || status === 'submitted' || status === 'approved' || status === 'reviewed' || formObj.is_completed === true) {
+      return true;
+    }
+    return false;
   };
 
   // Helper to extract 100% of all submitted fields from a completed form

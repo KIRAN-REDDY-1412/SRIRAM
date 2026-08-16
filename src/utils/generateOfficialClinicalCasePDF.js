@@ -184,34 +184,41 @@ export const generateOfficialClinicalCasePDF = async ({
   };
 
   const drawDualSignatures = (currentY) => {
-    const sigY = Math.min(Math.max(currentY + 12, pageHeight - 48), pageHeight - 38);
+    let sigY = currentY + 12;
+    if (sigY + 30 > maxY) {
+      doc.addPage();
+      drawWatermark();
+      sigY = 38;
+    }
 
     doc.setDrawColor(15, 23, 42);
     doc.setLineWidth(0.4);
-    doc.line(marginX, sigY - 4, pageWidth - marginX, sigY - 4);
+    doc.line(marginX, sigY - 2, pageWidth - marginX, sigY - 2);
 
     const sigLeftX = marginX + 15;
     const sigRightX = pageWidth - marginX - 55;
 
     // Student Signature Box (Left)
-    doc.line(sigLeftX, sigY + 8, sigLeftX + 45, sigY + 8);
+    doc.line(sigLeftX, sigY + 10, sigLeftX + 45, sigY + 10);
     doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(15, 23, 42);
-    doc.text('Student Signature', sigLeftX + 22.5, sigY + 12, { align: 'center' });
+    doc.text('Student Signature', sigLeftX + 22.5, sigY + 14, { align: 'center' });
     doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(2, 132, 199);
-    doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 16, { align: 'center' });
+    doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 18, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(100, 116, 139);
-    doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 20, { align: 'center' });
+    doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 22, { align: 'center' });
 
     // Faculty Preceptor Signature Box (Right Side)
-    doc.line(sigRightX, sigY + 8, sigRightX + 45, sigY + 8);
+    doc.line(sigRightX, sigY + 10, sigRightX + 45, sigY + 10);
     doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(15, 23, 42);
-    doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 12, { align: 'center' });
+    doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 14, { align: 'center' });
     doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(2, 132, 199);
-    doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 16, { align: 'center' });
+    doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 18, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(15, 23, 42);
-    doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 22, { align: 'center' });
+    doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 24, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(100, 116, 139);
-    doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 26, { align: 'center' });
+    doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 28, { align: 'center' });
+
+    return sigY + 32;
   };
 
   let y = 38;
@@ -389,8 +396,8 @@ export const generateOfficialClinicalCasePDF = async ({
 
     // KEY LABORATORY INVESTIGATIONS TABLE
     ensureSpace(25);
-    doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. LABORATORY INVESTIGATIONS`, marginX, y);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(2, 132, 199);
+    doc.text(`LABORATORY INVESTIGATIONS`, marginX, y);
     y += 5;
 
     const labsList = norm.labs;

@@ -120,21 +120,19 @@ export const generateOfficialClinicalCasePDF = async ({
   const drawWatermark = () => {
     if (!watermarkEnabled) return;
     doc.saveGraphicsState();
-    try {
-      doc.setGState(new doc.GState({ opacity: 0.12 }));
-    } catch (e) {}
     doc.setFont(fontFamily, 'bold');
-    doc.setFontSize(15);
-    doc.setTextColor(160, 175, 195); // Light slate gray
-    const textToDraw = watermarkLine1
-      ? (watermarkLine2 ? `${watermarkLine1} — ${watermarkLine2}` : watermarkLine1)
-      : collegeName.toUpperCase();
+    doc.setFontSize(22);
+    doc.setTextColor(205, 215, 225); // Crisp, visible, elegant light slate-gray
 
-    const rotationAngle = isDiagonal ? 45 : 0;
+    const textToDraw = (watermarkLine1 && watermarkLine2)
+      ? `${watermarkLine1} • ${watermarkLine2}`
+      : (watermarkLine1 || collegeName.toUpperCase());
+
+    // Always 45 degree diagonal center
     doc.text(textToDraw, pageWidth / 2, pageHeight / 2, {
       align: 'center',
       baseline: 'middle',
-      angle: rotationAngle
+      angle: 45
     });
     doc.restoreGraphicsState();
   };

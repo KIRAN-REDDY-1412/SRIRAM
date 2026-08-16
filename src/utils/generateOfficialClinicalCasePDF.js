@@ -93,20 +93,23 @@ export const generateOfficialClinicalCasePDF = async ({
 
     if (showCollegeName) {
       doc.setFont(fontFamily, 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(10.5);
       doc.setTextColor(15, 23, 42);
-      doc.text(collegeName.toUpperCase(), pageWidth / 2, 17, { align: 'center' });
+      doc.text(collegeName.toUpperCase(), pageWidth / 2, 14.5, { align: 'center' });
     }
 
-    const subTextParts = [];
-    if (showAutonomous) subTextParts.push('(Autonomous)');
-    if (showHospitalName) subTextParts.push(hospitalName);
-
-    if (subTextParts.length > 0) {
+    if (showAutonomous) {
       doc.setFont(fontFamily, 'italic');
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setTextColor(71, 85, 105);
-      doc.text(subTextParts.join(' • '), pageWidth / 2, 23, { align: 'center' });
+      doc.text('(Autonomous)', pageWidth / 2, 18.5, { align: 'center' });
+    }
+
+    if (showHospitalName) {
+      doc.setFont(fontFamily, 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text(hospitalName, pageWidth / 2, 23.2, { align: 'center' });
     }
 
     doc.setFillColor(15, 23, 42);
@@ -135,9 +138,14 @@ export const generateOfficialClinicalCasePDF = async ({
     const line2 = branding?.watermark_text_line2 || branding?.watermark_line2 || '';
     const textToDraw = line2 ? `${line1} • ${line2}` : line1;
 
+    // EXACT A4 PAGE GEOMETRIC MIDPOINT (105mm Horizontal, 148.5mm Vertical)
+    // Independent of content length or page matter
+    const pageCenterX = 105;
+    const pageCenterY = 148.5;
+
     const angle = typeof branding?.watermark_angle === 'number' ? branding.watermark_angle : 45;
 
-    doc.text(textToDraw, pageWidth / 2, pageHeight / 2, {
+    doc.text(textToDraw, pageCenterX, pageCenterY, {
       align: 'center',
       baseline: 'middle',
       angle: angle

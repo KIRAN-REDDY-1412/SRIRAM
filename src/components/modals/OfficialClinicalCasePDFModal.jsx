@@ -136,13 +136,13 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
 
   if (!isOpen) return null;
 
-  const profile = caseModulesData.profile || {};
-  const counselling = caseModulesData.counselling || {};
-  const intervention = caseModulesData.intervention || {};
-  const dir = caseModulesData.dir || {};
-  const adr = caseModulesData.adr || {};
-  const labs = caseModulesData.labs || [];
-  const drugs = caseModulesData.drugs || [];
+  const profile = caseModulesData?.profile || {};
+  const counselling = caseModulesData?.counselling || {};
+  const intervention = caseModulesData?.intervention || {};
+  const dir = caseModulesData?.dir || {};
+  const adr = caseModulesData?.adr || {};
+  const labs = caseModulesData?.labs || [];
+  const drugs = caseModulesData?.drugs || [];
 
   const finalCollegeObj = collegeData || college || student?.colleges;
 

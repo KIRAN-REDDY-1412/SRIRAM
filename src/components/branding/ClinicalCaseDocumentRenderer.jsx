@@ -41,6 +41,12 @@ export const ClinicalCaseDocumentRenderer = ({
   const labs = norm.labs;
   const drugs = norm.drugs;
 
+  const profile = norm.profile || {};
+  const counselling = norm.counselling || {};
+  const intervention = norm.intervention || {};
+  const dir = norm.dir || {};
+  const adr = norm.adr || {};
+
   // Extract Profile Demographics & History from central norm model
   const pName = norm.demographics.patientName;
   const pAge = norm.demographics.age;

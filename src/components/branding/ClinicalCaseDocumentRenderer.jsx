@@ -27,6 +27,7 @@ export const ClinicalCaseDocumentRenderer = ({
   const counselling = modules.counselling || {};
   const intervention = modules.intervention || {};
   const dir = modules.dir || {};
+  const adr = modules.adr || {};
   const isFormCompleted = (formObj) => {
     if (!formObj || typeof formObj !== 'object') return false;
     const status = (formObj.status || formObj.form_status || '').toLowerCase();

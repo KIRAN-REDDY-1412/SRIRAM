@@ -1201,6 +1201,9 @@ export const authenticatePreceptorInSupabase = async (username, password, curren
       .maybeSingle();
 
     if (error || !preceptor) return { success: false, error: 'Invalid Username or Password' };
+    if (preceptor.colleges?.status === 'Inactive' || preceptor.colleges?.status === 'Disabled') {
+      return { success: false, error: 'Your college portal is currently inactive. Please contact the System Administrator.' };
+    }
     if (preceptor.status !== 'Active') return { success: false, error: 'Your Preceptor account is currently Inactive. Contact College Admin.' };
     if (preceptor.password_hash !== inputHash) {
       // Increment failed login attempts
@@ -1253,6 +1256,9 @@ export const authenticateStudentInSupabase = async (username, password, currentC
       .maybeSingle();
 
     if (error || !student) return { success: false, error: 'Invalid Username or Password' };
+    if (student.colleges?.status === 'Inactive' || student.colleges?.status === 'Disabled') {
+      return { success: false, error: 'Your college portal is currently inactive. Please contact the System Administrator.' };
+    }
     if (student.status !== 'Active') return { success: false, error: 'Your Student account is currently Inactive. Contact College Admin.' };
     if (student.password_hash !== inputHash) {
       // Increment failed login attempts
@@ -1761,6 +1767,9 @@ export const authenticateCollegeAdminInSupabase = async (username, password, cur
       .maybeSingle();
 
     if (error || !college) return { success: false, error: 'Invalid User ID or Password' };
+    if (college.status === 'Inactive' || college.status === 'Disabled') {
+      return { success: false, error: 'Your college portal is currently inactive. Please contact the System Administrator.' };
+    }
     if (!college.college_admin_password_hash) return { success: false, error: 'College Admin password has not been set by Super Admin.' };
     if (college.college_admin_password_hash !== inputHash) return { success: false, error: 'Invalid User ID or Password' };
 
@@ -1772,6 +1781,42 @@ export const authenticateCollegeAdminInSupabase = async (username, password, cur
     return { success: true, college };
   } catch (err) {
     return { success: false, error: err.message };
+  }
+};
+
+export const updateCollegeStatusInSupabase = async (collegeId, status) => {
+  if (!collegeId) return { success: false, error: 'College ID is required' };
+  try {
+    const { data, error } = await supabase
+      .from('colleges')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', collegeId)
+      .select();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, college: data ? data[0] : null };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+export const fetchAllCollegesFromSupabase = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('colleges')
+      .select(`*, subscriptions!fk_colleges_subscription(*)`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      const { data: simpleData } = await supabase
+        .from('colleges')
+        .select('*')
+        .order('created_at', { ascending: false });
+      return { success: true, data: simpleData || [] };
+    }
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, data: [], error: err.message };
   }
 };
 

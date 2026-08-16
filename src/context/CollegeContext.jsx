@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
+  fetchAllCollegesFromSupabase,
   fetchActiveCollegesFromSupabase, 
   fetchRegistrationRequestsFromSupabase, 
   submitCollegeRegistrationToSupabase, 
   approveCollegeInSupabase, 
   rejectCollegeInSupabase,
-  updateCollegeProfileAndSubscriptionInSupabase, 
+  updateCollegeProfileAndSubscriptionInSupabase,
+  updateCollegeStatusInSupabase, 
   deleteCollegeFromSupabase, 
   deleteMultipleCollegesFromSupabase,
   uploadCollegeLogoToSupabaseStorage,
@@ -26,8 +27,8 @@ export const CollegeProvider = ({ children }) => {
     setIsLoading(true);
     console.log('[CollegeContext] Loading live data from Supabase PostgreSQL...');
     
-    // 1. Fetch Active Colleges for Landing Page (from colleges table)
-    const collegesRes = await fetchActiveCollegesFromSupabase();
+    // 1. Fetch All Colleges for Super Admin & Landing Page (from colleges table)
+    const collegesRes = await fetchAllCollegesFromSupabase();
     if (collegesRes.success && Array.isArray(collegesRes.data)) {
       const mappedColleges = collegesRes.data.map(c => {
         const sub = c.subscriptions && c.subscriptions[0] ? c.subscriptions[0] : null;
@@ -186,6 +187,16 @@ export const CollegeProvider = ({ children }) => {
     await loadSupabaseData();
   };
 
+  // Update College Status (Active <-> Inactive Soft Deactivation/Reactivation)
+  const updateCollegeStatus = async (collegeId, newStatus) => {
+    console.log(`[CollegeContext] Updating college status in Supabase: ${collegeId} -> ${newStatus}`);
+    const res = await updateCollegeStatusInSupabase(collegeId, newStatus);
+    if (res.success) {
+      await loadSupabaseData();
+    }
+    return res;
+  };
+
   return (
     <CollegeContext.Provider value={{
       activeColleges,
@@ -198,6 +209,7 @@ export const CollegeProvider = ({ children }) => {
       approveCollege,
       rejectCollege,
       updateCollegeProfile,
+      updateCollegeStatus,
       uploadCollegeLogo,
       loginCollegeAdmin,
       deleteCollege,

@@ -29,6 +29,7 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
     approveCollege, 
     rejectCollege, 
     updateCollegeProfile,
+    updateCollegeStatus,
     deleteCollege,
     deleteMultipleColleges
   } = useColleges();
@@ -48,6 +49,18 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [collegeToDelete, setCollegeToDelete] = useState(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+
+  const handleDeactivateCollege = async (collegeId) => {
+    if (window.confirm('Deactivate this college? All data, students, preceptors, cases, and settings will remain 100% safely preserved.')) {
+      await updateCollegeStatus(collegeId, 'Inactive');
+    }
+  };
+
+  const handleReactivateCollege = async (collegeId) => {
+    if (window.confirm('Reactivate this college portal? All previous data and access will be fully restored.')) {
+      await updateCollegeStatus(collegeId, 'Active');
+    }
+  };
 
   const pendingCount = pendingRequests.filter(r => r.status === 'Pending').length;
 
@@ -763,13 +776,24 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                         </div>
 
                         <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                          <button
-                            onClick={() => handleStartEditProfile(clg)}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Edit College Profile</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleStartEditProfile(clg)}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDeactivateCollege(clg.id)}
+                              className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-xs font-bold flex items-center gap-1 transition-colors"
+                              title="Deactivate College (Preserves All Data)"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>Deactivate</span>
+                            </button>
+                          </div>
 
                           <a
                             href={clg.portalUrl || `https://${clg.code.toLowerCase()}.pharmdverse.com`}
@@ -793,7 +817,20 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
           {/* TAB 3: INACTIVE */}
           {activeTab === 'inactive' && (
             <div className="space-y-4 animate-fadeIn">
-              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Inactive Colleges</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    Inactive & Deactivated Colleges
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    All historical records, students, preceptors, cases, and settings are safely preserved. Click Reactivate to restore operational status.
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                  {filteredInactive.length} Deactivated
+                </span>
+              </div>
+
               {filteredInactive.length === 0 ? (
                 <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
                   <XCircle className="w-10 h-10 text-slate-400 mx-auto mb-3" />
@@ -801,44 +838,95 @@ export const SuperAdminDashboard = ({ onExitToLanding }) => {
                     No inactive colleges.
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                    Colleges with suspended or inactive subscriptions will be listed here.
+                    Deactivated colleges will be listed here with options to view or reactivate.
                   </p>
                 </div>
               ) : (
-                filteredInactive.map((c) => {
-                  const isSelected = selectedIds.includes(c.id);
-                  return (
-                    <div key={c.id} className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelectItem(c.id)}
-                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 cursor-pointer"
-                        />
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.logoBg || 'from-slate-600 to-slate-800'} flex items-center justify-center text-white font-bold text-xs`}>
-                          {c.initials}
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filteredInactive.map((c) => {
+                    const isSelected = selectedIds.includes(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`p-5 rounded-3xl bg-white dark:bg-slate-900 border transition-all duration-300 flex flex-col justify-between group relative ${
+                          isSelected 
+                            ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md' 
+                            : 'border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-lg opacity-90'
+                        }`}
+                      >
                         <div>
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">{c.name}</h4>
-                          <span className="text-xs text-slate-500">{c.city}, {c.state}</span>
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectItem(c.id)}
+                                className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
+                              />
+                              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${c.logoBg || 'from-slate-600 to-slate-800'} flex items-center justify-center text-white font-extrabold text-xs shadow-md shrink-0`}>
+                                {c.initials}
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                  {c.name}
+                                </h4>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  {c.city}, {c.state}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                              Inactive
+                            </span>
+                          </div>
+
+                          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 space-y-1.5 my-3 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400 text-[10px]">College ID:</span>
+                              <span className="font-mono text-slate-700 dark:text-slate-300 font-bold">{c.id.substring(0, 8)}...</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400 text-[10px]">Admin ID:</span>
+                              <span className="font-mono text-slate-700 dark:text-slate-300">{c.adminUsername || 'Admin'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400 text-[10px]">Data Status:</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">100% Preserved</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            onClick={() => handleReactivateCollege(c.id)}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Reactivate</span>
+                          </button>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleStartEditProfile(c)}
+                              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => setCollegeToDelete({ id: c.id, name: c.name })}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                              title="Delete College"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                          Inactive
-                        </span>
-                        <button
-                          onClick={() => setCollegeToDelete({ id: c.id, name: c.name })}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
-                          title="Delete College"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}

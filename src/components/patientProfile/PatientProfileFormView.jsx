@@ -6,6 +6,7 @@ import { InlineActionNotification } from '../common/InlineActionNotification';
 import { useInlineNotification } from '../../hooks/useInlineNotification';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { computeModuleDiffs, isFieldModified } from '../../utils/diffEngine';
+import { CLINICAL_DEPARTMENTS, CLINICAL_WARDS_UNITS } from '../../constants/clinicalMasterData';
 
 const ModifiedFieldBadge = ({ isModified, oldValue }) => {
   if (!isModified) return null;

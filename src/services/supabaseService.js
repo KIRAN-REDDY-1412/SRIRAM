@@ -2104,7 +2104,8 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
   if (!clinicalCaseId) return { success: false, records: {} };
 
   try {
-    const [profileRes, counsellingRes, interventionRes, dirRes, adrRes] = await Promise.all([
+    // Primary query by 'clinical_case_id'
+    const [profileRes1, counsellingRes1, interventionRes1, dirRes1, adrRes1] = await Promise.all([
       supabase.from('patient_profiles').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
       supabase.from('patient_counselling').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
       supabase.from('pharmacist_interventions').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle(),
@@ -2112,17 +2113,25 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
       supabase.from('adr_reports').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle()
     ]);
 
-    const profileData = profileRes.data || {};
+    // Secondary fallback queries by 'case_id' or alternative table names
+    const profileData = profileRes1.data || (await supabase.from('patient_profiles').select('*').eq('case_id', clinicalCaseId).maybeSingle()).data || {};
+    const counsellingData = counsellingRes1.data || (await supabase.from('patient_counselling').select('*').eq('case_id', clinicalCaseId).maybeSingle()).data || {};
+    const interventionData = interventionRes1.data || (await supabase.from('pharmacist_interventions').select('*').eq('case_id', clinicalCaseId).maybeSingle()).data || {};
+    const dirData = dirRes1.data || (await supabase.from('drug_information_requests').select('*').eq('case_id', clinicalCaseId).maybeSingle()).data || {};
+    const adrData = adrRes1.data || 
+                    (await supabase.from('adr_reports').select('*').eq('case_id', clinicalCaseId).maybeSingle()).data || 
+                    (await supabase.from('adr_documentation').select('*').eq('clinical_case_id', clinicalCaseId).maybeSingle()).data || {};
+
     let labs = [];
     let drugs = [];
 
-    if (profileData.id) {
+    const profileId = profileData.id;
+    if (profileId) {
       const [labRes, drugRes] = await Promise.all([
-        supabase.from('patient_lab_investigations').select('*').eq('patient_profile_id', profileData.id).order('created_at', { ascending: true }),
-        supabase.from('patient_prescribed_drugs').select('*').eq('patient_profile_id', profileData.id).order('s_no', { ascending: true })
+        supabase.from('patient_lab_investigations').select('*').eq('patient_profile_id', profileId).order('created_at', { ascending: true }),
+        supabase.from('patient_prescribed_drugs').select('*').eq('patient_profile_id', profileId).order('s_no', { ascending: true })
       ]);
 
-      // Deduplicate labs & drugs
       const seenLab = new Set();
       (labRes.data || []).forEach(l => {
         const key = `${l.category}_${l.parameter_name}_${l.test_value}`;
@@ -2146,10 +2155,10 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
       success: true,
       records: {
         profile: profileData,
-        counselling: counsellingRes.data || {},
-        intervention: interventionRes.data || {},
-        dir: dirRes.data || {},
-        adr: adrRes.data || {},
+        counselling: counsellingData,
+        intervention: interventionData,
+        dir: dirData,
+        adr: adrData,
         vitals: profileData.vital_signs || profileData.vitals || [],
         labs,
         drugs

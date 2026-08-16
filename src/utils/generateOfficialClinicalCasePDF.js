@@ -4,7 +4,7 @@ import { buildNormalizedApprovedCaseData } from './buildNormalizedApprovedCaseDa
 /**
  * High-Precision Vector PDF Generator for PharmDVerse Clinical Cases.
  * Unlimited dynamic page flow, 100% complete data preservation, strict form boundaries,
- * column overlap protection, per-form dual signatures, and interior clipped watermark.
+ * column overlap protection, per-form dual signatures at bottom of content page, and interior clipped watermark.
  */
 export const generateOfficialClinicalCasePDF = ({
   clinicalCase = {},
@@ -139,13 +139,10 @@ export const generateOfficialClinicalCasePDF = ({
     doc.restoreGraphicsState();
   };
 
-  // --- DUAL SIGNATURE BLOCK HELPER ---
+  // --- DUAL SIGNATURE BLOCK HELPER (ALWAYS AT END/BOTTOM OF CONTENT PAGE) ---
   const drawDualSignatures = (currentY) => {
-    let sigY = currentY + 12;
-    if (sigY + 32 > maxY - 15) {
-      doc.addPage();
-      sigY = 38;
-    }
+    // Determine signature Y: placed tightly at bottom of current form's content page above footer
+    let sigY = Math.max(currentY + 6, pageHeight - 42);
 
     doc.setDrawColor(15, 23, 42);
     doc.setLineWidth(0.4);
@@ -155,32 +152,32 @@ export const generateOfficialClinicalCasePDF = ({
     const sigRightX = pageWidth - marginX - 55;
 
     // Student Signature Box (Left)
-    doc.line(sigLeftX, sigY + 12, sigLeftX + 45, sigY + 12);
+    doc.line(sigLeftX, sigY + 10, sigLeftX + 45, sigY + 10);
     doc.setFont('times', 'bold'); doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
-    doc.text('Student Signature', sigLeftX + 22.5, sigY + 16, { align: 'center' });
+    doc.text('Student Signature', sigLeftX + 22.5, sigY + 14, { align: 'center' });
     doc.setFont('times', 'normal'); doc.setFontSize(7.5); doc.setTextColor(2, 132, 199);
-    doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 20, { align: 'center' });
+    doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 18, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(100, 116, 139);
-    doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 24, { align: 'center' });
+    doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 22, { align: 'center' });
 
     // Faculty Preceptor Signature Box (Right)
-    doc.line(sigRightX, sigY + 12, sigRightX + 45, sigY + 12);
+    doc.line(sigRightX, sigY + 10, sigRightX + 45, sigY + 10);
     doc.setFont('times', 'bold'); doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
-    doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 16, { align: 'center' });
+    doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 14, { align: 'center' });
     doc.setFont('times', 'normal'); doc.setFontSize(7.5); doc.setTextColor(2, 132, 199);
-    doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 20, { align: 'center' });
+    doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 18, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(15, 23, 42);
-    doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 25, { align: 'center' });
+    doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 22, { align: 'center' });
     doc.setFontSize(7); doc.setTextColor(100, 116, 139);
-    doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 29, { align: 'center' });
+    doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 26, { align: 'center' });
 
-    return sigY + 34;
+    return sigY + 30;
   };
 
   let y = 38;
 
   const ensureSpace = (neededHeight) => {
-    if (y + neededHeight > maxY - 25) {
+    if (y + neededHeight > maxY - 40) {
       doc.addPage();
       y = 38;
       return true;

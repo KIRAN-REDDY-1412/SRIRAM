@@ -183,10 +183,41 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.restoreGraphicsState();
   };
 
+  const drawDualSignatures = (currentY) => {
+    const sigY = Math.min(Math.max(currentY + 12, pageHeight - 48), pageHeight - 38);
+
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.4);
+    doc.line(marginX, sigY - 4, pageWidth - marginX, sigY - 4);
+
+    const sigLeftX = marginX + 15;
+    const sigRightX = pageWidth - marginX - 55;
+
+    // Student Signature Box (Left)
+    doc.line(sigLeftX, sigY + 8, sigLeftX + 45, sigY + 8);
+    doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(15, 23, 42);
+    doc.text('Student Signature', sigLeftX + 22.5, sigY + 12, { align: 'center' });
+    doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(2, 132, 199);
+    doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 16, { align: 'center' });
+    doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+    doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 20, { align: 'center' });
+
+    // Faculty Preceptor Signature Box (Right Side)
+    doc.line(sigRightX, sigY + 8, sigRightX + 45, sigY + 8);
+    doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(15, 23, 42);
+    doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 12, { align: 'center' });
+    doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(2, 132, 199);
+    doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 16, { align: 'center' });
+    doc.setFontSize(7); doc.setTextColor(15, 23, 42);
+    doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 22, { align: 'center' });
+    doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+    doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 26, { align: 'center' });
+  };
+
   let y = 38;
 
   const ensureSpace = (neededHeight) => {
-    if (y + neededHeight > maxY) {
+    if (y + neededHeight > maxY - 30) {
       doc.addPage();
       drawWatermark();
       y = 38;
@@ -195,7 +226,7 @@ export const generateOfficialClinicalCasePDF = async ({
     return false;
   };
 
-  // --- START PAGE 1 ---
+  // --- START PAGE 1: FORM 1 — PATIENT PROFILE DOCUMENTATION ---
   drawWatermark();
 
   let sectionCounter = 1;
@@ -297,184 +328,191 @@ export const generateOfficialClinicalCasePDF = async ({
       doc.text([genExam, sysExam].filter(Boolean).join('\n'), marginX + 3, y, { maxWidth: contentWidth - 6 });
       y += 11;
     }
-  }
 
-  // VITAL SIGNS MONITORING LOG CHART TABLE
-  ensureSpace(25);
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(2, 132, 199);
-  doc.text('VITAL SIGNS LOG CHART', marginX, y);
-  y += 4;
+    // VITAL SIGNS LOG CHART TABLE
+    ensureSpace(25);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(2, 132, 199);
+    doc.text('VITAL SIGNS LOG CHART', marginX, y);
+    y += 4;
 
-  const vitalsList = norm.vitals.length > 0 
-    ? norm.vitals 
-    : (profile.vital_signs || profile.vitals ? [{ date: norm.dates.doa, temp: profile.temp || profile.temperature || '98.6', bp: profile.bp || '120/80', pr: profile.pr || profile.pulse || '72', rr: profile.rr || profile.respiratory_rate || '18', spo2: profile.spo2 || '98' }] : []);
+    const profile = clinicalCase.profile || {};
+    const vitalsList = norm.vitals.length > 0 
+      ? norm.vitals 
+      : (profile.vital_signs || profile.vitals ? [{ date: norm.dates.doa, temp: profile.temp || profile.temperature || '98.6', bp: profile.bp || '120/80', pr: profile.pr || profile.pulse || '72', rr: profile.rr || profile.respiratory_rate || '18', spo2: profile.spo2 || '98' }] : []);
 
-  doc.setFillColor(241, 245, 249);
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.3);
-  doc.rect(marginX, y, contentWidth, 6, 'FD');
+    doc.setFillColor(241, 245, 249);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
+    doc.rect(marginX, y, contentWidth, 6, 'FD');
 
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-  doc.text('Recorded Date', marginX + 2, y + 4.2);
-  doc.text('Temp (°F)', marginX + 32, y + 4.2);
-  doc.text('Blood Pressure (mmHg)', marginX + 57, y + 4.2);
-  doc.text('Pulse Rate (bpm)', marginX + 102, y + 4.2);
-  doc.text('Resp Rate (/min)', marginX + 132, y + 4.2);
-  doc.text('SpO2 (%)', marginX + 157, y + 4.2);
-  y += 6;
-
-  if (vitalsList.length > 0) {
-    doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-    vitalsList.forEach((v) => {
-      if (ensureSpace(6)) {
-        doc.setFillColor(241, 245, 249);
-        doc.rect(marginX, y, contentWidth, 6, 'FD');
-        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-        doc.text('Recorded Date', marginX + 2, y + 4.2);
-        doc.text('Temp (°F)', marginX + 32, y + 4.2);
-        doc.text('Blood Pressure (mmHg)', marginX + 57, y + 4.2);
-        doc.text('Pulse Rate (bpm)', marginX + 102, y + 4.2);
-        doc.text('Resp Rate (/min)', marginX + 132, y + 4.2);
-        doc.text('SpO2 (%)', marginX + 157, y + 4.2);
-        y += 6;
-        doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
-      }
-      doc.rect(marginX, y, contentWidth, 6, 'D');
-      doc.text(String(v.date || 'N/A'), marginX + 2, y + 4.2);
-      doc.text(String(v.temp || v.temperature || '98.6'), marginX + 32, y + 4.2);
-      doc.text(String(v.bp || '120/80'), marginX + 57, y + 4.2);
-      doc.text(String(v.pr || v.pulse || '72'), marginX + 102, y + 4.2);
-      doc.text(String(v.rr || v.respiratory_rate || '18'), marginX + 132, y + 4.2);
-      doc.text(String(v.spo2 ? `${v.spo2}%` : '98%'), marginX + 157, y + 4.2);
-      y += 6;
-    });
-  } else {
-    doc.rect(marginX, y, contentWidth, 6, 'D');
-    doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
-    doc.text('No vital signs logged.', pageWidth / 2, y + 4.2, { align: 'center' });
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text('Recorded Date', marginX + 2, y + 4.2);
+    doc.text('Temp (°F)', marginX + 32, y + 4.2);
+    doc.text('Blood Pressure (mmHg)', marginX + 57, y + 4.2);
+    doc.text('Pulse Rate (bpm)', marginX + 102, y + 4.2);
+    doc.text('Resp Rate (/min)', marginX + 132, y + 4.2);
+    doc.text('SpO2 (%)', marginX + 157, y + 4.2);
     y += 6;
-  }
-  y += 4;
 
-  // KEY LABORATORY INVESTIGATIONS TABLE
-  ensureSpace(25);
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-  doc.text(`${sectionCounter++}. KEY LABORATORY INVESTIGATIONS`, marginX, y);
-  y += 5;
-
-  const labsList = norm.labs;
-
-  doc.setFillColor(241, 245, 249);
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.3);
-  doc.rect(marginX, y, contentWidth, 6, 'FD');
-
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-  doc.text('Category', marginX + 2, y + 4.2);
-  doc.text('Investigation Parameter', marginX + 32, y + 4.2);
-  doc.text('Observed Value', marginX + 77, y + 4.2);
-  doc.text('Reference Range', marginX + 112, y + 4.2);
-  doc.text('Clinical Inference', marginX + 147, y + 4.2);
-  y += 6;
-
-  if (labsList.length > 0) {
-    doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-    labsList.forEach((lab) => {
-      if (ensureSpace(6)) {
-        doc.setFillColor(241, 245, 249);
-        doc.rect(marginX, y, contentWidth, 6, 'FD');
-        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-        doc.text('Category', marginX + 2, y + 4.2);
-        doc.text('Investigation Parameter', marginX + 32, y + 4.2);
-        doc.text('Observed Value', marginX + 77, y + 4.2);
-        doc.text('Reference Range', marginX + 112, y + 4.2);
-        doc.text('Clinical Inference', marginX + 147, y + 4.2);
+    if (vitalsList.length > 0) {
+      doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+      vitalsList.forEach((v) => {
+        if (ensureSpace(6)) {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(marginX, y, contentWidth, 6, 'FD');
+          doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+          doc.text('Recorded Date', marginX + 2, y + 4.2);
+          doc.text('Temp (°F)', marginX + 32, y + 4.2);
+          doc.text('Blood Pressure (mmHg)', marginX + 57, y + 4.2);
+          doc.text('Pulse Rate (bpm)', marginX + 102, y + 4.2);
+          doc.text('Resp Rate (/min)', marginX + 132, y + 4.2);
+          doc.text('SpO2 (%)', marginX + 157, y + 4.2);
+          y += 6;
+          doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
+        }
+        doc.rect(marginX, y, contentWidth, 6, 'D');
+        doc.text(String(v.date || 'N/A'), marginX + 2, y + 4.2);
+        doc.text(String(v.temp || v.temperature || '98.6'), marginX + 32, y + 4.2);
+        doc.text(String(v.bp || '120/80'), marginX + 57, y + 4.2);
+        doc.text(String(v.pr || v.pulse || '72'), marginX + 102, y + 4.2);
+        doc.text(String(v.rr || v.respiratory_rate || '18'), marginX + 132, y + 4.2);
+        doc.text(String(v.spo2 ? `${v.spo2}%` : '98%'), marginX + 157, y + 4.2);
         y += 6;
-        doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
-      }
+      });
+    } else {
       doc.rect(marginX, y, contentWidth, 6, 'D');
-      doc.text(String(lab.category || lab.lab_category || 'General'), marginX + 2, y + 4.2);
-      doc.text(String(lab.parameter_name || lab.test_name || 'N/A'), marginX + 32, y + 4.2, { maxWidth: 43 });
-      const valStr = lab.test_value || lab.observed_value ? `${lab.test_value || lab.observed_value} ${lab.unit || ''}` : 'N/A';
-      doc.text(String(valStr), marginX + 77, y + 4.2);
-      doc.text(String(lab.reference_range || lab.normal_range || 'N/A'), marginX + 112, y + 4.2);
-      doc.text(String(lab.clinical_inference || 'Normal'), marginX + 147, y + 4.2);
+      doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('No vital signs logged.', pageWidth / 2, y + 4.2, { align: 'center' });
       y += 6;
-    });
-  } else {
-    doc.rect(marginX, y, contentWidth, 6, 'D');
-    doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
-    doc.text('No laboratory investigations logged.', pageWidth / 2, y + 4.2, { align: 'center' });
+    }
+    y += 4;
+
+    // KEY LABORATORY INVESTIGATIONS TABLE
+    ensureSpace(25);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
+    doc.text(`${sectionCounter++}. LABORATORY INVESTIGATIONS`, marginX, y);
+    y += 5;
+
+    const labsList = norm.labs;
+
+    doc.setFillColor(241, 245, 249);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
+    doc.rect(marginX, y, contentWidth, 6, 'FD');
+
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text('Category', marginX + 2, y + 4.2);
+    doc.text('Investigation Parameter', marginX + 32, y + 4.2);
+    doc.text('Observed Value', marginX + 77, y + 4.2);
+    doc.text('Reference Range', marginX + 112, y + 4.2);
+    doc.text('Clinical Inference', marginX + 147, y + 4.2);
     y += 6;
-  }
-  y += 4;
 
-  // FINAL DIAGNOSIS & PRESCRIBED PHARMACOTHERAPY LOG TABLE
-  ensureSpace(25);
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-  doc.text(`${sectionCounter++}. PRESCRIBED PHARMACOTHERAPY LOG`, marginX, y);
-  y += 5;
-
-  doc.setDrawColor(5, 150, 105);
-  doc.setFillColor(236, 253, 245);
-  doc.rect(marginX, y, contentWidth, 10, 'FD');
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(5, 150, 105);
-  doc.text(`OFFICIAL DIAGNOSIS: ${norm.diagnosis.final.toUpperCase()}`, pageWidth / 2, y + 6.5, { align: 'center' });
-
-  y += 14;
-
-  const drugsList = norm.drugs.length > 0 
-    ? norm.drugs 
-    : (profile.medications || profile.drugs || profile.prescribed_medications ? [{ drug_name: profile.medications || profile.drugs || profile.prescribed_medications, dose: 'As prescribed', route: 'Oral', frequency: 'OD', indication: 'Symptomatic Management' }] : []);
-
-  doc.setFillColor(241, 245, 249);
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.3);
-  doc.rect(marginX, y, contentWidth, 6, 'FD');
-
-  doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-  doc.text('S.No', marginX + 2, y + 4.2);
-  doc.text('Brand & Generic Name', marginX + 17, y + 4.2);
-  doc.text('Dose & Route', marginX + 77, y + 4.2);
-  doc.text('Frequency', marginX + 117, y + 4.2);
-  doc.text('Therapeutic Indication', marginX + 142, y + 4.2);
-  y += 6;
-
-  if (drugsList.length > 0) {
-    doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-    drugsList.forEach((d, idx) => {
-      if (ensureSpace(6)) {
-        doc.setFillColor(241, 245, 249);
-        doc.rect(marginX, y, contentWidth, 6, 'FD');
-        doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
-        doc.text('S.No', marginX + 2, y + 4.2);
-        doc.text('Brand & Generic Name', marginX + 17, y + 4.2);
-        doc.text('Dose & Route', marginX + 77, y + 4.2);
-        doc.text('Frequency', marginX + 117, y + 4.2);
-        doc.text('Therapeutic Indication', marginX + 142, y + 4.2);
+    if (labsList.length > 0) {
+      doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+      labsList.forEach((lab) => {
+        if (ensureSpace(6)) {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(marginX, y, contentWidth, 6, 'FD');
+          doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+          doc.text('Category', marginX + 2, y + 4.2);
+          doc.text('Investigation Parameter', marginX + 32, y + 4.2);
+          doc.text('Observed Value', marginX + 77, y + 4.2);
+          doc.text('Reference Range', marginX + 112, y + 4.2);
+          doc.text('Clinical Inference', marginX + 147, y + 4.2);
+          y += 6;
+          doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
+        }
+        doc.rect(marginX, y, contentWidth, 6, 'D');
+        doc.text(String(lab.category || lab.lab_category || 'General'), marginX + 2, y + 4.2);
+        doc.text(String(lab.parameter_name || lab.test_name || 'N/A'), marginX + 32, y + 4.2, { maxWidth: 43 });
+        const valStr = lab.test_value || lab.observed_value ? `${lab.test_value || lab.observed_value} ${lab.unit || ''}` : 'N/A';
+        doc.text(String(valStr), marginX + 77, y + 4.2);
+        doc.text(String(lab.reference_range || lab.normal_range || 'N/A'), marginX + 112, y + 4.2);
+        doc.text(String(lab.clinical_inference || 'Normal'), marginX + 147, y + 4.2);
         y += 6;
-        doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
-      }
+      });
+    } else {
       doc.rect(marginX, y, contentWidth, 6, 'D');
-      doc.text(String(d.s_no || idx + 1), marginX + 2, y + 4.2);
-      const nameStr = d.trade_name || d.brand_name ? `${d.trade_name || d.brand_name} ${d.generic_name || d.drug_name ? `(${d.generic_name || d.drug_name})` : ''}` : String(d.generic_name || d.drug_name || 'N/A');
-      doc.text(nameStr, marginX + 17, y + 4.2, { maxWidth: 58 });
-      doc.text(`${d.dose || 'N/A'} (${d.route_of_admin || d.route || 'Oral'})`, marginX + 77, y + 4.2, { maxWidth: 38 });
-      doc.text(String(d.frequency || 'OD'), marginX + 117, y + 4.2);
-      doc.text(String(d.indication || 'Symptomatic Management'), marginX + 142, y + 4.2, { maxWidth: 36 });
+      doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('No laboratory investigations logged.', pageWidth / 2, y + 4.2, { align: 'center' });
       y += 6;
-    });
-  } else {
-    doc.rect(marginX, y, contentWidth, 6, 'D');
-    doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
-    doc.text('No medications logged.', pageWidth / 2, y + 4.2, { align: 'center' });
-    y += 6;
-  }
-  y += 4;
+    }
+    y += 4;
 
-  // 4. PATIENT COUNSELLING DOCUMENTATION (STRUCTURED 2-COLUMN BOX)
+    // FINAL DIAGNOSIS & PRESCRIBED PHARMACOTHERAPY LOG TABLE
+    ensureSpace(25);
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
+    doc.text(`${sectionCounter++}. MEDICATION PROFILE / DISCHARGE SUMMARY`, marginX, y);
+    y += 5;
+
+    doc.setDrawColor(5, 150, 105);
+    doc.setFillColor(236, 253, 245);
+    doc.rect(marginX, y, contentWidth, 10, 'FD');
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(10); doc.setTextColor(5, 150, 105);
+    doc.text(`OFFICIAL DIAGNOSIS: ${norm.diagnosis.final.toUpperCase()}`, pageWidth / 2, y + 6.5, { align: 'center' });
+
+    y += 14;
+
+    const drugsList = norm.drugs.length > 0 
+      ? norm.drugs 
+      : (profile.medications || profile.drugs || profile.prescribed_medications ? [{ drug_name: profile.medications || profile.drugs || profile.prescribed_medications, dose: 'As prescribed', route: 'Oral', frequency: 'OD', indication: 'Symptomatic Management' }] : []);
+
+    doc.setFillColor(241, 245, 249);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.3);
+    doc.rect(marginX, y, contentWidth, 6, 'FD');
+
+    doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+    doc.text('S.No', marginX + 2, y + 4.2);
+    doc.text('Brand & Generic Name', marginX + 17, y + 4.2);
+    doc.text('Dose & Route', marginX + 77, y + 4.2);
+    doc.text('Frequency', marginX + 117, y + 4.2);
+    doc.text('Therapeutic Indication', marginX + 142, y + 4.2);
+    y += 6;
+
+    if (drugsList.length > 0) {
+      doc.setFont(fontFamily, 'normal'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+      drugsList.forEach((d, idx) => {
+        if (ensureSpace(6)) {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(marginX, y, contentWidth, 6, 'FD');
+          doc.setFont(fontFamily, 'bold'); doc.setFontSize(8); doc.setTextColor(15, 23, 42);
+          doc.text('S.No', marginX + 2, y + 4.2);
+          doc.text('Brand & Generic Name', marginX + 17, y + 4.2);
+          doc.text('Dose & Route', marginX + 77, y + 4.2);
+          doc.text('Frequency', marginX + 117, y + 4.2);
+          doc.text('Therapeutic Indication', marginX + 142, y + 4.2);
+          y += 6;
+          doc.setFont(fontFamily, 'normal'); doc.setFontSize(8);
+        }
+        doc.rect(marginX, y, contentWidth, 6, 'D');
+        doc.text(String(d.s_no || idx + 1), marginX + 2, y + 4.2);
+        const nameStr = d.trade_name || d.brand_name ? `${d.trade_name || d.brand_name} ${d.generic_name || d.drug_name ? `(${d.generic_name || d.drug_name})` : ''}` : String(d.generic_name || d.drug_name || 'N/A');
+        doc.text(nameStr, marginX + 17, y + 4.2, { maxWidth: 58 });
+        doc.text(`${d.dose || 'N/A'} (${d.route_of_admin || d.route || 'Oral'})`, marginX + 77, y + 4.2, { maxWidth: 38 });
+        doc.text(String(d.frequency || 'OD'), marginX + 117, y + 4.2);
+        doc.text(String(d.indication || 'Symptomatic Management'), marginX + 142, y + 4.2, { maxWidth: 36 });
+        y += 6;
+      });
+    } else {
+      doc.rect(marginX, y, contentWidth, 6, 'D');
+      doc.setFont(fontFamily, 'italic'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('No medications logged.', pageWidth / 2, y + 4.2, { align: 'center' });
+      y += 6;
+    }
+    y += 4;
+
+    // Draw Dual Signatures at the end of Form 1
+    drawDualSignatures(y);
+  }
+
+  // --- FORM 2: PATIENT COUNSELLING DOCUMENTATION (STARTS ON FRESH PAGE) ---
   if (norm.isCounsellingCompleted) {
-    ensureSpace(32);
+    doc.addPage();
+    drawWatermark();
+    y = 38;
+
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
     doc.text(`${sectionCounter++}. PATIENT COUNSELLING DOCUMENTATION`, marginX, y);
     y += 5;
@@ -503,11 +541,17 @@ export const generateOfficialClinicalCasePDF = async ({
     }
 
     y += 32;
+
+    // Draw Dual Signatures at the end of Form 2
+    drawDualSignatures(y);
   }
 
-  // 5. PHARMACIST INTERVENTION DOCUMENTATION (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // --- FORM 3: PHARMACIST INTERVENTION DOCUMENTATION (STARTS ON FRESH PAGE) ---
   if (norm.isInterventionCompleted) {
-    ensureSpace(32);
+    doc.addPage();
+    drawWatermark();
+    y = 38;
+
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
     doc.text(`${sectionCounter++}. PHARMACIST INTERVENTION DOCUMENTATION`, marginX, y);
     y += 5;
@@ -537,11 +581,17 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setFont('times', 'normal'); doc.text(`${norm.intervention.outcome || norm.intervention.clinical_outcome || 'Positive / Resolved'}`, col2X + 28, y + 24);
 
     y += 32;
+
+    // Draw Dual Signatures at the end of Form 3
+    drawDualSignatures(y);
   }
 
-  // 6. DRUG INFORMATION REQUEST DOCUMENTATION (DIR — STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // --- FORM 4: DRUG INFORMATION REQUEST DOCUMENTATION (STARTS ON FRESH PAGE) ---
   if (norm.isDirCompleted) {
-    ensureSpace(32);
+    doc.addPage();
+    drawWatermark();
+    y = 38;
+
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
     doc.text(`${sectionCounter++}. DRUG INFORMATION REQUEST DOCUMENTATION`, marginX, y);
     y += 5;
@@ -571,11 +621,17 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setFont('times', 'normal'); doc.text(`${norm.dir.information_provided || norm.dir.response || 'N/A'}`, col1X + 30, y + 24, { maxWidth: contentWidth - 34 });
 
     y += 32;
+
+    // Draw Dual Signatures at the end of Form 4
+    drawDualSignatures(y);
   }
 
-  // 7. ADR DOCUMENTATION LOG (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // --- FORM 5: ADR DOCUMENTATION LOG (STARTS ON FRESH PAGE) ---
   if (norm.isAdrCompleted || norm.diagnosis.dischargeSummary) {
-    ensureSpace(32);
+    doc.addPage();
+    drawWatermark();
+    y = 38;
+
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
     doc.text(`${sectionCounter++}. ADR DOCUMENTATION LOG`, marginX, y);
     y += 5;
@@ -614,38 +670,10 @@ export const generateOfficialClinicalCasePDF = async ({
       doc.text(norm.diagnosis.dischargeSummary, marginX + 3, y, { maxWidth: contentWidth - 6 });
       y += 8;
     }
+
+    // Draw Dual Signatures at the end of Form 5
+    drawDualSignatures(y);
   }
-
-  // DUAL VERIFICATION SIGNATURE SECTION (AT BOTTOM OF FINAL PAGE)
-  ensureSpace(40);
-  const sigY = Math.max(y + 15, pageHeight - 42);
-
-  doc.setDrawColor(15, 23, 42);
-  doc.setLineWidth(0.4);
-  doc.line(marginX, sigY - 5, pageWidth - marginX, sigY - 5);
-
-  const sigLeftX = marginX + 15;
-  const sigRightX = pageWidth - marginX - 55;
-
-  // Student Signature Box (Left)
-  doc.line(sigLeftX, sigY + 10, sigLeftX + 45, sigY + 10);
-  doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
-  doc.text('Student Signature', sigLeftX + 22.5, sigY + 14, { align: 'center' });
-  doc.setFont('times', 'normal'); doc.setFontSize(8.5); doc.setTextColor(2, 132, 199);
-  doc.text(`${norm.studentName} (${norm.studentRoll})`, sigLeftX + 22.5, sigY + 19, { align: 'center' });
-  doc.setFontSize(7.5); doc.setTextColor(100, 116, 139);
-  doc.text(`Date: ${currentDateStr}`, sigLeftX + 22.5, sigY + 23, { align: 'center' });
-
-  // Faculty Preceptor Signature Box (Right Side)
-  doc.line(sigRightX, sigY + 10, sigRightX + 45, sigY + 10);
-  doc.setFont('times', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
-  doc.text('Preceptor Signature', sigRightX + 22.5, sigY + 14, { align: 'center' });
-  doc.setFont('times', 'normal'); doc.setFontSize(8.5); doc.setTextColor(2, 132, 199);
-  doc.text(norm.preceptorName, sigRightX + 22.5, sigY + 19, { align: 'center' });
-  doc.setFontSize(7.5); doc.setTextColor(15, 23, 42);
-  doc.text(norm.preceptorDesig.toUpperCase(), sigRightX + 22.5, sigY + 26, { align: 'center' });
-  doc.setFontSize(7.5); doc.setTextColor(100, 116, 139);
-  doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 30, { align: 'center' });
 
   // Stamp headers & footers dynamically across all pages
   const totalPages = doc.internal.getNumberOfPages();

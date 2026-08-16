@@ -119,36 +119,54 @@ export const generateOfficialClinicalCasePDF = async ({
 
   const drawWatermark = () => {
     if (!watermarkEnabled) return;
+    doc.saveGraphicsState();
+    try {
+      doc.setGState(new doc.GState({ opacity: 0.12 }));
+    } catch (e) {}
     doc.setFont(fontFamily, 'bold');
     doc.setFontSize(15);
-    doc.setTextColor(226, 232, 240); // slate-200
-    const textToDraw = watermarkLine1 ? `${watermarkLine1} - ${watermarkLine2}` : collegeName.toUpperCase();
-    if (isDiagonal) {
-      doc.text(textToDraw, pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
-    } else {
-      doc.text(textToDraw, pageWidth / 2, pageHeight / 2, { align: 'center' });
-    }
+    doc.setTextColor(160, 175, 195); // Light slate gray
+    const textToDraw = watermarkLine1
+      ? (watermarkLine2 ? `${watermarkLine1} — ${watermarkLine2}` : watermarkLine1)
+      : collegeName.toUpperCase();
+
+    const rotationAngle = isDiagonal ? 45 : 0;
+    doc.text(textToDraw, pageWidth / 2, pageHeight / 2, {
+      align: 'center',
+      baseline: 'middle',
+      angle: rotationAngle
+    });
+    doc.restoreGraphicsState();
   };
 
   const drawPageFooter = (pageNum, totalPages) => {
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.2);
-    doc.line(marginX, pageHeight - 12, pageWidth - marginX, pageHeight - 12);
+    doc.saveGraphicsState();
+    const footerY = pageHeight - 12; // Fixed line 12mm from bottom
+    const textY = pageHeight - 6.5;  // Fixed baseline 6.5mm from bottom
+
+    doc.setDrawColor(203, 213, 225); // slate-300
+    doc.setLineWidth(0.25);
+    doc.line(marginX, footerY, pageWidth - marginX, footerY);
 
     doc.setFont(fontFamily, 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text(footerLeft, marginX, pageHeight - 6);
+    doc.setTextColor(100, 116, 139); // slate-500
 
+    // LEFT: College Name / footerLeft
+    doc.text(footerLeft, marginX, textY, { align: 'left' });
+
+    // CENTER: Official Approved Clinical Document • [date]
     if (showDateTime) {
-      doc.text(`${footerCenter} • ${currentDateStr}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+      doc.text(`${footerCenter} • ${currentDateStr}`, pageWidth / 2, textY, { align: 'center' });
     } else {
-      doc.text(footerCenter, pageWidth / 2, pageHeight - 6, { align: 'center' });
+      doc.text(footerCenter, pageWidth / 2, textY, { align: 'center' });
     }
 
+    // RIGHT: Page X of Y
     if (showPageNum) {
-      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
+      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, textY, { align: 'right' });
     }
+    doc.restoreGraphicsState();
   };
 
   let y = 38;
@@ -157,7 +175,6 @@ export const generateOfficialClinicalCasePDF = async ({
     if (y + neededHeight > maxY) {
       doc.addPage();
       drawWatermark();
-      drawPageHeader();
       y = 38;
       return true;
     }
@@ -166,7 +183,6 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // --- START PAGE 1 ---
   drawWatermark();
-  drawPageHeader();
 
   let sectionCounter = 1;
 
@@ -617,10 +633,15 @@ export const generateOfficialClinicalCasePDF = async ({
   doc.setFontSize(7.5); doc.setTextColor(100, 116, 139);
   doc.text(`Date: ${currentDateStr}`, sigRightX + 22.5, sigY + 30, { align: 'center' });
 
-  // Stamp total pages on footers across all pages
+  // Stamp headers & footers dynamically across all pages
   const totalPages = doc.internal.getNumberOfPages();
+  const repeatHeader = branding?.repeat_header ?? true;
+
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
+    if (repeatHeader || i === 1) {
+      drawPageHeader();
+    }
     drawPageFooter(i, totalPages);
   }
 

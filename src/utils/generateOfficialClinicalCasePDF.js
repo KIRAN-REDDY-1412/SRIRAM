@@ -2,8 +2,10 @@ import { jsPDF } from 'jspdf';
 
 /**
  * Direct High-Resolution Vector PDF Generator for Approved Clinical Cases.
- * Fully dynamic layout engine — renders ONLY actual submitted clinical data.
- * Profile & Counselling are mandatory; Intervention, Drug Info, and ADR Log are rendered ONLY if actually submitted.
+ * Enforces the FINAL DATA RULE:
+ *  - Form COMPLETED (green) -> INCLUDE EVERY SINGLE FIELD AND ITS ACTUAL SUBMITTED VALUE.
+ *  - Form NOT COMPLETED (draft/incomplete/not submitted) -> EXCLUDE THE ENTIRE FORM.
+ *  - Profile & Counselling remain mandatory for Case Submission.
  */
 export const generateOfficialClinicalCasePDF = async ({
   clinicalCase = {},
@@ -60,29 +62,32 @@ export const generateOfficialClinicalCasePDF = async ({
   const collegeLogo = college?.college_logo_url || college?.logo_url;
   const hospitalLogo = college?.hospital_logo_url;
 
-  // Helper to check if an optional form contains actual submitted data
-  const hasData = (obj) => {
-    if (!obj || typeof obj !== 'object') return false;
-    return Object.values(obj).some(val => {
-      if (val === null || val === undefined || val === '') return false;
-      if (Array.isArray(val) && val.length === 0) return false;
-      if (typeof val === 'object' && Object.keys(val).length === 0) return false;
-      return true;
-    });
+  // Helper to determine if a form module is COMPLETED (green)
+  const isFormCompleted = (formObj) => {
+    if (!formObj || typeof formObj !== 'object') return false;
+    const status = (formObj.status || formObj.form_status || '').toLowerCase();
+    
+    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted') return false;
+    if (status === 'completed' || status === 'submitted' || status === 'approved' || formObj.is_completed === true) return true;
+
+    return Object.entries(formObj).some(([k, v]) => {
+      if (['status', 'form_status', 'id', 'case_id', 'created_at', 'updated_at'].includes(k)) return false;
+      return v !== null && v !== undefined && v !== '';
+    }) && status !== 'draft';
   };
 
-  const hasIntervention = hasData(intervention);
-  const hasDir = hasData(dir);
-  const hasAdr = hasData(adr);
+  const isProfileCompleted = isFormCompleted(profile) || Boolean(profile.patient_name || clinicalCase.patient_name);
+  const isCounsellingCompleted = isFormCompleted(counselling);
+  const isInterventionCompleted = isFormCompleted(intervention);
+  const isDirCompleted = isFormCompleted(dir);
+  const isAdrCompleted = isFormCompleted(adr);
 
   // Helper for drawing repeating page header
   const drawPageHeader = () => {
-    // Header Outer Box
     doc.setDrawColor(15, 23, 42); // slate-900
     doc.setLineWidth(0.4);
     doc.rect(marginX, 12, contentWidth, 22);
 
-    // College Logo (Left)
     if (collegeLogo && typeof collegeLogo === 'string' && collegeLogo.startsWith('data:image')) {
       try {
         const fmt = collegeLogo.includes('image/png') ? 'PNG' : 'JPEG';
@@ -90,7 +95,6 @@ export const generateOfficialClinicalCasePDF = async ({
       } catch (e) {}
     }
 
-    // Hospital Logo (Right)
     if (hospitalLogo && typeof hospitalLogo === 'string' && hospitalLogo.startsWith('data:image')) {
       try {
         const fmt = hospitalLogo.includes('image/png') ? 'PNG' : 'JPEG';
@@ -98,19 +102,16 @@ export const generateOfficialClinicalCasePDF = async ({
       } catch (e) {}
     }
 
-    // College Name
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
     doc.text(collegeName.toUpperCase(), pageWidth / 2, 19, { align: 'center' });
 
-    // Subtitle (Autonomous & Hospital)
     doc.setFont('times', 'italic');
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105);
     doc.text(`(Autonomous) • ${hospitalName}`, pageWidth / 2, 24, { align: 'center' });
 
-    // Document Sub-header Banner
     doc.setFillColor(15, 23, 42);
     doc.rect(marginX, 28, contentWidth, 5, 'F');
     doc.setFont('courier', 'bold');
@@ -119,15 +120,13 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`CASE ID : ${caseId}   •   OFFICIAL APPROVED CLINICAL CASE RECORD`, pageWidth / 2, 31.5, { align: 'center' });
   };
 
-  // Helper for drawing soft watermark
   const drawWatermark = () => {
     doc.setFont('times', 'bold');
     doc.setFontSize(16);
-    doc.setTextColor(241, 245, 249); // slate-100 (soft light gray)
+    doc.setTextColor(241, 245, 249);
     doc.text(collegeName.toUpperCase(), pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
   };
 
-  // Helper for drawing page footer (3 distinct non-overlapping columns)
   const drawPageFooter = (pageNum, totalPages) => {
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(0.2);
@@ -143,14 +142,13 @@ export const generateOfficialClinicalCasePDF = async ({
 
   let y = 38;
 
-  // Helper for dynamic page overflow management
   const ensureSpace = (neededHeight) => {
     if (y + neededHeight > maxY) {
       doc.addPage();
       drawWatermark();
       drawPageHeader();
       y = 38;
-      return true; // Indicates page break occurred
+      return true;
     }
     return false;
   };
@@ -162,86 +160,86 @@ export const generateOfficialClinicalCasePDF = async ({
   let sectionCounter = 1;
 
   // 1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY (MANDATORY PROFILE)
-  doc.setFont('times', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(2, 132, 199); // secondary cyan
-  doc.text(`${sectionCounter++}. PATIENT DEMOGRAPHICS & CLINICAL HISTORY`, marginX, y);
-  y += 4;
-
-  // Patient Profile Table Box
-  doc.setDrawColor(203, 213, 225);
-  doc.setFillColor(248, 250, 252);
-  doc.rect(marginX, y, contentWidth, 38, 'FD');
-
-  doc.setFontSize(9);
-  doc.setTextColor(15, 23, 42);
-
-  const col1 = marginX + 3;
-  const col2 = marginX + 90;
-
-  doc.text(`Patient Name: ${profile.patient_name || clinicalCase.patient_name || 'N/A'}`, col1, y + 6);
-  doc.text(`Age / Gender: ${profile.age || clinicalCase.age || 'N/A'} Yrs / ${profile.gender || clinicalCase.gender || 'N/A'}`, col2, y + 6);
-
-  doc.text(`IP/OP No: ${profile.ip_op_number || profile.ip_no || clinicalCase.ip_op_number || 'N/A'}`, col1, y + 12);
-  doc.text(`Ward / Bed: ${profile.ward || clinicalCase.ward || 'N/A'}`, col2, y + 12);
-
-  doc.text(`Department: ${profile.department || clinicalCase.department || 'N/A'}`, col1, y + 18);
-  doc.text(`Attending Physician: ${profile.attending_physician || profile.physician || 'Attending Consultant'}`, col2, y + 18);
-
-  doc.text(`Date of Admission: ${profile.date_of_admission || profile.doa || 'N/A'}`, col1, y + 24);
-  doc.text(`Date of Discharge: ${profile.date_of_discharge || profile.dod || 'N/A'}`, col2, y + 24);
-
-  const ht = profile.height ? `${profile.height} cm` : '—';
-  const wt = profile.weight ? `${profile.weight} kg` : '—';
-  const bmi = profile.bmi ? `${profile.bmi}` : '—';
-  doc.text(`Physical Measurements: Ht: ${ht} | Wt: ${wt} | BMI: ${bmi}`, col1, y + 30);
-  doc.text(`Allergies: ${profile.allergy_drugs || profile.allergies || 'NIL'}`, col2, y + 30);
-
-  y += 42;
-
-  // History Sections
-  if (profile.chief_complaints) {
-    ensureSpace(12);
+  if (isProfileCompleted) {
     doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Chief Complaints & Presenting History:', marginX, y);
+    doc.setFontSize(11);
+    doc.setTextColor(2, 132, 199);
+    doc.text(`${sectionCounter++}. PATIENT DEMOGRAPHICS & CLINICAL HISTORY`, marginX, y);
     y += 4;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(profile.chief_complaints, marginX + 3, y, { maxWidth: contentWidth - 6 });
-    y += 10;
+
+    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(248, 250, 252);
+    doc.rect(marginX, y, contentWidth, 38, 'FD');
+
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+
+    const col1 = marginX + 3;
+    const col2 = marginX + 90;
+
+    doc.text(`Patient Name: ${profile.patient_name || clinicalCase.patient_name || 'N/A'}`, col1, y + 6);
+    doc.text(`Age / Gender: ${profile.age || clinicalCase.age || 'N/A'} Yrs / ${profile.gender || clinicalCase.gender || 'N/A'}`, col2, y + 6);
+
+    doc.text(`IP/OP No: ${profile.ip_op_number || profile.ip_no || clinicalCase.ip_op_number || 'N/A'}`, col1, y + 12);
+    doc.text(`Ward / Bed: ${profile.ward || clinicalCase.ward || 'N/A'}`, col2, y + 12);
+
+    doc.text(`Department: ${profile.department || clinicalCase.department || 'N/A'}`, col1, y + 18);
+    doc.text(`Attending Physician: ${profile.attending_physician || profile.physician || 'Attending Consultant'}`, col2, y + 18);
+
+    doc.text(`Date of Admission: ${profile.date_of_admission || profile.doa || 'N/A'}`, col1, y + 24);
+    doc.text(`Date of Discharge: ${profile.date_of_discharge || profile.dod || 'N/A'}`, col2, y + 24);
+
+    const ht = profile.height ? `${profile.height} cm` : '—';
+    const wt = profile.weight ? `${profile.weight} kg` : '—';
+    const bmi = profile.bmi ? `${profile.bmi}` : '—';
+    doc.text(`Physical Measurements: Ht: ${ht} | Wt: ${wt} | BMI: ${bmi}`, col1, y + 30);
+    doc.text(`Allergies: ${profile.allergy_drugs || profile.allergies || 'NIL'}`, col2, y + 30);
+
+    y += 42;
+
+    if (profile.chief_complaints) {
+      ensureSpace(12);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Chief Complaints & Presenting History:', marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(profile.chief_complaints, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 10;
+    }
+
+    if (profile.past_medical_history || profile.past_history) {
+      ensureSpace(12);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Past Medical & Medication History:', marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(profile.past_medical_history || profile.past_history, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 10;
+    }
+
+    if (profile.general_examination || profile.systemic_examination) {
+      ensureSpace(14);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('General & Systemic Examinations:', marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      const genExam = profile.general_examination ? `General Exam: ${profile.general_examination}` : '';
+      const sysExam = profile.systemic_examination ? `Systemic Exam: ${profile.systemic_examination}` : '';
+      doc.text([genExam, sysExam].filter(Boolean).join('\n'), marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 12;
+    }
   }
 
-  if (profile.past_medical_history || profile.past_history) {
-    ensureSpace(12);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Past Medical & Medication History:', marginX, y);
-    y += 4;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(profile.past_medical_history || profile.past_history, marginX + 3, y, { maxWidth: contentWidth - 6 });
-    y += 10;
-  }
-
-  if (profile.general_examination || profile.systemic_examination) {
-    ensureSpace(14);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('General & Systemic Examinations:', marginX, y);
-    y += 4;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    const genExam = profile.general_examination ? `General Exam: ${profile.general_examination}` : '';
-    const sysExam = profile.systemic_examination ? `Systemic Exam: ${profile.systemic_examination}` : '';
-    doc.text([genExam, sysExam].filter(Boolean).join('\n'), marginX + 3, y, { maxWidth: contentWidth - 6 });
-    y += 12;
-  }
-
-  // Vitals Signs Table
+  // VITAL SIGNS MONITORING LOG
   if (vitalsList.length > 0) {
     ensureSpace(20);
     doc.setFont('times', 'bold');
@@ -343,9 +341,8 @@ export const generateOfficialClinicalCasePDF = async ({
   doc.text(`${sectionCounter++}. FINAL DIAGNOSIS & PRESCRIBED MEDICATIONS`, marginX, y);
   y += 6;
 
-  // Final Diagnosis Box
-  doc.setDrawColor(5, 150, 105); // Emerald-600
-  doc.setFillColor(236, 253, 245); // Emerald-50
+  doc.setDrawColor(5, 150, 105);
+  doc.setFillColor(236, 253, 245);
   doc.rect(marginX, y, contentWidth, 12, 'FD');
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
@@ -354,7 +351,6 @@ export const generateOfficialClinicalCasePDF = async ({
 
   y += 18;
 
-  // Medications Table
   if (drugs.length > 0) {
     ensureSpace(12);
     doc.setFillColor(241, 245, 249);
@@ -392,31 +388,37 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 6;
   }
 
-  // PATIENT COUNSELLING SUMMARY (MANDATORY FORM)
-  ensureSpace(25);
-  doc.setFont('times', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(2, 132, 199);
-  doc.text(`${sectionCounter++}. PATIENT COUNSELLING SUMMARY`, marginX, y);
-  y += 6;
+  // PATIENT COUNSELLING SUMMARY (MANDATORY FORM — INCLUDE IF COMPLETED)
+  if (isCounsellingCompleted) {
+    ensureSpace(25);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(2, 132, 199);
+    doc.text(`${sectionCounter++}. PATIENT COUNSELLING SUMMARY`, marginX, y);
+    y += 6;
 
-  doc.setFont('times', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Patient Counselling Record:', marginX, y);
-  y += 4;
-  doc.setFont('times', 'normal');
-  doc.setFontSize(8.5);
-  doc.text(`Counselled: ${counselling.counselling_provided_to || counselling.patient_type || 'Patient'} | Mode: ${counselling.counselling_mode || 'Oral'} | Time: ${counselling.time_taken || '15 min'}`, marginX + 3, y);
-  y += 5;
-  if (counselling.counselling_points || counselling.disease_counselled || counselling.points_covered) {
-    doc.text(`Key Focus / Points Covered: ${counselling.counselling_points || counselling.disease_counselled || (Array.isArray(counselling.points_covered) ? counselling.points_covered.join(', ') : counselling.points_covered)}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
+    doc.setFont('times', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Patient Counselling Record:', marginX, y);
+    y += 4;
+    doc.setFont('times', 'normal');
+    doc.setFontSize(8.5);
+    doc.text(`Counselled: ${counselling.counselling_provided_to || counselling.patient_type || 'Patient'} | Mode: ${counselling.counselling_mode || 'Oral'} | Time: ${counselling.time_taken || '15 min'}`, marginX + 3, y);
+    y += 5;
+    if (counselling.counselling_points || counselling.disease_counselled || counselling.points_covered) {
+      doc.text(`Key Focus / Points Covered: ${counselling.counselling_points || counselling.disease_counselled || (Array.isArray(counselling.points_covered) ? counselling.points_covered.join(', ') : counselling.points_covered)}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 6;
+    }
+    if (counselling.barriers_action || counselling.barrier_details) {
+      doc.text(`Barriers & Action Taken: ${counselling.barriers_action || counselling.barrier_details}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 6;
+    }
     y += 6;
   }
-  y += 6;
 
-  // PHARMACIST INTERVENTIONS (OPTIONAL — RENDER ONLY IF ACTUALLY SUBMITTED)
-  if (hasIntervention) {
+  // PHARMACIST INTERVENTIONS (OPTIONAL — INCLUDE ONLY IF COMPLETED)
+  if (isInterventionCompleted) {
     ensureSpace(25);
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
@@ -446,8 +448,8 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 6;
   }
 
-  // DRUG INFORMATION REQUEST (OPTIONAL — RENDER ONLY IF ACTUALLY SUBMITTED)
-  if (hasDir) {
+  // DRUG INFORMATION REQUEST (OPTIONAL — INCLUDE ONLY IF COMPLETED)
+  if (isDirCompleted) {
     ensureSpace(25);
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
@@ -458,19 +460,19 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setFont('times', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(15, 23, 42);
-    if (dir.query || dir.drug_info_query) {
-      doc.text(`Query: ${dir.query || dir.drug_info_query}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
+    if (dir.query || dir.drug_info_query || dir.details_of_enquiry) {
+      doc.text(`Query: ${dir.query || dir.drug_info_query || dir.details_of_enquiry}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
       y += 5;
     }
-    if (dir.response || dir.query_response) {
-      doc.text(`Response: ${dir.response || dir.query_response}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
+    if (dir.response || dir.query_response || dir.information_provided) {
+      doc.text(`Response: ${dir.response || dir.query_response || dir.information_provided}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
       y += 5;
     }
     y += 6;
   }
 
-  // ADR LOG & DISCHARGE SUMMARY
-  if (hasAdr || profile.discharge_summary) {
+  // ADR LOG (OPTIONAL — INCLUDE ONLY IF COMPLETED)
+  if (isAdrCompleted || profile.discharge_summary) {
     ensureSpace(25);
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
@@ -478,7 +480,7 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`${sectionCounter++}. ADR LOG & DISCHARGE SUMMARY`, marginX, y);
     y += 6;
 
-    if (hasAdr) {
+    if (isAdrCompleted) {
       doc.setFont('times', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);

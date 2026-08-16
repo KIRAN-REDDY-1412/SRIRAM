@@ -27,21 +27,24 @@ export const ClinicalCaseDocumentRenderer = ({
   const counselling = modules.counselling || {};
   const intervention = modules.intervention || {};
   const dir = modules.dir || {};
-  const adr = modules.adr || {};
+  const isFormCompleted = (formObj) => {
+    if (!formObj || typeof formObj !== 'object') return false;
+    const status = (formObj.status || formObj.form_status || '').toLowerCase();
+    
+    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted') return false;
+    if (status === 'completed' || status === 'submitted' || status === 'approved' || formObj.is_completed === true) return true;
 
-  const hasData = (obj) => {
-    if (!obj || typeof obj !== 'object') return false;
-    return Object.values(obj).some(val => {
-      if (val === null || val === undefined || val === '') return false;
-      if (Array.isArray(val) && val.length === 0) return false;
-      if (typeof val === 'object' && Object.keys(val).length === 0) return false;
-      return true;
-    });
+    return Object.entries(formObj).some(([k, v]) => {
+      if (['status', 'form_status', 'id', 'case_id', 'created_at', 'updated_at'].includes(k)) return false;
+      return v !== null && v !== undefined && v !== '';
+    }) && status !== 'draft';
   };
 
-  const hasIntervention = hasData(intervention);
-  const hasDir = hasData(dir);
-  const hasAdr = hasData(adr);
+  const isProfileCompleted = isFormCompleted(profile) || Boolean(profile.patient_name || cCase.patient_name);
+  const isCounsellingCompleted = isFormCompleted(counselling);
+  const isInterventionCompleted = isFormCompleted(intervention);
+  const isDirCompleted = isFormCompleted(dir);
+  const isAdrCompleted = isFormCompleted(adr);
 
   const caseId = cCase.case_id || 'AMRMCP-2026-000001';
   const preceptorName = cCase.assigned_preceptor_name || cPreceptor.full_name || 'Faculty Preceptor';
@@ -383,8 +386,8 @@ export const ClinicalCaseDocumentRenderer = ({
             </div>
           </div>
 
-          {/* Section 5: Pharmacist Intervention (Optional — Render ONLY if submitted) */}
-          {hasIntervention && (
+          {/* Section 5: Pharmacist Intervention (Optional — Render ONLY if completed) */}
+          {isInterventionCompleted && (
             <div className="border p-3.5 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
                 5. Clinical Pharmacist Intervention
@@ -415,8 +418,8 @@ export const ClinicalCaseDocumentRenderer = ({
       >
         <div className="space-y-4 text-xs">
           
-          {/* Section 6: Drug Information Request (DIR - Optional — Render ONLY if submitted) */}
-          {hasDir && (
+          {/* Section 6: Drug Information Request (DIR - Optional — Render ONLY if completed) */}
+          {isDirCompleted && (
             <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
                 6. Drug Information Request (DIR)
@@ -430,8 +433,8 @@ export const ClinicalCaseDocumentRenderer = ({
             </div>
           )}
 
-          {/* Section 7: Adverse Drug Reaction (ADR) Log (Optional — Render ONLY if submitted) */}
-          {hasAdr && (
+          {/* Section 7: Adverse Drug Reaction (ADR) Log (Optional — Render ONLY if completed) */}
+          {isAdrCompleted && (
             <div className="border p-3 rounded-lg bg-amber-50/50 border-amber-300 text-amber-950 space-y-1 text-[11px]">
               <strong className="block border-b border-amber-200 pb-1 font-extrabold uppercase text-[11px] text-amber-900">
                 7. Adverse Drug Reaction (ADR) Monitoring Log

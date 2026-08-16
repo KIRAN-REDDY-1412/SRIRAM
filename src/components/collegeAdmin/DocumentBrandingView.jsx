@@ -869,20 +869,6 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
       {/* PPT FORMAT CONFIGURATION PANELS */}
       <div className="space-y-6 max-w-5xl mx-auto pt-6 border-t border-slate-200 dark:border-slate-800">
         
-        {/* INLINE PPT SLIDE LIVE PREVIEW */}
-        <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-              <MonitorPlay className="w-4 h-4 text-amber-400" />
-              Live PPT Slide Format Preview
-            </h3>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-800">
-              Live Real-Time Updates
-            </span>
-          </div>
-          <SamplePptSlidePreview college={college} pptSettings={pptSettings} />
-        </div>
-
         {/* SECTION 1: COLLEGE & HOSPITAL IDENTITY (READ ONLY) */}
         <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">

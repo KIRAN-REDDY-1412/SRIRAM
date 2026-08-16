@@ -3,7 +3,8 @@ import { buildNormalizedApprovedCaseData } from './buildNormalizedApprovedCaseDa
 
 /**
  * High-Precision Vector PDF Generator for PharmDVerse Clinical Cases.
- * Enforces strict form boundaries, complete 100% field inclusion, and post-pass translucent watermark overlay.
+ * Enforces strict form boundaries, complete 100% field inclusion, column overlap protection,
+ * and post-pass translucent watermark overlay clipped to printable page interior.
  */
 export const generateOfficialClinicalCasePDF = ({
   clinicalCase = {},
@@ -36,6 +37,7 @@ export const generateOfficialClinicalCasePDF = ({
 
   const col1X = marginX + 3;
   const col2X = marginX + 98;
+  const maxColWidth = 82; // Strictly bounds 2-column text to prevent text overlap collisions!
 
   const currentDateStr = new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -104,28 +106,32 @@ export const generateOfficialClinicalCasePDF = ({
     doc.restoreGraphicsState();
   };
 
-  // --- POST-PASS WATERMARK DRAWING (STAMPED OVER ALL CONTENT & TABLES WITH OPACITY) ---
+  // --- POST-PASS WATERMARK DRAWING (CLIPPED TO CONTENT BOUNDARY, NEVER OVERLAPS FOOTER OR MARGINS) ---
   const drawPageWatermark = () => {
     if (branding?.show_watermark === false) return;
     const watermarkText = (branding?.watermark_text || branding?.college_name || college?.college_name || norm.collegeName).toUpperCase();
     const line2 = (branding?.watermark_line_2 || '').toUpperCase();
-    const opacity = parseFloat(branding?.watermark_opacity ?? 0.16);
+    const opacity = parseFloat(branding?.watermark_opacity ?? 0.15);
 
     doc.saveGraphicsState();
     try {
+      // Clip to interior content box so watermark NEVER bleeds into footers or margins!
+      doc.rect(marginX, 33, contentWidth, pageHeight - 46);
+      doc.clip();
+
       doc.setGState(new doc.GState({ opacity }));
       doc.setFont('times', 'bold');
-      doc.setFontSize(26);
+      doc.setFontSize(watermarkText.length > 28 ? 20 : 24);
       doc.setTextColor(71, 85, 105);
 
       const centerX = 105;
       const centerY = 148.5;
 
       if (line2) {
-        doc.text(watermarkText, centerX, centerY - 7, { align: 'center', angle: 45, rotationDirection: 0 });
-        doc.text(line2, centerX, centerY + 7, { align: 'center', angle: 45, rotationDirection: 0 });
+        doc.text(watermarkText, centerX, centerY - 6, { align: 'center', angle: 30, rotationDirection: 0 });
+        doc.text(line2, centerX, centerY + 6, { align: 'center', angle: 30, rotationDirection: 0 });
       } else {
-        doc.text(watermarkText, centerX, centerY, { align: 'center', angle: 45, rotationDirection: 0 });
+        doc.text(watermarkText, centerX, centerY, { align: 'center', angle: 30, rotationDirection: 0 });
       }
     } catch (e) {
       console.warn('Watermark render error:', e);
@@ -200,22 +206,22 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
     doc.setFont('times', 'bold'); doc.text('Patient Name:', col1X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.patientName, col1X + 24, y + 6);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.patientName, col1X + 24, y + 6, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Age / Gender:', col2X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.demographics.age} Yrs / ${norm.demographics.gender}`, col2X + 24, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.demographics.age} Yrs / ${norm.demographics.gender}`, col2X + 24, y + 6, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('IP/OP No:', col1X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.ipOpNo, col1X + 24, y + 12);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.ipOpNo, col1X + 24, y + 12, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Ward / Bed:', col2X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.wardBed, col2X + 24, y + 12);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.wardBed, col2X + 24, y + 12, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Department:', col1X, y + 18);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.department, col1X + 24, y + 18);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.department, col1X + 24, y + 18, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Attending Physician:', col2X, y + 18);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.physician, col2X + 32, y + 18);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.physician, col2X + 32, y + 18, { maxWidth: maxColWidth - 32 });
 
     doc.setFont('times', 'bold'); doc.text('Date of Admission:', col1X, y + 24);
     doc.setFont('times', 'normal'); doc.text(norm.dates.doa, col1X + 28, y + 24);
@@ -224,16 +230,16 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFont('times', 'normal'); doc.text(norm.dates.dod, col2X + 28, y + 24);
 
     doc.setFont('times', 'bold'); doc.text('Physical Measurements:', col1X, y + 30);
-    doc.setFont('times', 'normal'); doc.text(`Ht: ${norm.demographics.height} | Wt: ${norm.demographics.weight} | BMI: ${norm.demographics.bmi}`, col1X + 35, y + 30);
+    doc.setFont('times', 'normal'); doc.text(`Ht: ${norm.demographics.height} | Wt: ${norm.demographics.weight} | BMI: ${norm.demographics.bmi}`, col1X + 35, y + 30, { maxWidth: maxColWidth - 35 });
 
     doc.setFont('times', 'bold'); doc.text('Allergies:', col2X, y + 30);
-    doc.setFont('times', 'normal'); doc.text(`Drug: ${norm.demographics.allergyDrugs} | Food: ${norm.demographics.allergyFood}`, col2X + 18, y + 30);
+    doc.setFont('times', 'normal'); doc.text(`Drug: ${norm.demographics.allergyDrugs} | Food: ${norm.demographics.allergyFood}`, col2X + 18, y + 30, { maxWidth: maxColWidth - 18 });
 
     doc.setFont('times', 'bold'); doc.text('Social History:', col1X, y + 36);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.socialHistory, col1X + 24, y + 36);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.socialHistory, col1X + 24, y + 36, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Diet & Lifestyle:', col2X, y + 36);
-    doc.setFont('times', 'normal'); doc.text(norm.demographics.diet, col2X + 24, y + 36);
+    doc.setFont('times', 'normal'); doc.text(norm.demographics.diet, col2X + 24, y + 36, { maxWidth: maxColWidth - 24 });
 
     y += 48;
 
@@ -457,19 +463,19 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
     doc.setFont('times', 'bold'); doc.text('Counselling Date / Time:', col1X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.date} ${norm.counselling.time}`, col1X + 36, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.date} ${norm.counselling.time}`, col1X + 36, y + 6, { maxWidth: maxColWidth - 36 });
 
     doc.setFont('times', 'bold'); doc.text('Provided To / Type:', col2X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.providedTo} (${norm.counselling.patientType})`, col2X + 32, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.providedTo} (${norm.counselling.patientType})`, col2X + 32, y + 6, { maxWidth: maxColWidth - 32 });
 
     doc.setFont('times', 'bold'); doc.text('Duration / Representative:', col1X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.timeTaken} ${norm.counselling.representativeReasons ? `(${norm.counselling.representativeReasons})` : ''}`, col1X + 38, y + 12);
+    doc.setFont('times', 'normal'); doc.text(`${norm.counselling.timeTaken} ${norm.counselling.representativeReasons ? `(${norm.counselling.representativeReasons})` : ''}`, col1X + 38, y + 12, { maxWidth: maxColWidth - 38 });
 
     doc.setFont('times', 'bold'); doc.text('Understanding Ascertained:', col2X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(norm.counselling.understandingAscertained, col2X + 38, y + 12);
+    doc.setFont('times', 'normal'); doc.text(norm.counselling.understandingAscertained, col2X + 38, y + 12, { maxWidth: maxColWidth - 38 });
 
     doc.setFont('times', 'bold'); doc.text('Disease Counselled:', col1X, y + 18);
-    doc.setFont('times', 'normal'); doc.text(norm.counselling.diseaseCounselled, col1X + 32, y + 18);
+    doc.setFont('times', 'normal'); doc.text(norm.counselling.diseaseCounselled, col1X + 32, y + 18, { maxWidth: maxColWidth - 32 });
 
     doc.setFont('times', 'bold'); doc.text('Key Focus Points:', col1X, y + 24);
     doc.setFont('times', 'normal'); doc.text(norm.counselling.pointsCovered, col1X + 28, y + 24, { maxWidth: contentWidth - 32 });
@@ -501,10 +507,10 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
     doc.setFont('times', 'bold'); doc.text('Intervention Date:', col1X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(norm.intervention.date, col1X + 28, y + 6);
+    doc.setFont('times', 'normal'); doc.text(norm.intervention.date, col1X + 28, y + 6, { maxWidth: maxColWidth - 28 });
 
     doc.setFont('times', 'bold'); doc.text('Reporting Date:', col2X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(norm.intervention.reportingDate, col2X + 24, y + 6);
+    doc.setFont('times', 'normal'); doc.text(norm.intervention.reportingDate, col2X + 24, y + 6, { maxWidth: maxColWidth - 24 });
 
     doc.setFont('times', 'bold'); doc.text('Problem Identified:', col1X, y + 12);
     doc.setFont('times', 'normal'); doc.text(norm.intervention.prescriptionProblems, col1X + 30, y + 12, { maxWidth: contentWidth - 34 });
@@ -513,10 +519,10 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFont('times', 'normal'); doc.text(`${norm.intervention.actionsTaken} — ${norm.intervention.recommendations}`, col1X + 42, y + 18, { maxWidth: contentWidth - 46 });
 
     doc.setFont('times', 'bold'); doc.text('Significance Level:', col1X, y + 24);
-    doc.setFont('times', 'normal'); doc.text(norm.intervention.significanceLevel, col1X + 30, y + 24);
+    doc.setFont('times', 'normal'); doc.text(norm.intervention.significanceLevel, col1X + 30, y + 24, { maxWidth: maxColWidth - 30 });
 
     doc.setFont('times', 'bold'); doc.text('Physician Acceptance:', col2X, y + 24);
-    doc.setFont('times', 'normal'); doc.text(norm.intervention.physicianAcceptance, col2X + 34, y + 24);
+    doc.setFont('times', 'normal'); doc.text(norm.intervention.physicianAcceptance, col2X + 34, y + 24, { maxWidth: maxColWidth - 34 });
 
     if (norm.intervention.referencesText) {
       doc.setFont('times', 'bold'); doc.text('References Consulted:', col1X, y + 30);
@@ -545,16 +551,16 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
     doc.setFont('times', 'bold'); doc.text('Query Date / Time:', col1X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.dir.date} ${norm.dir.time}`, col1X + 30, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.dir.date} ${norm.dir.time}`, col1X + 30, y + 6, { maxWidth: maxColWidth - 30 });
 
     doc.setFont('times', 'bold'); doc.text('Enquirer Name & Status:', col2X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.dir.enquirerName} (${norm.dir.professionalStatus})`, col2X + 36, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.dir.enquirerName} (${norm.dir.professionalStatus})`, col2X + 36, y + 6, { maxWidth: maxColWidth - 36 });
 
     doc.setFont('times', 'bold'); doc.text('Category of Enquiry:', col1X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(norm.dir.questionCategory, col1X + 32, y + 12);
+    doc.setFont('times', 'normal'); doc.text(norm.dir.questionCategory, col1X + 32, y + 12, { maxWidth: maxColWidth - 32 });
 
     doc.setFont('times', 'bold'); doc.text('Turnaround Time:', col2X, y + 12);
-    doc.setFont('times', 'normal'); doc.text(norm.dir.timeframeNeeded, col2X + 28, y + 12);
+    doc.setFont('times', 'normal'); doc.text(norm.dir.timeframeNeeded, col2X + 28, y + 12, { maxWidth: maxColWidth - 28 });
 
     doc.setFont('times', 'bold'); doc.text('Patient Background:', col1X, y + 18);
     doc.setFont('times', 'normal'); doc.text(norm.dir.patientBackground, col1X + 30, y + 18, { maxWidth: contentWidth - 34 });
@@ -587,10 +593,10 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFontSize(8.5); doc.setTextColor(15, 23, 42);
 
     doc.setFont('times', 'bold'); doc.text('ADR Log Number:', col1X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(norm.adr.adrNumber, col1X + 28, y + 6);
+    doc.setFont('times', 'normal'); doc.text(norm.adr.adrNumber, col1X + 28, y + 6, { maxWidth: maxColWidth - 28 });
 
     doc.setFont('times', 'bold'); doc.text('Reporting / Onset Date:', col2X, y + 6);
-    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reportingDate} / ${norm.adr.onsetDate}`, col2X + 34, y + 6);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reportingDate} / ${norm.adr.onsetDate}`, col2X + 34, y + 6, { maxWidth: maxColWidth - 34 });
 
     doc.setFont('times', 'bold'); doc.text('Suspected Drug:', col1X, y + 12);
     doc.setFont('times', 'normal'); doc.text(norm.adr.suspectedMeds.length > 0 ? norm.adr.suspectedMeds.map(m => `${m.medicine_name || m.generic_name} (${m.dose || ''})`).join(', ') : (norm.adr.reactionTitle || 'N/A'), col1X + 26, y + 12, { maxWidth: contentWidth - 30 });
@@ -599,13 +605,13 @@ export const generateOfficialClinicalCasePDF = ({
     doc.setFont('times', 'normal'); doc.text(`${norm.adr.reactionCategory} — ${norm.adr.reactionTitle}`, col1X + 36, y + 18, { maxWidth: contentWidth - 40 });
 
     doc.setFont('times', 'bold'); doc.text('Causality (Naranjo):', col1X, y + 24);
-    doc.setFont('times', 'normal'); doc.text(norm.adr.naranjoCausality, col1X + 32, y + 24);
+    doc.setFont('times', 'normal'); doc.text(norm.adr.naranjoCausality, col1X + 32, y + 24, { maxWidth: maxColWidth - 32 });
 
     doc.setFont('times', 'bold'); doc.text('Severity / Seriousness:', col2X, y + 24);
-    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reactionSeverity} (${norm.adr.reactionSeriousness})`, col2X + 34, y + 24);
+    doc.setFont('times', 'normal'); doc.text(`${norm.adr.reactionSeverity} (${norm.adr.reactionSeriousness})`, col2X + 34, y + 24, { maxWidth: maxColWidth - 34 });
 
     doc.setFont('times', 'bold'); doc.text('Dechallenge / Rechallenge:', col1X, y + 30);
-    doc.setFont('times', 'normal'); doc.text(`Dechallenge: ${norm.adr.dechallengeInfo} | Rechallenge: ${norm.adr.rechallengeInfo}`, col1X + 38, y + 30);
+    doc.setFont('times', 'normal'); doc.text(`Dechallenge: ${norm.adr.dechallengeInfo} | Rechallenge: ${norm.adr.rechallengeInfo}`, col1X + 38, y + 30, { maxWidth: contentWidth - 42 });
 
     y += 44;
     drawDualSignatures(y);
@@ -617,7 +623,7 @@ export const generateOfficialClinicalCasePDF = ({
 
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    // Draw Watermark ON TOP of page content with opacity so it is 100% visible at ANY color background or table!
+    // Draw Watermark ON TOP of page content with opacity & clipping so it is 100% visible at ANY color background or table!
     drawPageWatermark();
     if (repeatHeader || i === 1) {
       drawPageHeader();

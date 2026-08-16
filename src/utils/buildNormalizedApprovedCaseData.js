@@ -12,23 +12,22 @@ export const buildNormalizedApprovedCaseData = ({
   college = {},
   caseModulesData = {}
 }) => {
-  const profile = caseModulesData?.profile || {};
-  const counselling = caseModulesData?.counselling || {};
-  const intervention = caseModulesData?.intervention || {};
-  const dir = caseModulesData?.dir || {};
-  const adr = caseModulesData?.adr || {};
+  const profile = caseModulesData?.profile || clinicalCase?.profile || {};
+  const counselling = caseModulesData?.counselling || clinicalCase?.counselling || {};
+  const intervention = caseModulesData?.intervention || clinicalCase?.intervention || {};
+  const dir = caseModulesData?.dir || clinicalCase?.dir || {};
+  const adr = caseModulesData?.adr || clinicalCase?.adr || {};
 
   // Helper to determine if a form is actually completed/submitted
   const isFormCompleted = (formObj) => {
     if (!formObj || typeof formObj !== 'object' || Object.keys(formObj).length === 0) return false;
     const status = (formObj.status || formObj.form_status || formObj.approval_status || '').toLowerCase();
-    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted' || status === 'not started' || status === 'not added' || status === '') {
+    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted' || status === 'not started' || status === 'not added') {
       return false;
     }
     if (status === 'completed' || status === 'submitted' || status === 'approved' || status === 'reviewed' || formObj.is_completed === true) {
       return true;
     }
-    // Fallback: check if primary content exists
     return true;
   };
 
@@ -81,8 +80,8 @@ export const buildNormalizedApprovedCaseData = ({
     allergyDrugs: profile.allergy_drugs || profile.allergies || 'NIL',
     allergyFood: profile.allergy_food || 'NIL',
     socialHistory: profile.social_history || [
-      profile.smoker_pack_day ? `Smoker (${profile.smoker_pack_day}/day, ${profile.smoker_duration || ''})` : null,
-      profile.alcoholic_amount_day ? `Alcoholic (${profile.alcoholic_amount_day}, ${profile.alcoholic_duration || ''})` : null,
+      profile.smoker_pack_day ? `Smoker (${profile.smoker_pack_day}/day)` : null,
+      profile.alcoholic_amount_day ? `Alcoholic (${profile.alcoholic_amount_day})` : null,
       profile.marital_status ? `Marital: ${profile.marital_status}` : null
     ].filter(Boolean).join(', ') || 'Non-smoker, Non-alcoholic',
     diet: profile.diet || 'Regular Diet'
@@ -123,7 +122,14 @@ export const buildNormalizedApprovedCaseData = ({
 
   const vitals = safeArray(profile.vital_signs || profile.vitals);
   const labs = safeArray(profile.lab_investigations || profile.labs);
-  const drugs = safeArray(profile.prescribed_drugs || profile.medications || profile.drugs);
+  const drugs = safeArray(
+    caseModulesData?.drugs ||
+    profile.prescribed_drugs ||
+    profile.medications ||
+    profile.drugs ||
+    clinicalCase?.prescribed_drugs ||
+    clinicalCase?.medications
+  );
 
   // Diagnosis
   const diagnosis = {
@@ -132,7 +138,7 @@ export const buildNormalizedApprovedCaseData = ({
     dischargeSummary: profile.discharge_summary || ''
   };
 
-  // 100% Full Detailed Counselling Map
+  // Detailed Counselling Map
   const counsellingMap = {
     date: dates.counsellingDate,
     time: dates.counsellingTime,
@@ -151,7 +157,7 @@ export const buildNormalizedApprovedCaseData = ({
     understandingAscertained: counselling.understanding_ascertained !== false ? 'Yes (Ascertained)' : 'No'
   };
 
-  // 100% Full Detailed Pharmacist Intervention Map
+  // Detailed Pharmacist Intervention Map
   const interventionMap = {
     date: dates.interventionDate,
     reportingDate: dates.reportingDate,
@@ -169,7 +175,7 @@ export const buildNormalizedApprovedCaseData = ({
     followUp: intervention.follow_up || ''
   };
 
-  // 100% Full Detailed Drug Information Map
+  // Detailed Drug Information Map
   const dirMap = {
     date: dates.queryDate,
     time: dates.queryTime,
@@ -186,7 +192,7 @@ export const buildNormalizedApprovedCaseData = ({
     references: safeArray(dir.references)
   };
 
-  // 100% Full Detailed ADR Map
+  // Detailed ADR Map
   const adrMap = {
     adrNumber: adr.adr_number || 'ADR-LOG-001',
     reportingDate: dates.adrReportingDate,

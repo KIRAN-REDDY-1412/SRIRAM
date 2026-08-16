@@ -190,9 +190,9 @@ export const generateClinicalCasePPTX = async ({
     fontFace, fontSize: 9, color: '64748B', align: 'center'
   });
 
-  // SLIDE 2: PATIENT DETAILS
+  // SLIDE 2: PATIENT PROFILE DOCUMENTATION
   const slide2 = pptx.addSlide();
-  slide2.addText('1. Patient Profile & Demographics', {
+  slide2.addText('1. PATIENT PROFILE DOCUMENTATION', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
@@ -220,52 +220,34 @@ export const generateClinicalCasePPTX = async ({
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
 
-  const historyRows = [
-    [{ text: 'Clinical Aspect', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 11 } }, { text: 'Patient Record Information', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 11 } }],
-    [{ text: 'Chief Complaints', options: { fontFace, fontSize: 10, bold: true } }, { text: profile.chief_complaints || 'Abdominal pain during defecation for 3 days', options: { fontFace, fontSize: 10 } }],
-    [{ text: 'Past Medical History', options: { fontFace, fontSize: 10, bold: true } }, { text: profile.past_medical_history || 'Hypertension, T2DM, Appendectomy P/S', options: { fontFace, fontSize: 10 } }],
-    [{ text: 'Past Medication History', options: { fontFace, fontSize: 10, bold: true } }, { text: profile.past_medication_history || 'Tab. Telmisartan 40mg PO OD, Tab. Metformin 500mg PO BD', options: { fontFace, fontSize: 10 } }],
-    [{ text: 'Family History', options: { fontFace, fontSize: 10, bold: true } }, { text: profile.family_history || 'Father had T2DM and Hypertension.', options: { fontFace, fontSize: 10 } }],
-    [{ text: 'Social History', options: { fontFace, fontSize: 10, bold: true } }, { text: profile.social_history || 'Married. Non-smoker, Non-alcoholic, Mixed diet.', options: { fontFace, fontSize: 10, bold: true, color: '0369A1' } }]
-  ];
+  const historyText = `Chief Complaints:\n${profile.chief_complaints || clinicalCase.chief_complaints || 'Abdominal pain, fever, diarrhea for 5 days.'}\n\nPast Medical History:\n${profile.past_medical_history || 'No significant past medical history.'}\n\nPast Medication History:\n${profile.past_medication_history || 'No long-term medications.'}`;
 
-  slide3.addTable(historyRows, {
-    x: startX, y: 0.8, w: contentW, colW: [2.5, 6.5],
-    border: { pt: 1, color: 'CBD5E1' }
+  slide3.addText(historyText, {
+    x: startX, y: 0.8, w: contentW, h: 3.5,
+    fontFace, fontSize: bodyFontSize, color: primaryColor, fill: { color: darkBgColor }, line: { color: 'CBD5E1', width: 1 }
   });
   slide3.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
 
-  // SLIDE 4: PAST MEDICAL & MEDICATION HISTORY
+  // SLIDE 4: CLINICAL EXAMINATION & VITALS LOG
   const slide4 = pptx.addSlide();
-  slide4.addText('3. Past Medical & Medication Breakdown', {
+  slide4.addText('7. CLINICAL EXAMINATION & VITAL SIGNS', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
 
-  const medHistoryBox = `Past Medical History Summary:\n${profile.past_medical_history || 'Hypertension (5 yrs), T2DM (3 yrs), Appendectomy P/S.'}\n\nPast Medication History:\n${profile.past_medication_history || 'Telmisartan 40mg PO OD, Metformin 500mg PO BD. No history of long-term NSAID usage.'}`;
-  slide4.addText(medHistoryBox, {
-    x: startX, y: 0.8, w: contentW, h: 1.8,
-    fontFace, fontSize: 11, color: '1E293B', fill: { color: 'F8FAFC' }, line: { color: 'CBD5E1', width: 1 }
-  });
+  const examText = `General Examination:\n${profile.general_examination || 'Conscious, coherent, febrile (100.4°F), no pallor, icterus, or cyanosis.'}\n\nSystemic Examination:\n${profile.systemic_examination || 'CVS: S1, S2 heard. RS: Clear. GI: Tenderness in right lower quadrant. CNS: Intact.'}`;
 
-  const socialBox = `Social & Lifestyle History:\n${profile.social_history || 'Marital Status: Married | Occupation: School Teacher | Non-smoker, Non-alcoholic | Mixed diet, moderate physical activity.'}`;
-  slide4.addText(socialBox, {
-    x: startX, y: 2.8, w: contentW, h: 1.5,
-    fontFace, fontSize: 11, color: '0369A1', fill: { color: 'F0F9FF' }, line: { color: 'BAE6FD', width: 1 }
+  slide4.addText(examText, {
+    x: startX, y: 0.8, w: contentW, h: 3.5,
+    fontFace, fontSize: bodyFontSize, color: primaryColor, fill: { color: darkBgColor }, line: { color: 'CBD5E1', width: 1 }
   });
   slide4.addText(footerText, { x: startX, y: 4.8, w: contentW, h: 0.3, fontFace, fontSize: 9, color: '64748B', align: 'center' });
 
-  // SLIDE 5: CLINICAL EXAMINATION & VITALS LOG
+  // SLIDE 5: VITAL SIGNS LOG TABLE
   const slide5 = pptx.addSlide();
-  slide5.addText('4. Clinical Examination & Vital Signs', {
+  slide5.addText('VITAL SIGNS LOG CHART', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
-  });
-
-  const examText = `General Examination: ${profile.general_examination || 'Cyanosis: Absent | Icterus: Absent | Pallor: Present (+)'}\nSystemic Examination: ${profile.systemic_examination || 'CVS: S1S2+ | GI: Soft, RIF Tenderness (+) | RS: B/L AE+'}`;
-  slide5.addText(examText, {
-    x: startX, y: 0.8, w: contentW, h: 0.8,
-    fontFace, fontSize: 10, color: '1E293B', fill: { color: 'F8FAFC' }, line: { color: 'CBD5E1', width: 1 }
   });
 
   const vitalsHeader = [
@@ -298,7 +280,7 @@ export const generateClinicalCasePPTX = async ({
 
   // SLIDE 6: LABORATORY INVESTIGATIONS
   const slide6 = pptx.addSlide();
-  slide6.addText('5. Laboratory Investigations', {
+  slide6.addText('8. LABORATORY INVESTIGATIONS', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
@@ -333,7 +315,7 @@ export const generateClinicalCasePPTX = async ({
 
   // SLIDE 7: OTHER INVESTIGATIONS
   const slide7 = pptx.addSlide();
-  slide7.addText('6. Radiological & Diagnostic Reports', {
+  slide7.addText('Radiological & Diagnostic Reports', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
@@ -347,7 +329,7 @@ export const generateClinicalCasePPTX = async ({
 
   // SLIDE 8: DIAGNOSIS
   const slide8 = pptx.addSlide();
-  slide8.addText('7. Final Clinical Diagnosis', {
+  slide8.addText('9. PROVISIONAL & FINAL DIAGNOSIS', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });
@@ -370,7 +352,7 @@ export const generateClinicalCasePPTX = async ({
 
   // SLIDE 9: TREATMENT / MEDICATION
   const slide9 = pptx.addSlide();
-  slide9.addText('8. Prescribed Pharmacotherapy Log', {
+  slide9.addText('10. MEDICATION PROFILE / DISCHARGE SUMMARY', {
     x: startX, y: 0.3, w: contentW, h: 0.4,
     fontFace, fontSize: titleFontSize, bold: true, color: primaryColor
   });

@@ -118,21 +118,29 @@ export const generateOfficialClinicalCasePDF = async ({
   };
 
   const drawWatermark = () => {
-    if (!watermarkEnabled) return;
+    if (branding?.watermark_enabled === false) return;
     doc.saveGraphicsState();
+
+    const customOpacity = typeof branding?.watermark_opacity === 'number' ? branding.watermark_opacity : 0.18;
+    try {
+      doc.setGState(new doc.GState({ opacity: customOpacity }));
+    } catch (e) {}
+
     doc.setFont(fontFamily, 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(205, 215, 225); // Crisp, visible, elegant light slate-gray
+    const customFontSize = typeof branding?.watermark_size === 'number' ? branding.watermark_size : 22;
+    doc.setFontSize(customFontSize);
+    doc.setTextColor(140, 160, 185);
 
-    const textToDraw = (watermarkLine1 && watermarkLine2)
-      ? `${watermarkLine1} • ${watermarkLine2}`
-      : (watermarkLine1 || collegeName.toUpperCase());
+    const line1 = branding?.watermark_text_line1 || branding?.watermark_line1 || collegeName.toUpperCase();
+    const line2 = branding?.watermark_text_line2 || branding?.watermark_line2 || '';
+    const textToDraw = line2 ? `${line1} • ${line2}` : line1;
 
-    // Always 45 degree diagonal center
+    const angle = typeof branding?.watermark_angle === 'number' ? branding.watermark_angle : 45;
+
     doc.text(textToDraw, pageWidth / 2, pageHeight / 2, {
       align: 'center',
       baseline: 'middle',
-      angle: 45
+      angle: angle
     });
     doc.restoreGraphicsState();
   };
@@ -184,12 +192,12 @@ export const generateOfficialClinicalCasePDF = async ({
 
   let sectionCounter = 1;
 
-  // 1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY (PROFILE)
+  // 1. PATIENT PROFILE DOCUMENTATION
   if (norm.isProfileCompleted) {
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. PATIENT DEMOGRAPHICS & CLINICAL HISTORY`, marginX, y);
+    doc.text(`${sectionCounter++}. PATIENT PROFILE DOCUMENTATION`, marginX, y);
     y += 4;
 
     // Structured 2-Column Profile Box
@@ -456,11 +464,11 @@ export const generateOfficialClinicalCasePDF = async ({
   }
   y += 4;
 
-  // 4. PATIENT COUNSELLING SUMMARY (STRUCTURED 2-COLUMN BOX)
+  // 4. PATIENT COUNSELLING DOCUMENTATION (STRUCTURED 2-COLUMN BOX)
   if (norm.isCounsellingCompleted) {
     ensureSpace(32);
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. PATIENT COUNSELLING SUMMARY`, marginX, y);
+    doc.text(`${sectionCounter++}. PATIENT COUNSELLING DOCUMENTATION`, marginX, y);
     y += 5;
 
     doc.setDrawColor(203, 213, 225);
@@ -489,11 +497,11 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 32;
   }
 
-  // 5. PHARMACIST INTERVENTIONS (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // 5. PHARMACIST INTERVENTION DOCUMENTATION (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
   if (norm.isInterventionCompleted) {
     ensureSpace(32);
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. PHARMACIST INTERVENTIONS`, marginX, y);
+    doc.text(`${sectionCounter++}. PHARMACIST INTERVENTION DOCUMENTATION`, marginX, y);
     y += 5;
 
     doc.setDrawColor(203, 213, 225);
@@ -523,11 +531,11 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 32;
   }
 
-  // 6. DRUG INFORMATION REQUEST (DIR — STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // 6. DRUG INFORMATION REQUEST DOCUMENTATION (DIR — STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
   if (norm.isDirCompleted) {
     ensureSpace(32);
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. DRUG INFORMATION REQUEST (DIR)`, marginX, y);
+    doc.text(`${sectionCounter++}. DRUG INFORMATION REQUEST DOCUMENTATION`, marginX, y);
     y += 5;
 
     doc.setDrawColor(203, 213, 225);
@@ -557,11 +565,11 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 32;
   }
 
-  // 7. ADR LOG & DISCHARGE SUMMARY (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
+  // 7. ADR DOCUMENTATION LOG (STRUCTURED 2-COLUMN BOX — ONLY IF COMPLETED)
   if (norm.isAdrCompleted || norm.diagnosis.dischargeSummary) {
     ensureSpace(32);
     doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. ADR LOG & DISCHARGE SUMMARY`, marginX, y);
+    doc.text(`${sectionCounter++}. ADR DOCUMENTATION LOG`, marginX, y);
     y += 5;
 
     if (norm.isAdrCompleted) {

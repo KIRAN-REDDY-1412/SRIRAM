@@ -365,15 +365,13 @@ export const generateClinicalCasePPTX = async ({
   const drugRows = drugs.length > 0
     ? drugs.map((d, idx) => [
         { text: `${d.s_no || idx + 1}`, options: { fontFace, fontSize: 9, align: 'center' } },
-        { text: `${d.trade_name} ${d.generic_name ? `(${d.generic_name})` : ''}`, options: { fontFace, fontSize: 9, bold: true } },
-        { text: `${d.dose} (${d.route_of_admin || 'Oral'})`, options: { fontFace, fontSize: 9 } },
+        { text: `${d.trade_name || d.brand_name || ''} ${d.generic_name || d.drug_name ? `(${d.generic_name || d.drug_name})` : ''}`, options: { fontFace, fontSize: 9, bold: true } },
+        { text: `${d.dose || '—'} (${d.route_of_admin || d.route || 'Oral'})`, options: { fontFace, fontSize: 9 } },
         { text: d.frequency || 'OD', options: { fontFace, fontSize: 9, bold: true } },
-        { text: d.indication || 'Symptomatic Management', options: { fontFace, fontSize: 9 } }
+        { text: d.indication || '—', options: { fontFace, fontSize: 9 } }
       ])
     : [
-        [{ text: '1', options: { fontFace, fontSize: 9, align: 'center' } }, { text: 'Inj. Hydrocortisone 100mg', options: { fontFace, fontSize: 9, bold: true } }, { text: '100mg (IV)', options: { fontFace, fontSize: 9 } }, { text: 'TID', options: { fontFace, fontSize: 9, bold: true } }, { text: 'IBD Flare', options: { fontFace, fontSize: 9 } }],
-        [{ text: '2', options: { fontFace, fontSize: 9, align: 'center' } }, { text: 'Tab. Mesalamine 1.2g', options: { fontFace, fontSize: 9, bold: true } }, { text: '1.2g (Oral)', options: { fontFace, fontSize: 9 } }, { text: 'BD', options: { fontFace, fontSize: 9, bold: true } }, { text: 'Terminal Ileitis', options: { fontFace, fontSize: 9 } }],
-        [{ text: '3', options: { fontFace, fontSize: 9, align: 'center' } }, { text: 'Tab. Pantoprazole 40mg', options: { fontFace, fontSize: 9, bold: true } }, { text: '40mg (Oral)', options: { fontFace, fontSize: 9 } }, { text: 'OD', options: { fontFace, fontSize: 9, bold: true } }, { text: 'Gastroprotection', options: { fontFace, fontSize: 9 } }]
+        [{ text: '—', options: { fontFace, fontSize: 9, align: 'center' } }, { text: 'No medications logged', options: { fontFace, fontSize: 9, italic: true } }, { text: '—', options: { fontFace, fontSize: 9 } }, { text: '—', options: { fontFace, fontSize: 9 } }, { text: '—', options: { fontFace, fontSize: 9 } }]
       ];
 
   slide9.addTable([drugHeader, ...drugRows], {
@@ -391,11 +389,11 @@ export const generateClinicalCasePPTX = async ({
 
   const counsellingRows = [
     [{ text: 'Clinical Aspect', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Details & Action Taken', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
-    [{ text: 'Counselled Provided To', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.counselling_provided_to || 'Patient & Spouse', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Counselling Mode & Time', options: { fontFace, fontSize: 9, bold: true } }, { text: `${counselling.counselling_mode || 'Oral & Pamphlet'} (${counselling.time_taken || '20 min'})`, options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Intervention Problem Identified', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.problem_identified || 'Iron & Mesalamine chelation interaction.', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Pharmacist Recommendation', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.intervention_provided || 'Space doses by 2 hours.', options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Physician Acceptance Status', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.physician_acceptance || 'Accepted & Implemented.', options: { fontFace, fontSize: 9, color: emeraldColor, bold: true } }]
+    [{ text: 'Counselled Provided To', options: { fontFace, fontSize: 9, bold: true } }, { text: counselling.counselling_provided_to || counselling.patient_type || 'Patient', options: { fontFace, fontSize: 9 } }],
+    [{ text: 'Counselling Mode & Time', options: { fontFace, fontSize: 9, bold: true } }, { text: `${counselling.counselling_mode || 'Oral'} (${counselling.time_taken || '15 min'})`, options: { fontFace, fontSize: 9 } }],
+    [{ text: 'Intervention Problem Identified', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.prescription_problems || intervention.description_of_problem || intervention.problem_identified || 'Not Applicable / None Submitted', options: { fontFace, fontSize: 9 } }],
+    [{ text: 'Pharmacist Recommendation', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.recommendations || intervention.action_taken || intervention.intervention_provided || 'Not Applicable / None Submitted', options: { fontFace, fontSize: 9 } }],
+    [{ text: 'Physician Acceptance Status', options: { fontFace, fontSize: 9, bold: true } }, { text: intervention.physician_acceptance || intervention.outcome || intervention.status || 'Not Applicable', options: { fontFace, fontSize: 9, color: emeraldColor, bold: true } }]
   ];
 
   slide10.addTable(counsellingRows, {
@@ -413,8 +411,8 @@ export const generateClinicalCasePPTX = async ({
 
   const adrRows = [
     [{ text: 'Record Section', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }, { text: 'Summary Information & Verification Status', options: { bold: true, fill: { color: 'F1F5F9' }, fontFace, fontSize: 10 } }],
-    [{ text: 'ADR Suspected Drug & Reaction', options: { fontFace, fontSize: 9, bold: true } }, { text: `${adr.reaction_title || 'Suspected ADR'} (Drug: ${adr.suspected_drug || 'Metformin'})`, options: { fontFace, fontSize: 9 } }],
-    [{ text: 'Discharge Summary Notes', options: { fontFace, fontSize: 9, bold: true } }, { text: profile.discharge_summary || 'Patient treated with IV steroids, oral Mesalamine. Symptoms resolved. Discharged on oral maintenance therapy.', options: { fontFace, fontSize: 9 } }],
+    [{ text: 'ADR Suspected Drug & Reaction', options: { fontFace, fontSize: 9, bold: true } }, { text: adr.suspected_drug ? `${adr.suspected_drug} — ${adr.reaction_description || adr.reaction_title || adr.reaction}` : 'No ADR Reported', options: { fontFace, fontSize: 9 } }],
+    [{ text: 'Discharge Summary Notes', options: { fontFace, fontSize: 9, bold: true } }, { text: profile.discharge_summary || 'Discharged in stable condition as per physician advice.', options: { fontFace, fontSize: 9 } }],
     [{ text: 'Institutional Case Status', options: { fontFace, fontSize: 9, bold: true } }, { text: 'OFFICIALLY APPROVED & VERIFIED', options: { fontFace, fontSize: 9, bold: true, color: emeraldColor } }],
     [{ text: 'Candidate Student Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Digitally Signed by ${studentName} (${rollNumber})`, options: { fontFace, fontSize: 9 } }],
     [{ text: 'Faculty Preceptor Signature', options: { fontFace, fontSize: 9, bold: true } }, { text: `Verified & Approved by ${preceptorName}`, options: { fontFace, fontSize: 9, bold: true, color: primaryColor } }]

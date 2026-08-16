@@ -29,6 +29,20 @@ export const ClinicalCaseDocumentRenderer = ({
   const dir = modules.dir || {};
   const adr = modules.adr || {};
 
+  const hasData = (obj) => {
+    if (!obj || typeof obj !== 'object') return false;
+    return Object.values(obj).some(val => {
+      if (val === null || val === undefined || val === '') return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      if (typeof val === 'object' && Object.keys(val).length === 0) return false;
+      return true;
+    });
+  };
+
+  const hasIntervention = hasData(intervention);
+  const hasDir = hasData(dir);
+  const hasAdr = hasData(adr);
+
   const caseId = cCase.case_id || 'AMRMCP-2026-000001';
   const preceptorName = cCase.assigned_preceptor_name || cPreceptor.full_name || 'Faculty Preceptor';
   const finalDiagnosis = cCase.final_diagnosis || cCase.diagnosis || profile.final_diagnosis || profile.provisional_diagnosis || 'Clinical Case Presentation';
@@ -355,7 +369,7 @@ export const ClinicalCaseDocumentRenderer = ({
             </table>
           </div>
 
-          {/* Section 4: Patient Counselling Record */}
+          {/* Section 4: Patient Counselling Record (Mandatory) */}
           <div className="border p-3.5 rounded-lg bg-slate-50/50 branded-border space-y-1.5 text-[11px]">
             <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
               4. Patient Counselling Record
@@ -365,21 +379,23 @@ export const ClinicalCaseDocumentRenderer = ({
               <div>Mode & Duration: <span className="font-bold">{cMode} ({cTime})</span></div>
               <div className="col-span-2">Disease & Meds Counselled: <span>{cDisease}</span></div>
               <div className="col-span-2"><strong className="text-slate-900">Key Focus & Advice:</strong> {cFocus}</div>
-              <div className="col-span-2"><strong className="text-slate-900">Barriers & Action:</strong> {cBarriers}</div>
+              {cBarriers && <div className="col-span-2"><strong className="text-slate-900">Barriers & Action:</strong> {cBarriers}</div>}
             </div>
           </div>
 
-          {/* Section 5: Pharmacist Intervention */}
-          <div className="border p-3.5 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
-            <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
-              5. Clinical Pharmacist Intervention
-            </strong>
-            <div className="space-y-1">
-              <div><strong className="text-slate-900">Problem Identified:</strong> {iProblem}</div>
-              <div><strong className="text-slate-900">Action & Recommendation:</strong> {iAction} {iRecs ? `— ${iRecs}` : ''}</div>
-              <div><strong className="text-slate-900">Physician Acceptance:</strong> <span className="font-bold" style={{ color: secondaryCol }}>{iAccepted}</span></div>
+          {/* Section 5: Pharmacist Intervention (Optional — Render ONLY if submitted) */}
+          {hasIntervention && (
+            <div className="border p-3.5 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
+              <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
+                5. Clinical Pharmacist Intervention
+              </strong>
+              <div className="space-y-1">
+                {iProblem !== 'None.' && <div><strong className="text-slate-900">Problem Identified:</strong> {iProblem}</div>}
+                {iAction !== 'None.' && <div><strong className="text-slate-900">Action & Recommendation:</strong> {iAction} {iRecs ? `— ${iRecs}` : ''}</div>}
+                <div><strong className="text-slate-900">Physician Acceptance:</strong> <span className="font-bold" style={{ color: secondaryCol }}>{iAccepted}</span></div>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </PharmDVerseBrandedDocumentContainer>
@@ -399,8 +415,8 @@ export const ClinicalCaseDocumentRenderer = ({
       >
         <div className="space-y-4 text-xs">
           
-          {/* Section 6: Drug Information Request (DIR) */}
-          {(dir.details_of_enquiry || dirEnquirer) && (
+          {/* Section 6: Drug Information Request (DIR - Optional — Render ONLY if submitted) */}
+          {hasDir && (
             <div className="border p-3 rounded-lg bg-slate-50/50 branded-border space-y-1 text-[11px]">
               <strong className="block border-b pb-1 font-extrabold uppercase branded-heading branded-border text-[11px]">
                 6. Drug Information Request (DIR)
@@ -414,17 +430,19 @@ export const ClinicalCaseDocumentRenderer = ({
             </div>
           )}
 
-          {/* Section 7: Adverse Drug Reaction (ADR) Log */}
-          <div className="border p-3 rounded-lg bg-amber-50/50 border-amber-300 text-amber-950 space-y-1 text-[11px]">
-            <strong className="block border-b border-amber-200 pb-1 font-extrabold uppercase text-[11px] text-amber-900">
-              7. Adverse Drug Reaction (ADR) Monitoring Log
-            </strong>
-            <div className="space-y-1">
-              <div>Suspected Drug & Reaction: <span className="font-bold">{adrDrug} — {adrTitle}</span></div>
-              <div>Causality & Severity: <span>{adrCausality} (Score: {adrScore})</span></div>
-              <div>Outcome: <span className="font-bold">{adrOutcome}</span></div>
+          {/* Section 7: Adverse Drug Reaction (ADR) Log (Optional — Render ONLY if submitted) */}
+          {hasAdr && (
+            <div className="border p-3 rounded-lg bg-amber-50/50 border-amber-300 text-amber-950 space-y-1 text-[11px]">
+              <strong className="block border-b border-amber-200 pb-1 font-extrabold uppercase text-[11px] text-amber-900">
+                7. Adverse Drug Reaction (ADR) Monitoring Log
+              </strong>
+              <div className="space-y-1">
+                <div>Suspected Drug & Reaction: <span className="font-bold">{adrDrug} — {adrTitle}</span></div>
+                <div>Causality & Severity: <span>{adrCausality} (Score: {adrScore})</span></div>
+                <div>Outcome: <span className="font-bold">{adrOutcome}</span></div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Discharge Summary Notes */}
           {profile.discharge_summary && (

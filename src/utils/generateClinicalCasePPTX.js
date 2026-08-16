@@ -1,9 +1,9 @@
 import pptxgen from 'pptxgenjs';
+import { buildNormalizedApprovedCaseData } from './buildNormalizedApprovedCaseData';
 
 /**
  * Generate and download an editable PowerPoint (.pptx) presentation for a Clinical Case.
- * Structured into 11 comprehensive slides covering complete clinical case documentation.
- * Precision-calculated layout coordinates for standard PPTXGenJS 16:9 canvas (10.0 x 5.625 in).
+ * Consumes the central normalized data model from buildNormalizedApprovedCaseData.
  */
 export const generateClinicalCasePPTX = async ({
   clinicalCase = {},
@@ -13,6 +13,14 @@ export const generateClinicalCasePPTX = async ({
   caseModulesData = {},
   pptSettings = {}
 }) => {
+  const norm = buildNormalizedApprovedCaseData({
+    clinicalCase,
+    student,
+    preceptor,
+    college,
+    caseModulesData
+  });
+
   const pptx = new pptxgen();
 
   // Page setup & configuration
@@ -33,24 +41,24 @@ export const generateClinicalCasePPTX = async ({
   const contentW = isWidescreen ? 9.0 : 9.0;
   const startX = 0.5;
 
-  const collegeName = college?.college_name || college?.name || pptSettings?.header_title || pptSettings?.ppt_header_title || 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const hospitalName = college?.hospital_name || clinicalCase?.hospital_name || 'Lalitha Superspecialities Hospital';
-  const caseId = clinicalCase?.case_id || 'AMRMCP-2026-000001';
-  const studentName = student?.full_name || clinicalCase?.student_name || 'Student Candidate';
-  const rollNumber = student?.roll_number || 'Y22PHD0314';
-  const preceptorName = clinicalCase?.assigned_preceptor_name || preceptor?.full_name || 'Faculty Preceptor';
-  const finalDiagnosis = clinicalCase?.final_diagnosis || clinicalCase?.diagnosis || 'Clinical Case Presentation';
+  const collegeName = norm.collegeName;
+  const hospitalName = norm.hospitalName;
+  const caseId = norm.caseId;
+  const studentName = norm.studentName;
+  const rollNumber = norm.studentRoll;
+  const preceptorName = norm.preceptorName;
+  const finalDiagnosis = norm.diagnosis.final;
   const footerText = pptSettings?.footer_text || pptSettings?.ppt_footer_text || `${collegeName} • Clinical Case Presentation`;
 
-  // Module Data
-  const profile = caseModulesData?.profile || {};
-  const vitalsList = caseModulesData?.vitals || [];
-  const labs = caseModulesData?.labs || [];
-  const drugs = caseModulesData?.drugs || [];
-  const counselling = caseModulesData?.counselling || {};
-  const intervention = caseModulesData?.intervention || {};
-  const dir = caseModulesData?.dir || {};
-  const adr = caseModulesData?.adr || {};
+  // Module Data from central norm model
+  const profile = norm.profile;
+  const vitalsList = norm.vitals;
+  const labs = norm.labs;
+  const drugs = norm.drugs;
+  const counselling = norm.counselling;
+  const intervention = norm.intervention;
+  const dir = norm.dir;
+  const adr = norm.adr;
 
   const addWatermark = (slide) => {
     if (pptSettings?.show_watermark !== false && pptSettings?.ppt_show_watermark !== false) {

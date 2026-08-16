@@ -1,11 +1,10 @@
 import React from 'react';
 import { PharmDVerseBrandedDocumentContainer } from './PharmDVerseBrandedDocumentContainer';
+import { buildNormalizedApprovedCaseData } from '../../utils/buildNormalizedApprovedCaseData';
 
 /**
  * Unified Multi-Page Clinical Case PDF Document Renderer.
- * Used for BOTH:
- *  1. Admin PDF Format Live Previews (using SAMPLE_CLINICAL_CASE_DATA)
- *  2. Real Approved Case PDF View & Download (using actual case modules data from Supabase)
+ * Consumes the central normalized data model from buildNormalizedApprovedCaseData.
  */
 export const ClinicalCaseDocumentRenderer = ({
   caseData = {},
@@ -14,55 +13,44 @@ export const ClinicalCaseDocumentRenderer = ({
   student = {},
   preceptor = {}
 }) => {
-  const cCase = caseData.clinicalCase || {};
+  const norm = buildNormalizedApprovedCaseData({
+    clinicalCase: caseData.clinicalCase,
+    student: student?.full_name ? student : caseData.student,
+    preceptor: preceptor?.full_name ? preceptor : caseData.preceptor,
+    college: college?.college_name ? college : caseData.college,
+    caseModulesData: caseData.caseModulesData
+  });
+
+  const cCollege = college?.college_name || college?.name ? college : (caseData.college || {});
   const cStudent = student?.full_name ? student : (caseData.student || {});
   const cPreceptor = preceptor?.full_name ? preceptor : (caseData.preceptor || {});
-  const cCollege = college?.college_name || college?.name ? college : (caseData.college || {});
-  const modules = caseData.caseModulesData || {};
 
-  const profile = modules.profile || {};
-  const vitals = modules.vitals || [];
-  const labs = modules.labs || [];
-  const drugs = modules.drugs || [];
-  const counselling = modules.counselling || {};
-  const intervention = modules.intervention || {};
-  const dir = modules.dir || {};
-  const adr = modules.adr || {};
-  const isFormCompleted = (formObj) => {
-    if (!formObj || typeof formObj !== 'object') return false;
-    const status = (formObj.status || formObj.form_status || '').toLowerCase();
-    
-    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted') return false;
-    if (status === 'completed' || status === 'submitted' || status === 'approved' || formObj.is_completed === true) return true;
-
-    return Object.entries(formObj).some(([k, v]) => {
-      if (['status', 'form_status', 'id', 'case_id', 'created_at', 'updated_at'].includes(k)) return false;
-      return v !== null && v !== undefined && v !== '';
-    }) && status !== 'draft';
-  };
-
-  const isProfileCompleted = isFormCompleted(profile) || Boolean(profile.patient_name || cCase.patient_name);
-  const isCounsellingCompleted = isFormCompleted(counselling);
-  const isInterventionCompleted = isFormCompleted(intervention);
-  const isDirCompleted = isFormCompleted(dir);
-  const isAdrCompleted = isFormCompleted(adr);
-
-  const caseId = cCase.case_id || 'AMRMCP-2026-000001';
-  const preceptorName = cCase.assigned_preceptor_name || cPreceptor.full_name || 'Faculty Preceptor';
-  const finalDiagnosis = cCase.final_diagnosis || cCase.diagnosis || profile.final_diagnosis || profile.provisional_diagnosis || 'Clinical Case Presentation';
+  const caseId = norm.caseId;
+  const preceptorName = norm.preceptorName;
+  const finalDiagnosis = norm.diagnosis.final;
 
   const secondaryCol = branding?.secondary_color || '#0284c7';
 
-  // Extract Profile Demographics & History
-  const pName = profile.patient_name || cCase.patient_name || 'N/A';
-  const pAge = profile.age || cCase.age || 'N/A';
-  const pGender = profile.gender || cCase.gender || 'N/A';
-  const pIpOp = profile.ip_op_number || profile.ip_no || profile.ip_op_no || cCase.ip_op_number || 'N/A';
-  const pWard = profile.ward ? `${profile.ward} ${profile.bed_number ? `(Bed: ${profile.bed_number})` : ''}` : (cCase.ward || 'N/A');
-  const pDept = profile.department || cCase.department || 'N/A';
-  const pDoa = profile.date_of_admission || profile.doa || 'N/A';
-  const pDod = profile.date_of_discharge || profile.dod || profile.doc || 'N/A';
-  const pPhysician = profile.attending_physician || profile.physician || 'Attending Consultant';
+  const isProfileCompleted = norm.isProfileCompleted;
+  const isCounsellingCompleted = norm.isCounsellingCompleted;
+  const isInterventionCompleted = norm.isInterventionCompleted;
+  const isDirCompleted = norm.isDirCompleted;
+  const isAdrCompleted = norm.isAdrCompleted;
+
+  const vitals = norm.vitals;
+  const labs = norm.labs;
+  const drugs = norm.drugs;
+
+  // Extract Profile Demographics & History from central norm model
+  const pName = norm.demographics.patientName;
+  const pAge = norm.demographics.age;
+  const pGender = norm.demographics.gender;
+  const pIpOp = norm.demographics.ipOpNo;
+  const pWard = norm.demographics.wardBed;
+  const pDept = norm.demographics.department;
+  const pDoa = norm.dates.doa;
+  const pDod = norm.dates.dod;
+  const pPhysician = norm.demographics.physician;
 
   const pHwt = (profile.height || profile.weight || profile.bmi)
     ? `Ht: ${profile.height || '—'} cm | Wt: ${profile.weight || '—'} kg | BMI: ${profile.bmi || '—'}`

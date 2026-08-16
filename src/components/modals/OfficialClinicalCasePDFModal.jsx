@@ -8,6 +8,7 @@ import {
 } from '../../services/supabaseService';
 import { generateClinicalCasePPTX } from '../../utils/generateClinicalCasePPTX';
 import { generateOfficialClinicalCasePDF } from '../../utils/generateOfficialClinicalCasePDF';
+import { buildNormalizedApprovedCaseData } from '../../utils/buildNormalizedApprovedCaseData';
 
 const convertUrlToBase64 = async (url) => {
   if (!url) return '';
@@ -41,15 +42,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const [assignedPreceptorObj, setAssignedPreceptorObj] = useState(preceptor);
 
   const studentRoll = student?.roll_number || student?.roll_no || clinicalCase?.roll_number || 'Y22PHD0314';
-  const caseId = clinicalCase?.case_number ||
-                 clinicalCase?.case_id ||
-                 clinicalCase?.case_code ||
-                 clinicalCase?.profile?.case_number ||
-                 `AMRMCP-2026-${studentRoll}-0001`;
-
-  const approvedDateStr = clinicalCase?.reviewed_at || clinicalCase?.approved_at
-    ? new Date(clinicalCase.reviewed_at || clinicalCase.approved_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   useEffect(() => {
     const loadModules = async () => {
@@ -115,11 +107,26 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
     }
   }, [isOpen, clinicalCase?.id, college?.id, student?.college_id, clinicalCase?.college_id]);
 
+  const finalCollegeObj = collegeData || college || student?.colleges;
+  const finalPreceptorObj = assignedPreceptorObj || preceptor;
+
+  const norm = buildNormalizedApprovedCaseData({
+    clinicalCase,
+    student,
+    preceptor: finalPreceptorObj,
+    college: finalCollegeObj,
+    caseModulesData
+  });
+
+  const caseId = norm.caseId;
+
+  const approvedDateStr = clinicalCase?.reviewed_at || clinicalCase?.approved_at
+    ? new Date(clinicalCase.reviewed_at || clinicalCase.approved_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
-      const finalCollegeObj = collegeData || college;
-      const finalPreceptorObj = assignedPreceptorObj || preceptor;
       await generateOfficialClinicalCasePDF({
         clinicalCase,
         student,
@@ -139,8 +146,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   const handleDownloadPPT = async () => {
     setExportingPPT(true);
     try {
-      const finalCollegeObj = collegeData || college;
-      const finalPreceptorObj = assignedPreceptorObj || preceptor;
       await generateClinicalCasePPTX({
         clinicalCase,
         student,
@@ -158,14 +163,6 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
   };
 
   if (!isOpen) return null;
-
-  const profile = caseModulesData?.profile || {};
-  const counselling = caseModulesData?.counselling || {};
-  const intervention = caseModulesData?.intervention || {};
-  const dir = caseModulesData?.dir || {};
-  const adr = caseModulesData?.adr || {};
-
-  const finalCollegeObj = collegeData || college || student?.colleges;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
@@ -213,10 +210,10 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Institution Details</div>
                 <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  {finalCollegeObj?.college_name || finalCollegeObj?.name || 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY'}
+                  {norm.collegeName}
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400">
-                  {finalCollegeObj?.hospital_name || 'LALITHA SUPERSPECIALITIES HOSPITAL'}
+                  {norm.hospitalName}
                 </div>
               </div>
 
@@ -224,29 +221,31 @@ export const OfficialClinicalCasePDFModal = ({ isOpen, onClose, clinicalCase, st
               <div className="space-y-3">
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Included Approved Modules</div>
                 <div className="grid grid-cols-1 gap-2 text-xs">
-                  <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-                    <span className="font-semibold">1. Patient Profile Documentation</span>
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  {Boolean(counselling.disease_counselled || counselling.points_covered || counselling.counselling_date) && (
+                  {norm.isProfileCompleted && (
+                    <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                      <span className="font-semibold">1. Patient Profile Documentation</span>
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    </div>
+                  )}
+                  {norm.isCounsellingCompleted && (
                     <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
                       <span className="font-semibold">2. Patient Counselling Documentation</span>
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
                     </div>
                   )}
-                  {Boolean(intervention.date_of_intervention || intervention.intervention_date || intervention.description_of_problem || intervention.prescription_problems) && (
+                  {norm.isInterventionCompleted && (
                     <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
                       <span className="font-semibold">3. Pharmacist Intervention Documentation</span>
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
                     </div>
                   )}
-                  {Boolean(dir.request_date || dir.query_date || dir.details_of_enquiry) && (
+                  {norm.isDirCompleted && (
                     <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
                       <span className="font-semibold">4. Drug Information Request Documentation</span>
                       <CheckCircle className="w-4 h-4 text-emerald-600" />
                     </div>
                   )}
-                  {Boolean(adr.reaction_title || adr.reaction_description || adr.suspected_drug) && (
+                  {norm.isAdrCompleted && (
                     <div className="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
                       <span className="font-semibold">5. ADR Documentation Log</span>
                       <CheckCircle className="w-4 h-4 text-emerald-600" />

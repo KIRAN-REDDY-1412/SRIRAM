@@ -18,25 +18,35 @@ export const buildNormalizedApprovedCaseData = ({
   const dir = caseModulesData?.dir || clinicalCase?.dir || {};
   const adr = caseModulesData?.adr || clinicalCase?.adr || {};
 
-  // Helper to determine if a form is actually completed/submitted
+  // Helper to determine if a form is actually completed/submitted and approved
   const isFormCompleted = (formObj) => {
     if (!formObj || typeof formObj !== 'object' || Object.keys(formObj).length === 0) return false;
-    const status = (formObj.status || formObj.form_status || formObj.approval_status || '').toLowerCase();
-    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted' || status === 'not started' || status === 'not added') {
+    const status = (formObj.status || formObj.form_status || formObj.approval_status || formObj.status_label || '').toLowerCase();
+    
+    // Explicitly reject if status is Draft, Incomplete, Not Submitted, Not Started, or In Progress
+    if (status === 'draft' || status === 'incomplete' || status === 'not_submitted' || status === 'not started' || status === 'not added' || status === 'in progress') {
       return false;
     }
-    if (status === 'completed' || status === 'submitted' || status === 'approved' || status === 'reviewed' || formObj.is_completed === true) {
+    if (status === 'completed' || status === 'submitted' || status === 'approved' || status === 'reviewed' || formObj.is_completed === true || formObj.is_submitted === true) {
       return true;
     }
-    return true;
+    
+    // If no explicit status field exists, return true ONLY if non-default user-entered content exists AND it's not marked as draft
+    if (formObj.is_draft === true || formObj.draft === true) {
+      return false;
+    }
+    
+    return Boolean(formObj.is_completed || formObj.is_submitted || formObj.approved);
   };
 
-  // Status Flags
-  const isProfileCompleted = isFormCompleted(profile) || Boolean(profile.patient_name || clinicalCase?.patient_name);
-  const isCounsellingCompleted = isFormCompleted(counselling) && Boolean(counselling.disease_counselled || counselling.points_covered || counselling.counselling_date || counselling.time_taken);
-  const isInterventionCompleted = isFormCompleted(intervention) && Boolean(intervention.date_of_intervention || intervention.intervention_date || intervention.description_of_problem || intervention.prescription_problems);
-  const isDirCompleted = isFormCompleted(dir) && Boolean(dir.request_date || dir.query_date || dir.details_of_enquiry || dir.information_provided);
-  const isAdrCompleted = isFormCompleted(adr) && Boolean(adr.reaction_title || adr.reaction_description || adr.suspected_drug || adr.onset_date || adr.reporting_date);
+  // Profile is mandatory for all submitted cases
+  const isProfileCompleted = Boolean(profile.patient_name || clinicalCase?.patient_name);
+  
+  // Optional forms are included ONLY if actually submitted/completed
+  const isCounsellingCompleted = isFormCompleted(counselling);
+  const isInterventionCompleted = isFormCompleted(intervention);
+  const isDirCompleted = isFormCompleted(dir);
+  const isAdrCompleted = isFormCompleted(adr);
 
   // College & Student Identifiers
   const collegeName = college?.college_name || college?.name || clinicalCase?.college_name || 'PHARMDVERSE INSTITUTION OF PHARMACY';

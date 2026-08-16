@@ -9,7 +9,7 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
   const [assignedPreceptor, setAssignedPreceptor] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const rawConfiguredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || 'Lalitha Super Specialities Hospital';
+  const rawConfiguredHospital = student?.colleges?.hospital_name || student?.colleges?.hospitalName || student?.colleges?.primary_hospital_name || '';
   
   const getUniqueHospitals = (hospitalsList) => {
     const seen = new Set();
@@ -31,9 +31,9 @@ export const AddNewCaseView = ({ student, onCancel, onSuccess }) => {
     return result;
   };
 
-  const hospitalOptions = getUniqueHospitals([rawConfiguredHospital, 'Lalitha Super Specialities Hospital']);
+  const hospitalOptions = getUniqueHospitals([rawConfiguredHospital]);
 
-  const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || 'Lalitha Super Specialities Hospital');
+  const [hospitalName, setHospitalName] = useState(hospitalOptions[0] || rawConfiguredHospital || '');
   const [department, setDepartment] = useState('');
   const [wardUnit, setWardUnit] = useState('');
   const [ipOpType, setIpOpType] = useState('IP');

@@ -9,7 +9,7 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
   const [formData, setFormData] = useState({
     collegeName: initialCollege?.name || initialCollege?.college_name || '',
     isAutonomous: Boolean(initialCollege?.isAutonomous ?? initialCollege?.is_autonomous ?? false),
-    hospitalName: initialCollege?.hospitalName || initialCollege?.hospital_name || 'Lalitha Superspecialities Hospital',
+    hospitalName: initialCollege?.hospitalName || initialCollege?.hospital_name || initialCollege?.primary_hospital_name || '',
     collegeLogoUrl: initialCollege?.logoUrl || initialCollege?.college_logo_url || '',
     hospitalLogoUrl: initialCollege?.hospitalLogoUrl || initialCollege?.hospital_logo_url || '',
     principalName: initialCollege?.principalName || initialCollege?.principal_name || '',
@@ -110,7 +110,7 @@ export const CollegeAdminProfileView = ({ college: initialCollege, onProfileUpda
       setFormData({
         collegeName: currentCollege?.name || currentCollege?.college_name || '',
         isAutonomous: Boolean(currentCollege?.isAutonomous ?? currentCollege?.is_autonomous ?? false),
-        hospitalName: currentCollege?.hospitalName || currentCollege?.hospital_name || 'Lalitha Superspecialities Hospital',
+        hospitalName: currentCollege?.hospitalName || currentCollege?.hospital_name || currentCollege?.primary_hospital_name || '',
         collegeLogoUrl: currentCollege?.logoUrl || currentCollege?.college_logo_url || '',
         hospitalLogoUrl: currentCollege?.hospitalLogoUrl || currentCollege?.hospital_logo_url || '',
         principalName: currentCollege?.principalName || currentCollege?.principal_name || '',

@@ -112,8 +112,8 @@ const AdminFormatPDFPreview = ({ college, settings }) => {
 
 const SamplePptSlidePreview = ({ college, pptSettings }) => {
   const [slideNum, setSlideNum] = useState(1);
-  const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'COLLEGE NAME PLACEHOLDER';
-  const hospitalName = college?.hospital_name || 'HOSPITAL NAME PLACEHOLDER';
+  const collegeName = pptSettings?.header_title || college?.college_name || college?.name || 'College Name';
+  const hospitalName = college?.hospital_name || college?.hospitalName || college?.primary_hospital_name || 'Primary Hospital Name';
   const fontFamily = pptSettings?.font_family || 'Times New Roman';
   const titleSize = pptSettings?.ppt_title_font_size || '22px';
   const subHeadingSize = pptSettings?.ppt_subheading_font_size || '20px';
@@ -554,7 +554,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
                 )}
                 <div>
                   <span className="text-[10px] text-slate-400 block">Hospital Name:</span>
-                  <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || 'Lalitha Superspecialities Hospital'}</strong>
+                  <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || college?.primary_hospital_name || 'Primary Hospital Name'}</strong>
                 </div>
               </div>
             </div>
@@ -898,7 +898,7 @@ export const DocumentBrandingView = ({ college: initialCollege }) => {
               )}
               <div>
                 <span className="text-[10px] text-slate-400 block">Hospital Name:</span>
-                <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || 'Lalitha Superspecialities Hospital'}</strong>
+                <strong className="text-slate-900 dark:text-white font-bold">{college?.hospital_name || college?.hospitalName || college?.primary_hospital_name || 'Primary Hospital Name'}</strong>
               </div>
             </div>
           </div>

@@ -39,9 +39,9 @@ export const PharmDVerseDocumentHeader = ({ college: initialCollege, branding, d
   const showHospitalLogo = branding?.show_hospital_logo ?? true;
   const showHospitalName = branding?.show_hospital_name ?? true;
 
-  const collegeName = currentCollege?.college_name || currentCollege?.name || 'A.M. REDDY MEMORIAL COLLEGE OF PHARMACY';
-  const collegeLogoUrl = currentCollege?.college_logo_url || currentCollege?.logoUrl;
-  const hospitalName = currentCollege?.hospital_name || currentCollege?.hospitalName || 'Lalitha Superspecialities Hospital';
+  const collegeName = currentCollege?.college_name || currentCollege?.name || 'Pharmacy College';
+  const collegeLogoUrl = currentCollege?.college_logo_url || currentCollege?.logoUrl || currentCollege?.logo_url;
+  const hospitalName = currentCollege?.hospital_name || currentCollege?.hospitalName || currentCollege?.primary_hospital_name || 'Primary Teaching Hospital';
   const hospitalLogoUrl = currentCollege?.hospital_logo_url || currentCollege?.hospitalLogoUrl;
   
   // SINGLE SOURCE OF TRUTH FOR AUTONOMOUS STATUS

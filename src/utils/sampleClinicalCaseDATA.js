@@ -27,12 +27,12 @@ export const SAMPLE_CLINICAL_CASE_DATA = {
     department: 'General Medicine & Gastroenterology'
   },
   college: {
-    college_name: 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY',
-    name: 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY',
+    college_name: 'Pharmacy College',
+    name: 'Pharmacy College',
     is_autonomous: true,
     isAutonomous: true,
-    hospital_name: 'Lalitha Superspecialities Hospital',
-    hospitalName: 'Lalitha Superspecialities Hospital',
+    hospital_name: 'Primary Teaching Hospital',
+    hospitalName: 'Primary Teaching Hospital',
     college_logo_url: '',
     hospital_logo_url: ''
   },
@@ -117,4 +117,33 @@ export const SAMPLE_CLINICAL_CASE_DATA = {
       patient_outcome: 'Recovered completely by Day 3 without adverse systemic effects.'
     }
   }
+};
+
+/**
+ * Returns dynamic sample clinical case data pre-populated with the specific college's identity.
+ */
+export const getSampleCaseDataForCollege = (collegeObj = {}) => {
+  const collegeName = collegeObj?.college_name || collegeObj?.name || 'Pharmacy College';
+  const hospitalName = collegeObj?.hospital_name || collegeObj?.hospitalName || collegeObj?.primary_hospital_name || 'Primary Teaching Hospital';
+  const collegeLogoUrl = collegeObj?.college_logo_url || collegeObj?.logoUrl || collegeObj?.logo_url || '';
+  const hospitalLogoUrl = collegeObj?.hospital_logo_url || collegeObj?.hospitalLogoUrl || '';
+  const isAutonomous = Boolean(collegeObj?.is_autonomous ?? collegeObj?.isAutonomous);
+
+  return {
+    ...SAMPLE_CLINICAL_CASE_DATA,
+    college: {
+      ...SAMPLE_CLINICAL_CASE_DATA.college,
+      id: collegeObj?.id || SAMPLE_CLINICAL_CASE_DATA.college.id,
+      college_name: collegeName,
+      name: collegeName,
+      hospital_name: hospitalName,
+      hospitalName: hospitalName,
+      college_logo_url: collegeLogoUrl,
+      logoUrl: collegeLogoUrl,
+      hospital_logo_url: hospitalLogoUrl,
+      hospitalLogoUrl: hospitalLogoUrl,
+      is_autonomous: isAutonomous,
+      isAutonomous: isAutonomous
+    }
+  };
 };

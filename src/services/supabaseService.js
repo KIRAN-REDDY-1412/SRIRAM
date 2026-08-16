@@ -1626,7 +1626,7 @@ export const approveCollegeInSupabase = async (request) => {
       principal_name: request.contactName || request.contact_person,
       principal_mobile: request.mobileNumber || request.mobile_number,
       principal_email: request.email,
-      hospital_name: request.hospitalName || 'Lalitha Superspecialities Hospital',
+      hospital_name: request.hospitalName || request.hospital_name || request.primaryHospitalName || null,
       is_autonomous: Boolean(request.isAutonomous),
       status: 'Active'
     };

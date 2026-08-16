@@ -115,12 +115,12 @@ export const buildNormalizedApprovedCaseData = ({
   const adrFields = isAdrCompleted ? extractAllSubmittedFields(adr) : [];
 
   return {
-    caseId: clinicalCase?.case_id || 'AMRMCP-2026-000001',
-    collegeName: college?.college_name || college?.name || 'A.M.REDDY MEMORIAL COLLEGE OF PHARMACY',
-    hospitalName: college?.hospital_name || clinicalCase?.hospital_name || 'Lalitha Superspecialities Hospital',
-    studentName: student?.full_name || clinicalCase?.student_name || 'K.Nikhil',
-    studentRoll: student?.roll_number || 'Y22PHD0314',
-    preceptorName: preceptor?.full_name || clinicalCase?.assigned_preceptor_name || 'Dr. SAHITHI SRI',
+    caseId: clinicalCase?.case_id || 'CLINICAL-CASE-001',
+    collegeName: college?.college_name || college?.name || 'Pharmacy College',
+    hospitalName: college?.hospital_name || college?.hospitalName || college?.primary_hospital_name || clinicalCase?.hospital_name || 'Primary Teaching Hospital',
+    studentName: student?.full_name || clinicalCase?.student_name || 'Student Candidate',
+    studentRoll: student?.roll_number || 'Roll Number',
+    preceptorName: preceptor?.full_name || clinicalCase?.assigned_preceptor_name || 'Faculty Preceptor',
     preceptorDesig: preceptor?.designation || 'ASSISTANT PROFESSOR',
     
     // Status Flags

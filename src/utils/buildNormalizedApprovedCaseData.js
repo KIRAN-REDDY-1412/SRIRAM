@@ -41,13 +41,21 @@ export const buildNormalizedApprovedCaseData = ({
   // College & Student Identifiers
   const collegeName = college?.college_name || college?.name || clinicalCase?.college_name || 'PHARMDVERSE INSTITUTION OF PHARMACY';
   const hospitalName = college?.hospital_name || clinicalCase?.hospital_name || 'TEACHING HOSPITAL & RESEARCH CENTRE';
-  const caseId = clinicalCase?.case_id || clinicalCase?.id || 'AMRMCP-2026-CASE-001';
 
   const studentName = student?.full_name || student?.student_name || clinicalCase?.student_name || 'STUDENT PHARMACIST';
-  const studentRoll = student?.roll_number || student?.roll_no || clinicalCase?.roll_number || 'Y22PHD0316';
+  const studentRoll = student?.roll_number || student?.roll_no || clinicalCase?.roll_number || 'Y22PHD0314';
 
   const preceptorName = preceptor?.full_name || preceptor?.name || clinicalCase?.preceptor_name || 'FACULTY PRECEPTOR';
   const preceptorDesig = preceptor?.designation || 'FACULTY PRECEPTOR & CLINICAL EVALUATOR';
+
+  // Real Case ID Extraction Hierarchy
+  const caseId = clinicalCase?.case_number ||
+                 clinicalCase?.case_id ||
+                 clinicalCase?.case_code ||
+                 profile.case_number ||
+                 profile.case_id ||
+                 (clinicalCase?.id && typeof clinicalCase.id === 'string' && !clinicalCase.id.includes('-') ? clinicalCase.id : null) ||
+                 `AMRMCP-2026-${studentRoll}-0001`;
 
   // Dates
   const dates = {

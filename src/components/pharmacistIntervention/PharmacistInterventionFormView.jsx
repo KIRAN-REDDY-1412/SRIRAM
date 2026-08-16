@@ -103,19 +103,19 @@ export const PharmacistInterventionFormView = ({ clinicalCase, student, onBack, 
     present_diagnosis: presentDiagnosis,
     prescription_details: prescriptionDetails,
     prescription_problems: prescriptionProblems,
-    other_problem: otherProblem,
-    problem_description: problemDescription,
-    actions_taken: actionsTaken,
+    other_problem: prescriptionProblemOther,
+    problem_description: descriptionOfProblem,
+    actions_taken: actionTaken,
     recommendations: recommendations,
-    significance_level: significanceLevel,
-    intervention_outcome: interventionOutcome,
-    outcome_comments: outcomeComments,
+    significance_level: significanceOfIntervention,
+    intervention_outcome: outcome,
+    outcome_comments: reasonsIfNo,
     references_text: referencesText,
     follow_up: followUp
   }), [
     dateOfIntervention, presentDiagnosis, prescriptionDetails, prescriptionProblems,
-    otherProblem, problemDescription, actionsTaken, recommendations,
-    significanceLevel, interventionOutcome, outcomeComments, referencesText, followUp
+    prescriptionProblemOther, descriptionOfProblem, actionTaken, recommendations,
+    significanceOfIntervention, outcome, reasonsIfNo, referencesText, followUp
   ]);
 
   const diffMap = React.useMemo(() => {

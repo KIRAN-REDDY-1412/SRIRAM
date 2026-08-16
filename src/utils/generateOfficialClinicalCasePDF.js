@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 
 /**
  * Direct High-Resolution Vector PDF Generator for Approved Clinical Cases.
- * Pure jsPDF vector implementation — completely bypasses html2canvas and oklch CSS parsing errors.
+ * Fully dynamic layout engine — sections flow naturally without unnecessary hard-coded page breaks or empty spaces.
  */
 export const generateOfficialClinicalCasePDF = async ({
   clinicalCase = {},
@@ -26,6 +26,7 @@ export const generateOfficialClinicalCasePDF = async ({
   const pageHeight = doc.internal.pageSize.getHeight(); // 297mm
   const marginX = 15;
   const contentWidth = pageWidth - marginX * 2; // 180mm
+  const maxY = pageHeight - 20; // 277mm bottom content limit before footer
 
   const caseId = clinicalCase?.case_id || 'AMRMCP-2026-000001';
   const fileName = `${caseId}_Approved.pdf`;
@@ -124,13 +125,25 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
   };
 
-  // --- PAGE 1: DEMOGRAPHICS & CLINICAL HISTORY ---
+  let y = 38;
+
+  // Helper for dynamic page overflow management
+  const ensureSpace = (neededHeight) => {
+    if (y + neededHeight > maxY) {
+      doc.addPage();
+      drawWatermark();
+      drawPageHeader();
+      y = 38;
+      return true; // Indicates page break occurred
+    }
+    return false;
+  };
+
+  // --- START PAGE 1 ---
   drawWatermark();
   drawPageHeader();
 
-  let y = 38;
-
-  // Module Title
+  // 1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199); // secondary cyan
@@ -169,6 +182,7 @@ export const generateOfficialClinicalCasePDF = async ({
   y += 42;
 
   // History Sections
+  ensureSpace(12);
   doc.setFont('times', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(15, 23, 42);
@@ -179,6 +193,7 @@ export const generateOfficialClinicalCasePDF = async ({
   doc.text(profile.chief_complaints || 'Patient presented with chief complaints as documented in medical records.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
   y += 10;
+  ensureSpace(12);
   doc.setFont('times', 'bold');
   doc.setFontSize(9.5);
   doc.text('Past Medical & Medication History:', marginX, y);
@@ -188,6 +203,7 @@ export const generateOfficialClinicalCasePDF = async ({
   doc.text(profile.past_medical_history || profile.past_history || 'No significant past medical history reported.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
   y += 10;
+  ensureSpace(14);
   doc.setFont('times', 'bold');
   doc.setFontSize(9.5);
   doc.text('General & Systemic Examinations:', marginX, y);
@@ -198,9 +214,10 @@ export const generateOfficialClinicalCasePDF = async ({
   const sysExam = profile.systemic_examination || 'CVS: S1S2 heard | RS: NVBS | GI: Soft | CNS: Intact.';
   doc.text(`${genExam}\n${sysExam}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  y += 14;
+  y += 12;
 
   // Vitals Signs Table
+  ensureSpace(20);
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(2, 132, 199);
@@ -222,7 +239,23 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 6;
 
     doc.setFont('times', 'normal');
-    vitalsList.slice(0, 6).forEach((v) => {
+    vitalsList.forEach((v) => {
+      if (ensureSpace(6)) {
+        // Re-draw vitals header if page broke
+        doc.setFillColor(241, 245, 249);
+        doc.rect(marginX, y, contentWidth, 6, 'F');
+        doc.setFont('times', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Date', marginX + 4, y + 4);
+        doc.text('Temp (°F)', marginX + 30, y + 4);
+        doc.text('BP (mmHg)', marginX + 60, y + 4);
+        doc.text('Pulse (bpm)', marginX + 95, y + 4);
+        doc.text('Resp Rate', marginX + 130, y + 4);
+        doc.text('SpO2 (%)', marginX + 160, y + 4);
+        y += 6;
+        doc.setFont('times', 'normal');
+      }
       doc.text(v.date || '—', marginX + 4, y + 4);
       doc.text(v.temperature ? `${v.temperature}°F` : '—', marginX + 30, y + 4);
       doc.text(v.bp || '—', marginX + 60, y + 4);
@@ -233,12 +266,10 @@ export const generateOfficialClinicalCasePDF = async ({
     });
   }
 
-  // --- PAGE 2: LABORATORY & DIAGNOSTIC INVESTIGATIONS ---
-  doc.addPage();
-  drawWatermark();
-  drawPageHeader();
-  y = 38;
+  y += 6;
 
+  // 2. LABORATORY & DIAGNOSTIC INVESTIGATIONS
+  ensureSpace(20);
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
@@ -259,11 +290,19 @@ export const generateOfficialClinicalCasePDF = async ({
 
     doc.setFont('times', 'normal');
     labs.forEach((lab) => {
-      if (y > pageHeight - 25) {
-        doc.addPage();
-        drawWatermark();
-        drawPageHeader();
-        y = 38;
+      if (ensureSpace(6)) {
+        // Re-draw lab table header on new page
+        doc.setFillColor(241, 245, 249);
+        doc.rect(marginX, y, contentWidth, 6, 'F');
+        doc.setFont('times', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Category', marginX + 4, y + 4);
+        doc.text('Parameter Name', marginX + 45, y + 4);
+        doc.text('Observed Value', marginX + 105, y + 4);
+        doc.text('Reference Range', marginX + 145, y + 4);
+        y += 6;
+        doc.setFont('times', 'normal');
       }
       doc.text(lab.category || lab.lab_category || 'General', marginX + 4, y + 4);
       doc.text(lab.parameter_name || lab.test_name || '—', marginX + 45, y + 4);
@@ -278,15 +317,10 @@ export const generateOfficialClinicalCasePDF = async ({
     y += 8;
   }
 
-  // --- PAGE 3: DIAGNOSIS & PRESCRIBED MEDICATION THERAPY ---
-  if (y > pageHeight - 60) {
-    doc.addPage();
-    drawWatermark();
-    drawPageHeader();
-    y = 38;
-  }
-
   y += 6;
+
+  // 3. FINAL DIAGNOSIS & PRESCRIBED MEDICATIONS
+  ensureSpace(25);
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
@@ -306,6 +340,7 @@ export const generateOfficialClinicalCasePDF = async ({
 
   // Medications Table
   if (drugs.length > 0) {
+    ensureSpace(12);
     doc.setFillColor(241, 245, 249);
     doc.rect(marginX, y, contentWidth, 6, 'F');
     doc.setFont('times', 'bold');
@@ -319,11 +354,19 @@ export const generateOfficialClinicalCasePDF = async ({
 
     doc.setFont('times', 'normal');
     drugs.forEach((d, idx) => {
-      if (y > pageHeight - 25) {
-        doc.addPage();
-        drawWatermark();
-        drawPageHeader();
-        y = 38;
+      if (ensureSpace(6)) {
+        // Re-draw drugs header on new page
+        doc.setFillColor(241, 245, 249);
+        doc.rect(marginX, y, contentWidth, 6, 'F');
+        doc.setFont('times', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        doc.text('S.No', marginX + 3, y + 4);
+        doc.text('Brand & Generic Medication Name', marginX + 18, y + 4);
+        doc.text('Dose & Route', marginX + 100, y + 4);
+        doc.text('Frequency', marginX + 145, y + 4);
+        y += 6;
+        doc.setFont('times', 'normal');
       }
       doc.text(`${idx + 1}`, marginX + 3, y + 4);
       doc.text(`${d.brand_name || ''} (${d.generic_name || d.drug_name || '—'})`, marginX + 18, y + 4, { maxWidth: 78 });
@@ -333,12 +376,10 @@ export const generateOfficialClinicalCasePDF = async ({
     });
   }
 
-  // --- PAGE 4: COUNSELLING & PHARMACIST INTERVENTION ---
-  doc.addPage();
-  drawWatermark();
-  drawPageHeader();
-  y = 38;
+  y += 6;
 
+  // 4. PATIENT COUNSELLING & PHARMACIST INTERVENTIONS
+  ensureSpace(30);
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
@@ -357,9 +398,10 @@ export const generateOfficialClinicalCasePDF = async ({
   y += 5;
   doc.text(`Key Focus: ${counselling.counselling_points || counselling.disease_counselled || 'Medication adherence, lifestyle modifications, and dietary precautions.'}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
 
-  y += 14;
+  y += 12;
 
   // Pharmacist Intervention Box
+  ensureSpace(20);
   doc.setFont('times', 'bold');
   doc.setFontSize(9.5);
   doc.text('Pharmacist Intervention Summary:', marginX, y);
@@ -372,12 +414,10 @@ export const generateOfficialClinicalCasePDF = async ({
   y += 5;
   doc.text(`Intervention Outcome: ${intervention.outcome || intervention.status || 'Accepted and implemented.'}`, marginX + 3, y);
 
-  // --- PAGE 5: ADR LOG, DISCHARGE SUMMARY & DUAL SIGNATURES ---
-  doc.addPage();
-  drawWatermark();
-  drawPageHeader();
-  y = 38;
+  y += 8;
 
+  // 5. ADR LOG, DISCHARGE SUMMARY & VERIFICATION
+  ensureSpace(30);
   doc.setFont('times', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(2, 132, 199);
@@ -396,9 +436,10 @@ export const generateOfficialClinicalCasePDF = async ({
   y += 5;
   doc.text(`Causality Assessment: ${adr.naranjo_causality || adr.causality || 'Unlikely'} | Outcome: ${adr.outcome || 'Resolved'}`, marginX + 3, y);
 
-  y += 12;
+  y += 10;
 
   // Discharge Summary
+  ensureSpace(20);
   doc.setFont('times', 'bold');
   doc.setFontSize(9.5);
   doc.text('Discharge Summary & Advice:', marginX, y);
@@ -408,7 +449,8 @@ export const generateOfficialClinicalCasePDF = async ({
   doc.text(profile.discharge_summary || 'Patient managed symptomatically and discharged in stable condition with advice to follow up as prescribed.', marginX + 3, y, { maxWidth: contentWidth - 6 });
 
   // DUAL VERIFICATION SIGNATURE SECTION (AT BOTTOM OF FINAL PAGE)
-  const sigY = pageHeight - 42;
+  ensureSpace(40);
+  const sigY = Math.max(y + 15, pageHeight - 42);
 
   doc.setDrawColor(15, 23, 42);
   doc.setLineWidth(0.4);

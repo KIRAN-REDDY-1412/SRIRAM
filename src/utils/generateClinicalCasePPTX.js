@@ -85,9 +85,14 @@ export const generateClinicalCasePPTX = async ({
 
   const collegeLogo = college?.college_logo_url || college?.logo_url || '';
   const hospitalLogo = college?.hospital_logo_url || '';
+  const showCollegeLogo = pptSettings?.show_college_logo ?? pptSettings?.show_logo ?? true;
+  const showHospitalLogo = pptSettings?.show_hospital_logo ?? true;
+  const showCollegeName = pptSettings?.show_college_name ?? true;
+  const showAutonomous = pptSettings?.show_autonomous ?? true;
+  const showHospitalName = pptSettings?.show_hospital_name ?? true;
 
   // Left Side: College Logo
-  if (pptSettings?.show_logo !== false && collegeLogo) {
+  if (showCollegeLogo && collegeLogo) {
     try {
       slide1.addImage({
         path: collegeLogo,
@@ -99,7 +104,7 @@ export const generateClinicalCasePPTX = async ({
   }
 
   // Right Side: Hospital Logo
-  if (pptSettings?.show_hospital_logo !== false && hospitalLogo) {
+  if (showHospitalLogo && hospitalLogo) {
     try {
       slide1.addImage({
         path: hospitalLogo,
@@ -111,15 +116,23 @@ export const generateClinicalCasePPTX = async ({
   }
 
   // Center Text: College Name & Hospital Subtitle
-  slide1.addText(collegeName.toUpperCase(), {
-    x: startX + 1.0, y: 0.35, w: contentW - 2.0, h: 0.4,
-    fontFace, fontSize: titleFontSize - 3, bold: true, color: primaryColor, align: 'center'
-  });
+  if (showCollegeName) {
+    slide1.addText(collegeName.toUpperCase(), {
+      x: startX + 1.0, y: 0.35, w: contentW - 2.0, h: 0.4,
+      fontFace, fontSize: titleFontSize - 3, bold: true, color: primaryColor, align: 'center'
+    });
+  }
 
-  slide1.addText(`(Autonomous) • ${hospitalName}`, {
-    x: startX + 1.0, y: 0.75, w: contentW - 2.0, h: 0.3,
-    fontFace, fontSize: Math.max(subHeadingFontSize - 4, 11), italic: true, color: '475569', align: 'center'
-  });
+  const subTextParts = [];
+  if (showAutonomous) subTextParts.push('(Autonomous)');
+  if (showHospitalName) subTextParts.push(hospitalName);
+
+  if (subTextParts.length > 0) {
+    slide1.addText(subTextParts.join(' • '), {
+      x: startX + 1.0, y: 0.75, w: contentW - 2.0, h: 0.3,
+      fontFace, fontSize: Math.max(subHeadingFontSize - 4, 11), italic: true, color: '475569', align: 'center'
+    });
+  }
 
   // Case ID Sub-bar
   slide1.addShape(pptx.shapes.RECTANGLE, {

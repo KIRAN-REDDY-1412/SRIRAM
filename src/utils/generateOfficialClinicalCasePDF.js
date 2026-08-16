@@ -43,6 +43,25 @@ export const generateOfficialClinicalCasePDF = async ({
   const collegeName = norm.collegeName;
   const hospitalName = norm.hospitalName;
 
+  const showCollegeLogo = branding?.show_college_logo ?? true;
+  const showCollegeName = branding?.show_college_name ?? true;
+  const showAutonomous = branding?.show_autonomous ?? true;
+  const showHospitalLogo = branding?.show_hospital_logo ?? true;
+  const showHospitalName = branding?.show_hospital_name ?? true;
+
+  const watermarkEnabled = branding?.watermark_enabled ?? true;
+  const watermarkLine1 = branding?.watermark_text_line1 || 'PHARMDVERSE';
+  const watermarkLine2 = branding?.watermark_text_line2 || 'Clinical Documentation System';
+  const isDiagonal = branding?.watermark_position === 'Diagonal';
+
+  const footerLeft = branding?.footer_left_text || 'PharmDVerse';
+  const footerCenter = branding?.footer_center_text || 'Confidential Clinical Documentation';
+  const showPageNum = branding?.show_page_number ?? true;
+  const showDateTime = branding?.show_generated_datetime ?? true;
+
+  const rawFont = branding?.font_family || 'Times New Roman';
+  const fontFamily = rawFont.toLowerCase().includes('arial') || rawFont.toLowerCase().includes('sans') ? 'helvetica' : 'times';
+
   const currentDateStr = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: '2-digit',
@@ -58,29 +77,37 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setLineWidth(0.4);
     doc.rect(marginX, 12, contentWidth, 22);
 
-    if (collegeLogo && typeof collegeLogo === 'string' && collegeLogo.startsWith('data:image')) {
+    if (showCollegeLogo && collegeLogo && typeof collegeLogo === 'string' && collegeLogo.startsWith('data:image')) {
       try {
         const fmt = collegeLogo.includes('image/png') ? 'PNG' : 'JPEG';
         doc.addImage(collegeLogo, fmt, marginX + 2, 13.5, 17, 17);
       } catch (e) {}
     }
 
-    if (hospitalLogo && typeof hospitalLogo === 'string' && hospitalLogo.startsWith('data:image')) {
+    if (showHospitalLogo && hospitalLogo && typeof hospitalLogo === 'string' && hospitalLogo.startsWith('data:image')) {
       try {
         const fmt = hospitalLogo.includes('image/png') ? 'PNG' : 'JPEG';
         doc.addImage(hospitalLogo, fmt, pageWidth - marginX - 19, 13.5, 17, 17);
       } catch (e) {}
     }
 
-    doc.setFont('times', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(15, 23, 42);
-    doc.text(collegeName.toUpperCase(), pageWidth / 2, 19, { align: 'center' });
+    if (showCollegeName) {
+      doc.setFont(fontFamily, 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text(collegeName.toUpperCase(), pageWidth / 2, 19, { align: 'center' });
+    }
 
-    doc.setFont('times', 'italic');
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(`(Autonomous) • ${hospitalName}`, pageWidth / 2, 24, { align: 'center' });
+    const subTextParts = [];
+    if (showAutonomous) subTextParts.push('(Autonomous)');
+    if (showHospitalName) subTextParts.push(hospitalName);
+
+    if (subTextParts.length > 0) {
+      doc.setFont(fontFamily, 'italic');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(subTextParts.join(' • '), pageWidth / 2, 24, { align: 'center' });
+    }
 
     doc.setFillColor(15, 23, 42);
     doc.rect(marginX, 28, contentWidth, 5, 'F');
@@ -91,10 +118,16 @@ export const generateOfficialClinicalCasePDF = async ({
   };
 
   const drawWatermark = () => {
-    doc.setFont('times', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(241, 245, 249);
-    doc.text(collegeName.toUpperCase(), pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
+    if (!watermarkEnabled) return;
+    doc.setFont(fontFamily, 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(226, 232, 240); // slate-200
+    const textToDraw = watermarkLine1 ? `${watermarkLine1} - ${watermarkLine2}` : collegeName.toUpperCase();
+    if (isDiagonal) {
+      doc.text(textToDraw, pageWidth / 2, pageHeight / 2, { align: 'center', angle: 30 });
+    } else {
+      doc.text(textToDraw, pageWidth / 2, pageHeight / 2, { align: 'center' });
+    }
   };
 
   const drawPageFooter = (pageNum, totalPages) => {
@@ -102,12 +135,20 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.setLineWidth(0.2);
     doc.line(marginX, pageHeight - 12, pageWidth - marginX, pageHeight - 12);
 
-    doc.setFont('times', 'normal');
+    doc.setFont(fontFamily, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('PharmDVerse • Official Approved Record', marginX, pageHeight - 6);
-    doc.text(currentDateStr, pageWidth / 2, pageHeight - 6, { align: 'center' });
-    doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
+    doc.text(footerLeft, marginX, pageHeight - 6);
+
+    if (showDateTime) {
+      doc.text(`${footerCenter} • ${currentDateStr}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    } else {
+      doc.text(footerCenter, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    }
+
+    if (showPageNum) {
+      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - marginX, pageHeight - 6, { align: 'right' });
+    }
   };
 
   let y = 38;

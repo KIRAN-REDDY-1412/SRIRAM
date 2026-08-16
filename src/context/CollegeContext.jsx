@@ -15,6 +15,13 @@ import {
 
 const CollegeContext = createContext();
 
+const safeInitials = (str) => {
+  if (!str || typeof str !== 'string') return 'CLG';
+  const words = str.trim().split(/\s+/).filter(w => w && w.length > 0);
+  if (words.length === 0) return 'CLG';
+  return words.map(w => w[0]).join('').substring(0, 4).toUpperCase();
+};
+
 export const CollegeProvider = ({ children }) => {
   const [activeColleges, setActiveColleges] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -50,7 +57,7 @@ export const CollegeProvider = ({ children }) => {
           principalMobile: c.principal_mobile || '',
           principalEmail: c.principal_email || '',
           logoBg: c.college_logo || c.logo_bg || 'from-emerald-600 to-teal-700',
-          initials: (c.college_name || c.name) ? (c.college_name || c.name).split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
+          initials: safeInitials(c.college_name || c.name),
           studentsCount: sub ? sub.maximum_students : 600,
           portalUrl: `https://${(c.college_code || c.code || 'clg').toLowerCase()}.pharmdverse.com`,
           status: c.status || (sub ? sub.status : 'Active'),
@@ -94,8 +101,8 @@ export const CollegeProvider = ({ children }) => {
         pinCode: r.pincode || r.pin_code || '',
         universityAffiliation: r.university_affiliation || '',
         pciApprovalNo: r.pci_approval_number || r.pci_approval_no || '',
-        code: r.college_name ? r.college_name.split(' ').map(w => w[0]).join('').toUpperCase() + `-${(r.city || 'CLG').substring(0, 3).toUpperCase()}` : '',
-        initials: r.college_name ? r.college_name.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase() : 'CLG',
+        code: r.college_name ? `${safeInitials(r.college_name)}-${(r.city || 'CLG').substring(0, 3).toUpperCase()}` : '',
+        initials: safeInitials(r.college_name),
         logoBg: 'from-teal-600 to-emerald-700',
         subscriptionPlan: 'Professional',
         subscriptionStartDate: new Date().toISOString().split('T')[0],

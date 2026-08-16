@@ -234,7 +234,7 @@ export const savePdfBrandingSettingsInSupabase = async (collegeId, pdfPayload) =
   try {
     const { data: existing } = await supabase
       .from('document_branding_settings')
-      .select('id, document_templates')
+      .select('id')
       .eq('college_id', collegeId)
       .maybeSingle();
 
@@ -273,8 +273,7 @@ export const savePdfBrandingSettingsInSupabase = async (collegeId, pdfPayload) =
       repeat_table_header: pdfPayload.repeat_table_header ?? true,
       repeat_header: pdfPayload.repeat_header ?? true,
       show_student_signature: pdfPayload.show_student_signature ?? true,
-      show_preceptor_signature: pdfPayload.show_preceptor_signature ?? true,
-      document_templates: existing?.document_templates || {}
+      show_preceptor_signature: pdfPayload.show_preceptor_signature ?? true
     };
 
     if (existing) {
@@ -295,11 +294,10 @@ export const savePptBrandingSettingsInSupabase = async (collegeId, pptPayload) =
   try {
     const { data: existing } = await supabase
       .from('document_branding_settings')
-      .select('*')
+      .select('id')
       .eq('college_id', collegeId)
       .maybeSingle();
 
-    const existingTemplates = existing?.document_templates || {};
     const updatedPptSettings = {
       theme: pptPayload.theme || 'Clinical Emerald',
       aspect_ratio: pptPayload.aspect_ratio || '16:9 (Widescreen)',
@@ -318,15 +316,12 @@ export const savePptBrandingSettingsInSupabase = async (collegeId, pptPayload) =
       show_watermark: pptPayload.show_watermark ?? true
     };
 
-    const docTemplates = {
-      ...existingTemplates,
-      ppt_settings: updatedPptSettings
-    };
+    const pptJsonStr = JSON.stringify(updatedPptSettings);
 
     if (existing) {
       const { data, error } = await supabase
         .from('document_branding_settings')
-        .update({ document_templates: docTemplates })
+        .update({ footer_text: pptJsonStr })
         .eq('id', existing.id)
         .select();
 
@@ -335,7 +330,7 @@ export const savePptBrandingSettingsInSupabase = async (collegeId, pptPayload) =
     } else {
       const { data, error } = await supabase
         .from('document_branding_settings')
-        .insert([{ college_id: collegeId, document_templates: docTemplates }])
+        .insert([{ college_id: collegeId, footer_text: pptJsonStr }])
         .select();
 
       if (error) return { success: false, error: error.message };

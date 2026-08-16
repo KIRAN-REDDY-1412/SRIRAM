@@ -2040,6 +2040,7 @@ export const fetchCaseModuleStatusesFromSupabase = async (clinicalCaseId) => {
         intervention: interventionRes.data || {},
         dir: dirRes.data || {},
         adr: adrRes.data || {},
+        vitals: profileData.vital_signs || profileData.vitals || [],
         labs,
         drugs
       }

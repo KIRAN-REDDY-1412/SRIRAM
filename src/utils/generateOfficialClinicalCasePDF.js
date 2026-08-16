@@ -2,9 +2,9 @@ import { jsPDF } from 'jspdf';
 
 /**
  * Direct High-Resolution Vector PDF Generator for Approved Clinical Cases.
- * Enforces the FINAL DATA RULE:
- *  - Form COMPLETED (green) -> INCLUDE EVERY SINGLE FIELD AND ITS ACTUAL SUBMITTED VALUE.
- *  - Form NOT COMPLETED (draft/incomplete/not submitted) -> EXCLUDE THE ENTIRE FORM.
+ * Enforces the STRICT FINAL DATA RULE:
+ *  - Form COMPLETED (green) -> INCLUDE EVERY SINGLE SUBMITTED FIELD AND ITS VALUE dynamically.
+ *  - Form NOT COMPLETED (draft/incomplete/not_submitted) -> EXCLUDE THE ENTIRE FORM.
  *  - Profile & Counselling remain mandatory for Case Submission.
  */
 export const generateOfficialClinicalCasePDF = async ({
@@ -49,7 +49,7 @@ export const generateOfficialClinicalCasePDF = async ({
   });
 
   const profile = caseModulesData?.profile || {};
-  const vitalsList = caseModulesData?.vitals || [];
+  const vitalsList = caseModulesData?.vitals || profile.vital_signs || profile.vitals || [];
   const labs = caseModulesData?.labs || [];
   const drugs = caseModulesData?.drugs || [];
   const counselling = caseModulesData?.counselling || {};
@@ -62,7 +62,7 @@ export const generateOfficialClinicalCasePDF = async ({
   const collegeLogo = college?.college_logo_url || college?.logo_url;
   const hospitalLogo = college?.hospital_logo_url;
 
-  // Helper to determine if a form module is COMPLETED (green)
+  // Helper to check if a form module is COMPLETED (green)
   const isFormCompleted = (formObj) => {
     if (!formObj || typeof formObj !== 'object') return false;
     const status = (formObj.status || formObj.form_status || '').toLowerCase();
@@ -74,6 +74,20 @@ export const generateOfficialClinicalCasePDF = async ({
       if (['status', 'form_status', 'id', 'case_id', 'created_at', 'updated_at'].includes(k)) return false;
       return v !== null && v !== undefined && v !== '';
     }) && status !== 'draft';
+  };
+
+  // Helper to dynamically extract 100% of all submitted key-value pairs from any form
+  const getSubmittedFields = (formObj, excludedKeys = []) => {
+    if (!formObj || typeof formObj !== 'object') return [];
+    const systemKeys = ['id', 'clinical_case_id', 'student_id', 'college_id', 'status', 'form_status', 'created_at', 'updated_at', 'is_completed', ...excludedKeys];
+    
+    return Object.entries(formObj)
+      .filter(([k, v]) => !systemKeys.includes(k) && v !== null && v !== undefined && v !== '')
+      .map(([k, v]) => {
+        const label = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const value = typeof v === 'object' ? JSON.stringify(v) : String(v);
+        return { label, value, key: k };
+      });
   };
 
   const isProfileCompleted = isFormCompleted(profile) || Boolean(profile.patient_name || clinicalCase.patient_name);
@@ -159,7 +173,7 @@ export const generateOfficialClinicalCasePDF = async ({
 
   let sectionCounter = 1;
 
-  // 1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY (MANDATORY PROFILE)
+  // 1. PATIENT DEMOGRAPHICS & CLINICAL HISTORY (PROFILE — MANDATORY)
   if (isProfileCompleted) {
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
@@ -197,46 +211,25 @@ export const generateOfficialClinicalCasePDF = async ({
 
     y += 42;
 
-    if (profile.chief_complaints) {
+    // Render ALL submitted text fields in profile dynamically
+    const profileFields = getSubmittedFields(profile, [
+      'patient_name', 'age', 'gender', 'ip_op_number', 'ip_no', 'ward', 'bed_number', 'department',
+      'attending_physician', 'physician', 'date_of_admission', 'doa', 'date_of_discharge', 'dod',
+      'height', 'weight', 'bmi', 'allergy_drugs', 'vital_signs', 'vitals'
+    ]);
+
+    profileFields.forEach(({ label, value }) => {
       ensureSpace(12);
       doc.setFont('times', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
-      doc.text('Chief Complaints & Presenting History:', marginX, y);
+      doc.text(`${label}:`, marginX, y);
       y += 4;
       doc.setFont('times', 'normal');
       doc.setFontSize(8.5);
-      doc.text(profile.chief_complaints, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 10;
-    }
-
-    if (profile.past_medical_history || profile.past_history) {
-      ensureSpace(12);
-      doc.setFont('times', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Past Medical & Medication History:', marginX, y);
-      y += 4;
-      doc.setFont('times', 'normal');
-      doc.setFontSize(8.5);
-      doc.text(profile.past_medical_history || profile.past_history, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 10;
-    }
-
-    if (profile.general_examination || profile.systemic_examination) {
-      ensureSpace(14);
-      doc.setFont('times', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text('General & Systemic Examinations:', marginX, y);
-      y += 4;
-      doc.setFont('times', 'normal');
-      doc.setFontSize(8.5);
-      const genExam = profile.general_examination ? `General Exam: ${profile.general_examination}` : '';
-      const sysExam = profile.systemic_examination ? `Systemic Exam: ${profile.systemic_examination}` : '';
-      doc.text([genExam, sysExam].filter(Boolean).join('\n'), marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 12;
-    }
+      doc.text(value, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 8;
+    });
   }
 
   // VITAL SIGNS MONITORING LOG
@@ -279,10 +272,10 @@ export const generateOfficialClinicalCasePDF = async ({
         doc.setFont('times', 'normal');
       }
       doc.text(v.date || '—', marginX + 4, y + 4);
-      doc.text(v.temperature ? `${v.temperature}°F` : '—', marginX + 30, y + 4);
+      doc.text(v.temperature || v.temp ? `${v.temperature || v.temp}°F` : '—', marginX + 30, y + 4);
       doc.text(v.bp || '—', marginX + 60, y + 4);
-      doc.text(v.pulse ? `${v.pulse}` : '—', marginX + 95, y + 4);
-      doc.text(v.respiratory_rate ? `${v.respiratory_rate}` : '—', marginX + 130, y + 4);
+      doc.text(v.pulse || v.pr ? `${v.pulse || v.pr}` : '—', marginX + 95, y + 4);
+      doc.text(v.respiratory_rate || v.rr ? `${v.respiratory_rate || v.rr}` : '—', marginX + 130, y + 4);
       doc.text(v.spo2 ? `${v.spo2}%` : '—', marginX + 160, y + 4);
       y += 5;
     });
@@ -326,7 +319,7 @@ export const generateOfficialClinicalCasePDF = async ({
       }
       doc.text(lab.category || lab.lab_category || 'General', marginX + 4, y + 4);
       doc.text(lab.parameter_name || lab.test_name || '—', marginX + 45, y + 4);
-      doc.text(lab.observed_value || lab.value || '—', marginX + 105, y + 4);
+      doc.text(lab.observed_value || lab.test_value || lab.value || '—', marginX + 105, y + 4);
       doc.text(lab.reference_range || lab.normal_range || '—', marginX + 145, y + 4);
       y += 5;
     });
@@ -379,9 +372,9 @@ export const generateOfficialClinicalCasePDF = async ({
         y += 6;
         doc.setFont('times', 'normal');
       }
-      doc.text(`${idx + 1}`, marginX + 3, y + 4);
-      doc.text(`${d.brand_name || ''} (${d.generic_name || d.drug_name || '—'})`, marginX + 18, y + 4, { maxWidth: 78 });
-      doc.text(`${d.dose || '—'} (${d.route || 'Oral'})`, marginX + 100, y + 4);
+      doc.text(`${d.s_no || idx + 1}`, marginX + 3, y + 4);
+      doc.text(`${d.trade_name || d.brand_name || ''} (${d.generic_name || d.drug_name || '—'})`, marginX + 18, y + 4, { maxWidth: 78 });
+      doc.text(`${d.dose || '—'} (${d.route_of_admin || d.route || 'Oral'})`, marginX + 100, y + 4);
       doc.text(d.frequency || 'OD', marginX + 145, y + 4);
       y += 6;
     });
@@ -397,24 +390,20 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`${sectionCounter++}. PATIENT COUNSELLING SUMMARY`, marginX, y);
     y += 6;
 
-    doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Patient Counselling Record:', marginX, y);
+    const counsellingFields = getSubmittedFields(counselling);
+    counsellingFields.forEach(({ label, value }) => {
+      ensureSpace(10);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${label}:`, marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(value, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 7;
+    });
     y += 4;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    doc.text(`Counselled: ${counselling.counselling_provided_to || counselling.patient_type || 'Patient'} | Mode: ${counselling.counselling_mode || 'Oral'} | Time: ${counselling.time_taken || '15 min'}`, marginX + 3, y);
-    y += 5;
-    if (counselling.counselling_points || counselling.disease_counselled || counselling.points_covered) {
-      doc.text(`Key Focus / Points Covered: ${counselling.counselling_points || counselling.disease_counselled || (Array.isArray(counselling.points_covered) ? counselling.points_covered.join(', ') : counselling.points_covered)}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 6;
-    }
-    if (counselling.barriers_action || counselling.barrier_details) {
-      doc.text(`Barriers & Action Taken: ${counselling.barriers_action || counselling.barrier_details}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 6;
-    }
-    y += 6;
   }
 
   // PHARMACIST INTERVENTIONS (OPTIONAL — INCLUDE ONLY IF COMPLETED)
@@ -426,26 +415,20 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`${sectionCounter++}. PHARMACIST INTERVENTIONS`, marginX, y);
     y += 6;
 
-    doc.setFont('times', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Pharmacist Intervention Summary:', marginX, y);
+    const interventionFields = getSubmittedFields(intervention);
+    interventionFields.forEach(({ label, value }) => {
+      ensureSpace(10);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${label}:`, marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(value, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 7;
+    });
     y += 4;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    if (intervention.prescription_problems || intervention.description_of_problem || intervention.problem_identified) {
-      doc.text(`Problem Identified: ${intervention.prescription_problems || intervention.description_of_problem || intervention.problem_identified}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 5;
-    }
-    if (intervention.recommendations || intervention.action_taken || intervention.intervention_provided) {
-      doc.text(`Recommendation / Action: ${intervention.recommendations || intervention.action_taken || intervention.intervention_provided}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 5;
-    }
-    if (intervention.outcome || intervention.physician_acceptance || intervention.status) {
-      doc.text(`Intervention Outcome: ${intervention.outcome || intervention.physician_acceptance || intervention.status}`, marginX + 3, y);
-      y += 5;
-    }
-    y += 6;
   }
 
   // DRUG INFORMATION REQUEST (OPTIONAL — INCLUDE ONLY IF COMPLETED)
@@ -457,55 +440,45 @@ export const generateOfficialClinicalCasePDF = async ({
     doc.text(`${sectionCounter++}. DRUG INFORMATION REQUEST (DIR)`, marginX, y);
     y += 6;
 
-    doc.setFont('times', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(15, 23, 42);
-    if (dir.query || dir.drug_info_query || dir.details_of_enquiry) {
-      doc.text(`Query: ${dir.query || dir.drug_info_query || dir.details_of_enquiry}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 5;
-    }
-    if (dir.response || dir.query_response || dir.information_provided) {
-      doc.text(`Response: ${dir.response || dir.query_response || dir.information_provided}`, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 5;
-    }
-    y += 6;
+    const dirFields = getSubmittedFields(dir);
+    dirFields.forEach(({ label, value }) => {
+      ensureSpace(10);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${label}:`, marginX, y);
+      y += 4;
+      doc.setFont('times', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(value, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 7;
+    });
+    y += 4;
   }
 
   // ADR LOG (OPTIONAL — INCLUDE ONLY IF COMPLETED)
-  if (isAdrCompleted || profile.discharge_summary) {
+  if (isAdrCompleted) {
     ensureSpace(25);
     doc.setFont('times', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(2, 132, 199);
-    doc.text(`${sectionCounter++}. ADR LOG & DISCHARGE SUMMARY`, marginX, y);
+    doc.text(`${sectionCounter++}. ADVERSE DRUG REACTION (ADR) LOG`, marginX, y);
     y += 6;
 
-    if (isAdrCompleted) {
+    const adrFields = getSubmittedFields(adr);
+    adrFields.forEach(({ label, value }) => {
+      ensureSpace(10);
       doc.setFont('times', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
-      doc.text('Adverse Drug Reaction (ADR) Log:', marginX, y);
+      doc.text(`${label}:`, marginX, y);
       y += 4;
       doc.setFont('times', 'normal');
       doc.setFontSize(8.5);
-      doc.text(`Suspected Drug: ${adr.suspected_drug || 'N/A'} | Reaction: ${adr.reaction_description || adr.reaction_title || adr.reaction || 'NIL'}`, marginX + 3, y);
-      y += 5;
-      doc.text(`Causality Assessment: ${adr.naranjo_causality || adr.initial_causality_opinion || adr.causality || 'N/A'} | Outcome: ${adr.patient_outcome || adr.outcome || 'Resolved'}`, marginX + 3, y);
-      y += 8;
-    }
-
-    if (profile.discharge_summary) {
-      ensureSpace(18);
-      doc.setFont('times', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(15, 23, 42);
-      doc.text('Discharge Summary & Advice:', marginX, y);
-      y += 4;
-      doc.setFont('times', 'normal');
-      doc.setFontSize(8.5);
-      doc.text(profile.discharge_summary, marginX + 3, y, { maxWidth: contentWidth - 6 });
-      y += 8;
-    }
+      doc.text(value, marginX + 3, y, { maxWidth: contentWidth - 6 });
+      y += 7;
+    });
+    y += 4;
   }
 
   // DUAL VERIFICATION SIGNATURE SECTION (AT BOTTOM OF FINAL PAGE)
